@@ -1,0 +1,25 @@
+---
+description: Required completion gate when creating or updating any feature
+alwaysApply: true
+---
+
+# Feature completion gate
+
+When creating or updating a feature (App Router pages, components, server actions, auth, admin UI, audit, landing CTAs, schema touching product behavior), do **not** consider the work done until all of the following are finished in the same change:
+
+1. **Feature docs** — update or add `docs/<feature>.md` (see `feature-docs` rule). Keep paths and function names accurate.
+2. **QA test cases** — update or add `docs/qa/<feature>.test-cases.md` (see `feature-testing` rule).
+3. **Verification commands** — run and fix failures before stopping:
+
+```bash
+pnpm exec tsc --noEmit
+pnpm lint
+pnpm test
+pnpm build
+```
+
+(`pnpm test` may be skipped only for pure docs/copy edits with no logic change; typecheck, lint, and build still run when any `src/` file changed.)
+
+UI-only role hiding is not enough — keep server guards (`requireSession` / `requireAdmin` + Zod) per `feature-security`.
+
+Prefer the **feature-workflow** project skill for the full ordered checklist.

@@ -1,0 +1,54 @@
+---
+description: Document feature changes in docs/ when updating App Router pages, server actions, or lib auth/data helpers
+globs: src/app/**/*,src/lib/**/*,src/components/**/*,src/db/**/*,src/proxy.ts
+alwaysApply: false
+---
+
+# Feature Documentation (`docs/`)
+
+When creating or updating a feature in `src/app`, `src/lib`, `src/components`, or `src/db`, keep `docs/` in sync in the same change.
+
+## What to document
+
+- Purpose of the feature and when a user encounters it
+- Routes / entry points involved (`src/app/.../page.tsx`, server actions, API routes)
+- Auth helpers and data access (`requireAdmin`, `auth.api.*`, Drizzle queries) — inputs, auth requirements, side effects
+- Important security or ownership rules (who can call what)
+- Env vars, migrations, or setup steps if any
+
+## Where to put it
+
+- **Update an existing doc** when the topic already fits (e.g. auth → `docs/authentication.md`, users → `docs/user-management.md`, architecture → `docs/architecture.md`).
+- **Add a new `docs/<feature-name>.md`** when there is no clear home — use lowercase kebab-case filenames.
+- Cross-link from related docs when helpful; do not duplicate long explanations across files.
+- QA cases still go under `docs/qa/<feature>.test-cases.md` (see feature-testing rule).
+
+## How to write it
+
+- Keep docs actionable and short: what it does, how it works, how to use/test it.
+- Prefer concrete paths and function names over vague descriptions.
+- Do not invent behavior — document what the code actually does.
+
+```markdown
+<!-- ❌ BAD — vague, no pointers -->
+
+## Profiles
+
+Users can update profiles somehow.
+
+<!-- ✅ GOOD -->
+
+## Role change
+
+- Route: `src/app/(dashboard)/users/[id]/page.tsx`
+- Server action: `setUserRole` (`src/app/(dashboard)/users/actions.ts`) — calls `requireAdmin()` then `auth.api.setRole`
+- Side effect: audit row via Better Auth hooks in `src/lib/auth.ts`
+```
+
+## Checklist
+
+1. Did this change introduce or alter user-facing or API behavior?
+2. Is there an existing `docs/*.md` to update, or do we need a new file?
+3. Are routes, server actions, and auth/ownership called out with real paths/names?
+4. Would another engineer know how to find and safely change this feature from the doc alone?
+5. Did you also update `docs/qa/<feature>.test-cases.md` and run `pnpm verify` (typecheck, lint, test, build)?

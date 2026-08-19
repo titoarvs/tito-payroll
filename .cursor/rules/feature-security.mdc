@@ -1,0 +1,71 @@
+---
+description: Secure feature work for App Router pages, server actions, and lib data helpers (auth, validation, IDOR, PII, XSS)
+globs: src/app/**/*,src/lib/**/*,src/components/**/*,src/db/**/*,src/proxy.ts
+alwaysApply: false
+---
+
+# Feature Security (App Router + Server Actions)
+
+When creating or updating features in `src/app`, `src/lib`, or server actions, treat UI hiding as UX only — **enforce security on the server**.
+
+## Auth / session
+
+- Protect sensitive pages with `requireSession` / `requireAdmin` (`src/lib/require-admin.ts`).
+- Protect sensitive server actions with the same guards at the top of every mutation — before Zod parse is fine, but never after the privileged call.
+- Never rely on client-only checks (`if (!user) return`) or role-gated JSX as the sole guard for data or mutations.
+- `src/proxy.ts` cookie checks are optimistic redirects only; they are not the security boundary.
+
+```typescript
+// ❌ BAD — server action with no session/role check
+export const setUserRole = async (input) => {
+  await auth.api.setRole({ body: input, headers: await headers() });
+};
+
+// ✅ GOOD
+export const setUserRole = async (input) => {
+  await requireAdmin();
+  const parsed = setRoleSchema.safeParse(input);
+  // ...
+};
+```
+
+## Input validation
+
+- Validate all server action / API inputs with Zod before use.
+- Never trust client body, query, or path params — including IDs, roles, and flags.
+- Reject unknown fields when practical; coerce types explicitly.
+
+## IDOR / hidden controls
+
+- Authorize **role or ownership** on the server for every read/write by resource id.
+- Do not assume “user can’t see the button” or “id comes from our UI” means the request is safe.
+- Prefer session user id from `getSession()` / Better Auth context over client-supplied user ids unless the caller is a verified admin acting on a target.
+
+```typescript
+// ❌ BAD — any authenticated user can reset another user’s password
+await auth.api.setUserPassword({ body: { userId: input.userId, newPassword } });
+
+// ✅ GOOD — admin-only, then Better Auth admin plugin enforces again
+await requireAdmin();
+await auth.api.setUserPassword({ body: parsed.data, headers: await headers() });
+```
+
+## Secrets & PII
+
+- Never put secrets, API keys, or service credentials in client components or public env (`NEXT_PUBLIC_*`) unless intentionally public.
+- Return only fields the client needs; never expose password hashes, tokens, or internal ban fields unless required for an admin UI.
+- Log safely: no passwords, session tokens, or full reset URLs in production logs when Resend is configured (dev console fallback is intentional when `RESEND_API_KEY` is unset).
+
+## XSS / unsafe HTML
+
+- Do not render unsanitized user or third-party HTML (`dangerouslySetInnerHTML`) unless sanitized and necessary.
+- Prefer text content / safe components for user-generated strings (names, emails, audit metadata).
+
+## Checklist before shipping a feature
+
+1. Can an unauthenticated caller hit this server action or page data loader?
+2. Can user A read or mutate user B’s data by changing an id?
+3. Is every input validated on the server?
+4. Does the response leak fields the UI does not need?
+5. Is any user content rendered as raw HTML?
+6. Did UI role-gating get a matching `requireAdmin` / `requireSession` on the server?
