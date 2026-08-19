@@ -1,7 +1,9 @@
-import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+
+import { cn } from "~/lib/utils";
 
 interface AlertProps {
-  children: React.ReactNode;
+  children: ReactNode;
   variant?: "error" | "success" | "info";
   className?: string;
 }
@@ -19,7 +21,7 @@ export const Alert = ({
         variant === "error" &&
           "border-destructive/40 bg-destructive/10 text-destructive",
         variant === "success" &&
-          "border-emerald-500/40 bg-emerald-500/10 text-emerald-800",
+          "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400",
         variant === "info" && "border-border bg-muted text-foreground",
         className,
       )}

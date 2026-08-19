@@ -1,0 +1,26 @@
+---
+description: Tito Payroll is TanStack Start web only; domain data and auth live in tito-hris-api
+alwaysApply: true
+---
+
+# Tito Payroll — core
+
+Payroll UI app. Backend is sibling `../tito-hris-api` (`src/payroll/` + auth).
+
+## Stack
+
+- TanStack Start + Router + Query, Vite, Tailwind 4
+- Layers: Routes → Components → Hooks → Queries → api-services → HRIS API
+- Auth: HRIS JWT (`src/lib/hris-api-client.ts`), not Better Auth / local Drizzle for payroll data
+
+## Generate
+
+Follow project skills: **tito-payroll-web**, **payroll-api-hooks**, **feature-workflow**. Contract changes also follow repo skill **payroll-hris-sync**.
+
+## Do not
+
+- Add Next.js App Router pages, server actions, or Route Handlers
+- Add local payroll/employee tables
+- Call `hrisApi` from components
+- Use `number` for money
+- Add UI/E2E tests
