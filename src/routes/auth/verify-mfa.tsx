@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { ModeToggle } from "~/components/mode-toggle";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -34,7 +35,7 @@ function VerifyMfaPage() {
     setIsSubmitting(true);
     try {
       await verifyMfa(mfaToken, code.trim());
-      await navigate({ to: "/", replace: true });
+      await navigate({ to: "/dashboard", replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof HrisApiError
@@ -47,7 +48,10 @@ function VerifyMfaPage() {
   };
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-8">
+    <main className="relative flex flex-1 flex-col items-center justify-center p-8">
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
       <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm">
         <header className="space-y-1 text-center">
           <h1 className="font-display text-2xl font-semibold text-foreground">
