@@ -20,7 +20,7 @@ const buildSecurityHeaders = (hrisApiOrigin: string) => ({
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  "Content-Security-Policy": `default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https: ${hrisApiOrigin} https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' ${hrisApiOrigin}`,
+  "Content-Security-Policy": `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https: ${hrisApiOrigin}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' ${hrisApiOrigin}`,
 });
 
 export default defineConfig(({ mode }) => {
