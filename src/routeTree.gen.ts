@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AuthSuccessRouteImport } from './routes/auth/success'
+import { Route as AuthVerifyMfaRouteImport } from './routes/auth/verify-mfa'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,49 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthSuccessRoute = AuthSuccessRouteImport.update({
+  id: '/auth/success',
+  path: '/auth/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthVerifyMfaRoute = AuthVerifyMfaRouteImport.update({
+  id: '/auth/verify-mfa',
+  path: '/auth/verify-mfa',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
+  '/auth/success': typeof AuthSuccessRoute
+  '/auth/verify-mfa': typeof AuthVerifyMfaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
+  '/auth/success': typeof AuthSuccessRoute
+  '/auth/verify-mfa': typeof AuthVerifyMfaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
+  '/auth/success': typeof AuthSuccessRoute
+  '/auth/verify-mfa': typeof AuthVerifyMfaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in'
+  fullPaths: '/' | '/sign-in' | '/auth/success' | '/auth/verify-mfa'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in'
-  id: '__root__' | '/' | '/sign-in'
+  to: '/' | '/sign-in' | '/auth/success' | '/auth/verify-mfa'
+  id: '__root__' | '/' | '/sign-in' | '/auth/success' | '/auth/verify-mfa'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SignInRoute: typeof SignInRoute
+  AuthSuccessRoute: typeof AuthSuccessRoute
+  AuthVerifyMfaRoute: typeof AuthVerifyMfaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +85,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/success': {
+      id: '/auth/success'
+      path: '/auth/success'
+      fullPath: '/auth/success'
+      preLoaderRoute: typeof AuthSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/verify-mfa': {
+      id: '/auth/verify-mfa'
+      path: '/auth/verify-mfa'
+      fullPath: '/auth/verify-mfa'
+      preLoaderRoute: typeof AuthVerifyMfaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SignInRoute: SignInRoute,
+  AuthSuccessRoute: AuthSuccessRoute,
+  AuthVerifyMfaRoute: AuthVerifyMfaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

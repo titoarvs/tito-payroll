@@ -78,18 +78,6 @@ export const loginWithPassword = async (
   return completeHrisLogin(result);
 };
 
-export const loginWithGoogle = async (
-  idToken: string,
-  rememberMe = false,
-): Promise<LoginResult> => {
-  const result = await hrisApi.post<LoginResult>(
-    "/auth/google",
-    { idToken, rememberMe },
-    { skipAuth: true },
-  );
-  return completeHrisLogin(result);
-};
-
 export const getCurrentHrisUser = async (
   forceRefresh = false,
 ): Promise<HrisUser> => {
@@ -159,7 +147,30 @@ export const logoutFromHris = async (): Promise<void> => {
   }
 };
 
-export const getGoogleSignInUrl = (): string =>
-  `${getHrisApiBaseUrl()}/auth/google`;
+export const getGoogleSignInUrl = (): string => {
+  const url = new URL(`${getHrisApiBaseUrl()}/auth/google`);
+  if (typeof window !== "undefined") {
+    url.searchParams.set("returnTo", window.location.origin);
+  }
+  return url.toString();
+};
+
+/** Reads the tokens the API appends to the /auth/success redirect (query or hash). */
+export const parseTokensFromUrl = (
+  search: string,
+  hash = "",
+): Partial<TokenPair> => {
+  const params = new URLSearchParams(search.replace(/^\?/, ""));
+  new URLSearchParams(hash.replace(/^#/, "")).forEach((value, key) => {
+    params.set(key, value);
+  });
+
+  return {
+    accessToken:
+      params.get("accessToken") || params.get("access_token") || undefined,
+    refreshToken:
+      params.get("refreshToken") || params.get("refresh_token") || undefined,
+  };
+};
 
 export const hasHrisSession = (): boolean => readTokenPair() !== null;

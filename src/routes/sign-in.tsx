@@ -4,17 +4,20 @@ import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { requestGoogleIdToken } from "~/lib/google-identity";
 import { HrisApiError } from "~/lib/hris-api-client";
 import {
+  getGoogleSignInUrl,
   hasHrisSession,
-  loginWithGoogle,
   loginWithPassword,
   verifyMfa,
 } from "~/lib/hris-auth";
 
 export const Route = createFileRoute("/sign-in")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { error?: string } => {
+    const error = typeof search.error === "string" ? search.error : undefined;
+    return error ? { error } : {};
+  },
   beforeLoad: () => {
     if (hasHrisSession()) {
       throw redirect({ to: "/" });
@@ -24,6 +27,7 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function SignInPage() {
+  const { error: signInError } = Route.useSearch();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +35,12 @@ function SignInPage() {
   const [mfaCode, setMfaCode] = useState("");
   const [authError, setAuthError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const googleErrorMessage =
+    signInError === "google_login_failed"
+      ? "Google sign-in failed. Please try again."
+      : signInError
+        ? "Sign-in failed. Please try again."
+        : null;
 
   const handleLoginResult = async (
     result: Awaited<ReturnType<typeof loginWithPassword>>,
@@ -64,25 +74,10 @@ function SignInPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setAuthError("");
     setIsSubmitting(true);
-
-    try {
-      const idToken = await requestGoogleIdToken();
-      const result = await loginWithGoogle(idToken);
-      await handleLoginResult(result);
-    } catch (error) {
-      setAuthError(
-        error instanceof HrisApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "Google sign-in failed. Please try again.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    window.location.assign(getGoogleSignInUrl());
   };
 
   const handleMfaSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -126,7 +121,9 @@ function SignInPage() {
           </p>
         </header>
 
-        {authError ? <Alert variant="error">{authError}</Alert> : null}
+        {authError || googleErrorMessage ? (
+          <Alert variant="error">{authError || googleErrorMessage}</Alert>
+        ) : null}
 
         {mfaToken ? (
           <form className="space-y-4" onSubmit={handleMfaSubmit}>
