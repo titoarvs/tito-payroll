@@ -4,6 +4,7 @@ import type {
   EmployeeDetailResponse,
   EmployeeListParams,
   EmployeeListResponse,
+  EmployeeMeResponse,
 } from "./employees.types";
 
 const PATH = "/employee201/employees";
@@ -15,4 +16,5 @@ export const employeesService = {
     ),
   getById: (id: string) =>
     hrisApi.get<EmployeeDetailResponse>(`${PATH}/${id}`),
+  getMe: () => hrisApi.get<EmployeeMeResponse>(`${PATH}/me`),
 };

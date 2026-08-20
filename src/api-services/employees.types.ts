@@ -59,3 +59,9 @@ export interface EmployeeDetailResponse {
   data: EmployeeDetailData;
   message?: string;
 }
+
+/** Response from GET /employee201/employees/me (header fields only). */
+export interface EmployeeMeResponse {
+  data: EmployeeDetail;
+  message?: string;
+}
