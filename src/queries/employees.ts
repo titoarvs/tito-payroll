@@ -7,6 +7,7 @@ export const employeesKeys = {
   list: (params: EmployeeListParams = {}) =>
     [...employeesKeys.all, "list", params] as const,
   detail: (id: string) => [...employeesKeys.all, "detail", id] as const,
+  me: () => [...employeesKeys.all, "me"] as const,
 };
 
 export const getEmployeesQuery = (params: EmployeeListParams = {}) =>
@@ -20,4 +21,10 @@ export const getEmployeeQuery = (id: string) =>
     queryKey: employeesKeys.detail(id),
     queryFn: () => employeesService.getById(id),
     enabled: Boolean(id),
+  });
+
+export const getMyEmployeeQuery = () =>
+  queryOptions({
+    queryKey: employeesKeys.me(),
+    queryFn: () => employeesService.getMe(),
   });
