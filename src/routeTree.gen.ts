@@ -10,13 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as AuthVerifyMfaRouteImport } from './routes/auth/verify-mfa'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardEmployeesRouteImport } from './routes/dashboard/employees'
+import { Route as DashboardEmployeesIndexRouteImport } from './routes/dashboard/employees.index'
+import { Route as DashboardEmployeesIdRouteImport } from './routes/dashboard/employees.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -34,36 +44,96 @@ const AuthVerifyMfaRoute = AuthVerifyMfaRouteImport.update({
   path: '/auth/verify-mfa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardEmployeesRoute = DashboardEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardEmployeesIndexRoute = DashboardEmployeesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardEmployeesRoute,
+} as any)
+const DashboardEmployeesIdRoute = DashboardEmployeesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DashboardEmployeesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
+  '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
+  '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
+  '/dashboard/employees': typeof DashboardEmployeesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
+  '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
+  '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/auth/success' | '/auth/verify-mfa'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/auth/success'
+    | '/auth/verify-mfa'
+    | '/dashboard/employees'
+    | '/dashboard/'
+    | '/dashboard/employees/$id'
+    | '/dashboard/employees/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/auth/success' | '/auth/verify-mfa'
-  id: '__root__' | '/' | '/sign-in' | '/auth/success' | '/auth/verify-mfa'
+  to:
+    | '/'
+    | '/sign-in'
+    | '/auth/success'
+    | '/auth/verify-mfa'
+    | '/dashboard'
+    | '/dashboard/employees/$id'
+    | '/dashboard/employees'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/auth/success'
+    | '/auth/verify-mfa'
+    | '/dashboard/employees'
+    | '/dashboard/'
+    | '/dashboard/employees/$id'
+    | '/dashboard/employees/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   SignInRoute: typeof SignInRoute
   AuthSuccessRoute: typeof AuthSuccessRoute
   AuthVerifyMfaRoute: typeof AuthVerifyMfaRoute
@@ -76,6 +146,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -99,11 +176,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyMfaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/employees': {
+      id: '/dashboard/employees'
+      path: '/employees'
+      fullPath: '/dashboard/employees'
+      preLoaderRoute: typeof DashboardEmployeesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/employees/': {
+      id: '/dashboard/employees/'
+      path: '/'
+      fullPath: '/dashboard/employees/'
+      preLoaderRoute: typeof DashboardEmployeesIndexRouteImport
+      parentRoute: typeof DashboardEmployeesRoute
+    }
+    '/dashboard/employees/$id': {
+      id: '/dashboard/employees/$id'
+      path: '/$id'
+      fullPath: '/dashboard/employees/$id'
+      preLoaderRoute: typeof DashboardEmployeesIdRouteImport
+      parentRoute: typeof DashboardEmployeesRoute
+    }
   }
 }
 
+interface DashboardEmployeesRouteChildren {
+  DashboardEmployeesIdRoute: typeof DashboardEmployeesIdRoute
+  DashboardEmployeesIndexRoute: typeof DashboardEmployeesIndexRoute
+}
+
+const DashboardEmployeesRouteChildren: DashboardEmployeesRouteChildren = {
+  DashboardEmployeesIdRoute: DashboardEmployeesIdRoute,
+  DashboardEmployeesIndexRoute: DashboardEmployeesIndexRoute,
+}
+
+const DashboardEmployeesRouteWithChildren =
+  DashboardEmployeesRoute._addFileChildren(DashboardEmployeesRouteChildren)
+
+interface DashboardRouteChildren {
+  DashboardEmployeesRoute: typeof DashboardEmployeesRouteWithChildren
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardEmployeesRoute: DashboardEmployeesRouteWithChildren,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   SignInRoute: SignInRoute,
   AuthSuccessRoute: AuthSuccessRoute,
   AuthVerifyMfaRoute: AuthVerifyMfaRoute,

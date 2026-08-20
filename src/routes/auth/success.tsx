@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { ModeToggle } from "~/components/mode-toggle";
 import { Alert } from "~/components/ui/alert";
 import {
   clearTokenPair,
@@ -56,7 +57,7 @@ function AuthSuccessPage() {
       try {
         await getCurrentHrisUser();
         if (isActive) {
-          await navigate({ to: "/", replace: true });
+          await navigate({ to: "/dashboard", replace: true });
         }
       } catch {
         clearTokenPair();
@@ -75,7 +76,10 @@ function AuthSuccessPage() {
   }, [navigate, search.accessToken, search.refreshToken]);
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-8">
+    <main className="relative flex flex-1 flex-col items-center justify-center p-8">
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
       <div className="w-full max-w-md space-y-4 rounded-xl border border-border bg-card p-6 text-center shadow-sm">
         {errorMessage ? (
           <div className="space-y-3">
