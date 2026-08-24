@@ -16,7 +16,7 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - A `super_admin` account with `employee201.employees.view` (and ability to call get-by-id).
 - `employee201.employee` populated (from `tito-hris-api/`: `npm run seed:employees` after `seed:users`). Seed yields 17 rows — enough for pagination.
 - A non-`super_admin` account with a linked employee row (e.g. seed `ada.lovelace@seed.titosolutions.ph`) for self-profile checks.
-- A non-`super_admin` account **without** a linked employee row (optional) for 404.
+- A non-`super_admin` account **without** a linked employee row (optional, legacy only) for 404 — new Google/register users get an auto stub.
 
 ## Test Cases
 
@@ -157,10 +157,20 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 ### TC-17: Employee self-profile — no linked record
 
 - **Priority:** High
-- **Preconditions:** Signed in as non-`super_admin` with no `employee.userId` link **and** login email does not match any `employee.email`.
+- **Preconditions:** Signed in as non-`super_admin` with no `employee.userId` link **and** login email does not match any `employee.email` (legacy account created before stub-on-signup).
 - **Steps:**
   1. Open `/dashboard`.
 - **Expected result:** Message “No employee record linked to your account.” No header card. Still no Employees sidenav/roster.
+
+### TC-17b: Fresh Google / register creates employee201 stub
+
+- **Priority:** High
+- **Preconditions:** Brand-new Google (or register) account that did not exist in `auth.users` or `employee201.employee`.
+- **Steps:**
+  1. Sign in to payroll with Google (or complete register).
+  2. As that user, open `/dashboard`.
+  3. As a `super_admin`, open `/dashboard/employees` and search the new user’s email/name.
+- **Expected result:** Self-profile header appears (not the “No employee record” message). New stub is `probationary`, position may be `—`. In HRIS DB, `employee.id` and `employee.userId` both equal the new `auth.users.id`. Super-admin roster includes the stub.
 
 ### TC-18: Super-admin dashboard has no self-profile header
 
