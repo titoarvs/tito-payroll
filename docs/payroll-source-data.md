@@ -1,6 +1,6 @@
 # Payroll source data (T201 / employee201)
 
-Read-only clients for Basic Pay, deductions eligibility, leave treatment, and holiday premiums. Pay computation engines are not implemented yet.
+Read-only clients for Basic Pay inputs, deductions eligibility, leave treatment, and holiday premiums. **Cutoff compute** (Basic / Gross / statutory) lives in `docs/pay-runs.md`.
 
 ## Source of truth
 
@@ -8,8 +8,8 @@ All data comes from **tito-hris-api** `employee201` (not the T201 app DB directl
 
 | Need | Endpoint | Notes |
 | --- | --- | --- |
-| Monthly salary + hourly rate | `POST /api/employee201/employees/:id/salary` `{ reason }` | Audited; returns `{ salary, hourlyRate }` strings. Requires `employee201.employees.salary.view` (+ grant for non–super_admin). |
-| Employment / benefits flags | `GET /api/employee201/employees/:id` | `employmentStatus`, `withHmo`, `hmoProvider`, coverage booleans. **Never** returns salary/hourlyRate amounts. |
+| Monthly salary + hourly rate + allowance | `POST /api/employee201/employees/:id/salary` `{ reason }` | Audited; returns `{ salary, hourlyRate, allowance }` strings. Requires `employee201.employees.salary.view` (+ grant for non–super_admin). |
+| Employment / benefits flags | `GET /api/employee201/employees/:id` | `employmentStatus`, `withHmo`, `hmoProvider`, coverage booleans. **Never** returns salary/hourlyRate/allowance amounts. |
 | Leave in cutoff | `GET /api/employee201/leave-requests?...` | Use `leaveTypeCode`, `isPaid`, `paidDays`, `unpaidDays`. `UNPAID` = LWOP (zero pay). |
 | Holidays + premium % | `GET /api/employee201/holidays?from=&to=` | Confirmed active DOLE instances with `premiumPercent`. |
 
@@ -36,8 +36,12 @@ When `employmentStatus === "consultant"`:
 
 Hourly derivation (when HR leaves rate blank): `monthlySalary / 22 / 8`.
 
-## Out of scope (this pass)
+## Related
 
-- Basic Pay / holiday premium / leave-pay / deductions engines
-- Company SSS/Pag-IBIG/PhilHealth/tax tables
+Cutoff compute + contribution tables: [pay-runs.md](./pay-runs.md).
+
+## Out of scope (source-data pass)
+
+- Holiday premium / leave-pay engines (beyond exposing source fields)
+- BIR withholding tables
 - ND-PR-13 balance-exceed payroll behavior

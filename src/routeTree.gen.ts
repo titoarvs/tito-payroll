@@ -15,9 +15,14 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthSuccessRouteImport } from './routes/auth/success'
 import { Route as AuthVerifyMfaRouteImport } from './routes/auth/verify-mfa'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardContributionTablesRouteImport } from './routes/dashboard/contribution-tables'
 import { Route as DashboardEmployeesRouteImport } from './routes/dashboard/employees'
+import { Route as DashboardMyPayslipsRouteImport } from './routes/dashboard/my-payslips'
+import { Route as DashboardPayRunsRouteImport } from './routes/dashboard/pay-runs'
 import { Route as DashboardEmployeesIndexRouteImport } from './routes/dashboard/employees.index'
 import { Route as DashboardEmployeesIdRouteImport } from './routes/dashboard/employees.$id'
+import { Route as DashboardPayRunsIndexRouteImport } from './routes/dashboard/pay-runs.index'
+import { Route as DashboardPayRunsIdRouteImport } from './routes/dashboard/pay-runs.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -49,9 +54,25 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardContributionTablesRoute =
+  DashboardContributionTablesRouteImport.update({
+    id: '/contribution-tables',
+    path: '/contribution-tables',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardEmployeesRoute = DashboardEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMyPayslipsRoute = DashboardMyPayslipsRouteImport.update({
+  id: '/my-payslips',
+  path: '/my-payslips',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPayRunsRoute = DashboardPayRunsRouteImport.update({
+  id: '/pay-runs',
+  path: '/pay-runs',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardEmployeesIndexRoute = DashboardEmployeesIndexRouteImport.update({
@@ -64,6 +85,16 @@ const DashboardEmployeesIdRoute = DashboardEmployeesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DashboardEmployeesRoute,
 } as any)
+const DashboardPayRunsIndexRoute = DashboardPayRunsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardPayRunsRoute,
+} as any)
+const DashboardPayRunsIdRoute = DashboardPayRunsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DashboardPayRunsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -71,19 +102,28 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
+  '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
   '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
+  '/dashboard/my-payslips': typeof DashboardMyPayslipsRoute
+  '/dashboard/pay-runs': typeof DashboardPayRunsRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
+  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRoute
   '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
+  '/dashboard/pay-runs/': typeof DashboardPayRunsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
+  '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
+  '/dashboard/my-payslips': typeof DashboardMyPayslipsRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
+  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRoute
   '/dashboard/employees': typeof DashboardEmployeesIndexRoute
+  '/dashboard/pay-runs': typeof DashboardPayRunsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,10 +132,15 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
+  '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
   '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
+  '/dashboard/my-payslips': typeof DashboardMyPayslipsRoute
+  '/dashboard/pay-runs': typeof DashboardPayRunsRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
+  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRoute
   '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
+  '/dashboard/pay-runs/': typeof DashboardPayRunsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,19 +150,28 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/auth/success'
     | '/auth/verify-mfa'
+    | '/dashboard/contribution-tables'
     | '/dashboard/employees'
+    | '/dashboard/my-payslips'
+    | '/dashboard/pay-runs'
     | '/dashboard/'
     | '/dashboard/employees/$id'
+    | '/dashboard/pay-runs/$id'
     | '/dashboard/employees/'
+    | '/dashboard/pay-runs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/sign-in'
     | '/auth/success'
     | '/auth/verify-mfa'
+    | '/dashboard/contribution-tables'
+    | '/dashboard/my-payslips'
     | '/dashboard'
     | '/dashboard/employees/$id'
+    | '/dashboard/pay-runs/$id'
     | '/dashboard/employees'
+    | '/dashboard/pay-runs'
   id:
     | '__root__'
     | '/'
@@ -125,10 +179,15 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/auth/success'
     | '/auth/verify-mfa'
+    | '/dashboard/contribution-tables'
     | '/dashboard/employees'
+    | '/dashboard/my-payslips'
+    | '/dashboard/pay-runs'
     | '/dashboard/'
     | '/dashboard/employees/$id'
+    | '/dashboard/pay-runs/$id'
     | '/dashboard/employees/'
+    | '/dashboard/pay-runs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -183,11 +242,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/contribution-tables': {
+      id: '/dashboard/contribution-tables'
+      path: '/contribution-tables'
+      fullPath: '/dashboard/contribution-tables'
+      preLoaderRoute: typeof DashboardContributionTablesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/employees': {
       id: '/dashboard/employees'
       path: '/employees'
       fullPath: '/dashboard/employees'
       preLoaderRoute: typeof DashboardEmployeesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/my-payslips': {
+      id: '/dashboard/my-payslips'
+      path: '/my-payslips'
+      fullPath: '/dashboard/my-payslips'
+      preLoaderRoute: typeof DashboardMyPayslipsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/pay-runs': {
+      id: '/dashboard/pay-runs'
+      path: '/pay-runs'
+      fullPath: '/dashboard/pay-runs'
+      preLoaderRoute: typeof DashboardPayRunsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/employees/': {
@@ -203,6 +283,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/employees/$id'
       preLoaderRoute: typeof DashboardEmployeesIdRouteImport
       parentRoute: typeof DashboardEmployeesRoute
+    }
+    '/dashboard/pay-runs/': {
+      id: '/dashboard/pay-runs/'
+      path: '/'
+      fullPath: '/dashboard/pay-runs/'
+      preLoaderRoute: typeof DashboardPayRunsIndexRouteImport
+      parentRoute: typeof DashboardPayRunsRoute
+    }
+    '/dashboard/pay-runs/$id': {
+      id: '/dashboard/pay-runs/$id'
+      path: '/$id'
+      fullPath: '/dashboard/pay-runs/$id'
+      preLoaderRoute: typeof DashboardPayRunsIdRouteImport
+      parentRoute: typeof DashboardPayRunsRoute
     }
   }
 }
@@ -220,13 +314,32 @@ const DashboardEmployeesRouteChildren: DashboardEmployeesRouteChildren = {
 const DashboardEmployeesRouteWithChildren =
   DashboardEmployeesRoute._addFileChildren(DashboardEmployeesRouteChildren)
 
+interface DashboardPayRunsRouteChildren {
+  DashboardPayRunsIdRoute: typeof DashboardPayRunsIdRoute
+  DashboardPayRunsIndexRoute: typeof DashboardPayRunsIndexRoute
+}
+
+const DashboardPayRunsRouteChildren: DashboardPayRunsRouteChildren = {
+  DashboardPayRunsIdRoute: DashboardPayRunsIdRoute,
+  DashboardPayRunsIndexRoute: DashboardPayRunsIndexRoute,
+}
+
+const DashboardPayRunsRouteWithChildren =
+  DashboardPayRunsRoute._addFileChildren(DashboardPayRunsRouteChildren)
+
 interface DashboardRouteChildren {
+  DashboardContributionTablesRoute: typeof DashboardContributionTablesRoute
   DashboardEmployeesRoute: typeof DashboardEmployeesRouteWithChildren
+  DashboardMyPayslipsRoute: typeof DashboardMyPayslipsRoute
+  DashboardPayRunsRoute: typeof DashboardPayRunsRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardContributionTablesRoute: DashboardContributionTablesRoute,
   DashboardEmployeesRoute: DashboardEmployeesRouteWithChildren,
+  DashboardMyPayslipsRoute: DashboardMyPayslipsRoute,
+  DashboardPayRunsRoute: DashboardPayRunsRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
