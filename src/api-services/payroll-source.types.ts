@@ -1,6 +1,7 @@
 export interface EmployeeCompensationReveal {
   salary: string | null;
   hourlyRate: string | null;
+  allowance: string | null;
 }
 
 export interface EmployeeCompensationRevealResponse {

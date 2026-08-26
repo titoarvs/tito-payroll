@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type JSX } from "react";
 import { ModeToggle } from "~/components/mode-toggle";
 import { useCurrentUser, useLogout } from "~/hooks/use-current-user";
 import type { HrisUser } from "~/lib/hris-auth";
@@ -9,10 +9,17 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const isSuperAdmin = (user: HrisUser | undefined): boolean => {
-  if (!user) return false;
-  if (user.role === "super_admin") return true;
-  return user.roles?.includes("super_admin") === true;
+const userRoles = (user: HrisUser | undefined): string[] => {
+  if (!user) return [];
+  const roles = new Set<string>();
+  if (user.role) roles.add(user.role);
+  for (const role of user.roles ?? []) roles.add(role);
+  return [...roles];
+};
+
+const hasAnyRole = (user: HrisUser | undefined, names: string[]): boolean => {
+  const roles = userRoles(user);
+  return names.some((name) => roles.includes(name));
 };
 
 const displayName = (user: HrisUser): string => {
@@ -78,6 +85,48 @@ const UsersIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const CalendarIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    aria-hidden="true"
+  >
+    <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+    <path d="M8 3.5v3M16 3.5v3M3.5 10h17" />
+  </svg>
+);
+
+const TableIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    aria-hidden="true"
+  >
+    <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+    <path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10M14.5 9.5v10" />
+  </svg>
+);
+
+const FileIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    aria-hidden="true"
+  >
+    <path d="M7 3.5h7l5 5V20a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z" />
+    <path d="M14 3.5V9h5.5" />
+  </svg>
+);
+
 const BellIcon = ({ className }: { className?: string }) => (
   <svg
     className={className}
@@ -93,15 +142,12 @@ const BellIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const NAV_ITEMS = [
-  { to: "/dashboard", label: "Dashboard", icon: GridIcon, exact: true },
-  {
-    to: "/dashboard/employees",
-    label: "Employees",
-    icon: UsersIcon,
-    exact: false,
-  },
-] as const;
+type NavItem = {
+  to: string;
+  label: string;
+  icon: (props: { className?: string }) => JSX.Element;
+  exact: boolean;
+};
 
 export const AppShell = ({ children }: AppShellProps) => {
   const { data: user } = useCurrentUser();
@@ -110,9 +156,46 @@ export const AppShell = ({ children }: AppShellProps) => {
   const isNavigating = useRouterState({
     select: (s) => s.isLoading || s.status === "pending",
   });
-  const showSidenav = isSuperAdmin(user);
+  const isPayrollOps = hasAnyRole(user, [
+    "super_admin",
+    "admin",
+    "finance",
+  ]);
+  const showSidenav = Boolean(user);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const navItems: NavItem[] = [
+    { to: "/dashboard", label: "Dashboard", icon: GridIcon, exact: true },
+    ...(isPayrollOps
+      ? [
+          {
+            to: "/dashboard/employees",
+            label: "Employees",
+            icon: UsersIcon,
+            exact: false,
+          },
+          {
+            to: "/dashboard/pay-runs",
+            label: "Pay runs",
+            icon: CalendarIcon,
+            exact: false,
+          },
+          {
+            to: "/dashboard/contribution-tables",
+            label: "Contribution tables",
+            icon: TableIcon,
+            exact: false,
+          },
+        ]
+      : []),
+    {
+      to: "/dashboard/my-payslips",
+      label: "My payslips",
+      icon: FileIcon,
+      exact: false,
+    },
+  ];
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -142,7 +225,7 @@ export const AppShell = ({ children }: AppShellProps) => {
             <SparkleIcon className="h-6 w-6" />
           </div>
           <nav className="flex flex-1 flex-col gap-1" aria-label="Main">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.exact
                 ? pathname === item.to
