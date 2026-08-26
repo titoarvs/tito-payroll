@@ -1,38 +1,17 @@
 # Docs index
 
-Project documentation for the Next.js modular template.
+- [architecture.md](./architecture.md) — web-only payroll client; API is `tito-hris-api`
+- [auth.md](./auth.md) — HRIS JWT login (`/sign-in`, `/users/me`)
+- [dashboard.md](./dashboard.md) — authenticated shell (sidenav + topnav)
+- [employees.md](./employees.md) — employee card roster (search + pagination)
+- [payroll-source-data.md](./payroll-source-data.md) — salary/hourly/allowance, benefits flags, leave, holidays for pay engines
+- [pay-runs.md](./pay-runs.md) — cutoff compute, contribution tables, release
+- [theme.md](./theme.md) — light / dark / system (client-only)
+- [qa/auth.test-cases.md](./qa/auth.test-cases.md) — auth QA checklist
+- [qa/dashboard.test-cases.md](./qa/dashboard.test-cases.md) — dashboard shell QA checklist
+- [qa/employees.test-cases.md](./qa/employees.test-cases.md) — employees roster QA checklist
+- [qa/payroll-source-data.test-cases.md](./qa/payroll-source-data.test-cases.md) — payroll source-data QA checklist
+- [qa/pay-runs.test-cases.md](./qa/pay-runs.test-cases.md) — pay-run compute / release QA checklist
+- [qa/theme.test-cases.md](./qa/theme.test-cases.md) — theme toggle QA checklist
 
-## Architecture
-
-- [architecture.md](./architecture.md) — layers, auth model, module map
-
-## Features
-
-- [authentication.md](./authentication.md) — login, signup, Google SSO, password reset
-- [app-shell.md](./app-shell.md) — `/dashboard`, settings, shared sidebar
-- [user-management.md](./user-management.md) — admin `/users`
-- [audit-trail.md](./audit-trail.md) — audit log + `/audit`
-- [files.md](./files.md) — S3 uploads
-- [commerce.md](./commerce.md) — shop, cart, Stripe
-- [notifications.md](./notifications.md) — inbox + email templates
-- [analytics.md](./analytics.md) — events + `/admin/analytics` + GA4
-- [landing-and-authorization.md](./landing-and-authorization.md) — role-gated landing UX
-
-## QA
-
-- [qa/authentication.test-cases.md](./qa/authentication.test-cases.md)
-- [qa/app-shell.test-cases.md](./qa/app-shell.test-cases.md)
-- [qa/user-management.test-cases.md](./qa/user-management.test-cases.md)
-- [qa/audit-trail.test-cases.md](./qa/audit-trail.test-cases.md)
-- [qa/files.test-cases.md](./qa/files.test-cases.md)
-- [qa/commerce.test-cases.md](./qa/commerce.test-cases.md)
-- [qa/notifications.test-cases.md](./qa/notifications.test-cases.md)
-- [qa/analytics.test-cases.md](./qa/analytics.test-cases.md)
-
-## Agent workflow
-
-When changing features, follow `.cursor/skills/feature-workflow/SKILL.md`:
-
-1. Implement with server-side auth
-2. Update feature docs + QA cases
-3. Run `pnpm verify` (typecheck, lint, test, build) and fix failures
+When changing features, follow `.cursor/skills/feature-workflow/SKILL.md`.

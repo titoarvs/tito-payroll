@@ -1,0 +1,55 @@
+import { queryOptions } from "@tanstack/react-query";
+import {
+  contributionTablesService,
+  payRunsService,
+  payslipsService,
+} from "~/api-services/pay-runs.service";
+
+export const payRunsKeys = {
+  all: ["pay-runs"] as const,
+  list: () => [...payRunsKeys.all, "list"] as const,
+  detail: (id: string) => [...payRunsKeys.all, "detail", id] as const,
+  payslips: (id: string) => [...payRunsKeys.all, "payslips", id] as const,
+};
+
+export const contributionKeys = {
+  all: ["contribution-schedules"] as const,
+  list: () => [...contributionKeys.all, "list"] as const,
+  detail: (id: string) => [...contributionKeys.all, "detail", id] as const,
+};
+
+export const myPayslipsKeys = {
+  all: ["my-payslips"] as const,
+};
+
+export const getPayRunsQuery = () =>
+  queryOptions({
+    queryKey: payRunsKeys.list(),
+    queryFn: () => payRunsService.list(),
+  });
+
+export const getPayRunQuery = (id: string) =>
+  queryOptions({
+    queryKey: payRunsKeys.detail(id),
+    queryFn: () => payRunsService.getById(id),
+    enabled: Boolean(id),
+  });
+
+export const getPayRunPayslipsQuery = (payRunId: string) =>
+  queryOptions({
+    queryKey: payRunsKeys.payslips(payRunId),
+    queryFn: () => payRunsService.listPayslips(payRunId),
+    enabled: Boolean(payRunId),
+  });
+
+export const getContributionSchedulesQuery = () =>
+  queryOptions({
+    queryKey: contributionKeys.list(),
+    queryFn: () => contributionTablesService.list(),
+  });
+
+export const getMyPayslipsQuery = () =>
+  queryOptions({
+    queryKey: myPayslipsKeys.all,
+    queryFn: () => payslipsService.listMine(),
+  });

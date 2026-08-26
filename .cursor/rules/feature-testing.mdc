@@ -1,5 +1,5 @@
 ---
-description: Require a QA test-case markdown file for every new feature
+description: Require a QA test-case markdown file for every new payroll feature
 alwaysApply: true
 ---
 
@@ -9,9 +9,9 @@ When implementing a new feature, create a QA test-case markdown file before cons
 
 ## Required for every feature
 
-1. **Create a test-case file** alongside the feature — do not defer to a follow-up.
-2. **Cover all testable behavior** — happy path, validation errors, edge cases, and permission/auth boundaries.
-3. **Hand off to QA** — the file is the deliverable QA uses to validate the feature.
+1. **Create a test-case file** in the same change.
+2. **Cover** happy path, validation errors, auth/permission boundaries, and money/edge cases.
+3. **Hand off to QA** — this file is what QA runs.
 
 ## File location
 
@@ -19,7 +19,7 @@ When implementing a new feature, create a QA test-case markdown file before cons
 docs/qa/<feature-name>.test-cases.md
 ```
 
-Use kebab-case matching the feature (e.g. `create-campaign.test-cases.md`).
+Kebab-case matching the feature (e.g. `release-payslip.test-cases.md`).
 
 ## Template
 
@@ -28,12 +28,12 @@ Use kebab-case matching the feature (e.g. `create-campaign.test-cases.md`).
 
 ## Overview
 
-Brief description of the feature and where to find it (route, page, component).
+Where to find it (route, hook, HRIS endpoint).
 
 ## Prerequisites
 
-- User role / permissions required
-- Test data or environment setup
+- Role / permissions
+- Test data (pay run, employee)
 
 ## Test Cases
 
@@ -43,12 +43,7 @@ Brief description of the feature and where to find it (route, page, component).
 - **Preconditions:** ...
 - **Steps:**
   1. ...
-  2. ...
 - **Expected result:** ...
-
-### TC-02: [Short title]
-
-...
 
 ## Edge Cases & Error States
 
@@ -59,27 +54,17 @@ Brief description of the feature and where to find it (route, page, component).
 - ...
 ```
 
-## Minimum coverage per feature
+## Minimum coverage
 
-- [ ] Happy path (primary user flow)
-- [ ] Validation / error states (empty fields, invalid input)
-- [ ] Auth or role restrictions (if applicable)
-- [ ] Edge cases (empty states, loading, mobile vs desktop if relevant)
+- [ ] Happy path
+- [ ] Validation / error states
+- [ ] Auth or role restrictions
+- [ ] Money / empty list / loading if relevant
 
 ## Same-change requirements
 
-Creating or updating a feature is incomplete without:
+1. Feature doc under `docs/`
+2. This QA file
+3. Clean `pnpm typecheck` (and lint)
 
-1. Updated feature doc under `docs/`
-2. This QA file under `docs/qa/`
-3. Clean `pnpm verify` (`typecheck`, `lint`, `test`, `build`)
-
-See `.cursor/rules/feature-completion.mdc` and the **feature-workflow** skill.
-
-## Example
-
-Feature: campaign creation form → `docs/qa/create-campaign.test-cases.md`
-
-- TC-01: Submit valid campaign → success toast and redirect
-- TC-02: Submit with missing required fields → inline validation errors
-- TC-03: Non-admin user cannot access create page → redirect or 403
+Do not add Playwright/RTL/`*.test.tsx`. Manual browser QA uses this markdown.
