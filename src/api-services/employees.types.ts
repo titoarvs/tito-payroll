@@ -39,6 +39,14 @@ export interface EmployeeDetail {
   position: string | null;
   employmentStatus: string;
   isActive: boolean;
+  withHmo?: boolean;
+  hmoProvider?: string | null;
+  hmoMemberNumber?: string | null;
+  sssCovered?: boolean;
+  philhealthCovered?: boolean;
+  pagibigCovered?: boolean;
+  withholdingTaxCovered?: boolean;
+  civilStatus?: string | null;
 }
 
 export interface EmployeeLinkedUser {

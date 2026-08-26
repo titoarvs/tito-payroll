@@ -10,6 +10,7 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 
 - Payroll does **not** call the T201 app or T201’s `tito_people` database.
 - Local demo data: from `tito-hris-api/`, run `npm run seed:employees` (after `seed:users`) to populate `employee201.employee`.
+- **Auth-originated stubs:** when a new auth user is created (Google SSO, email register, admin create-user, or invitation accept without an existing employee), HRIS `EmployeesService.ensureForAuthUser` creates a probationary `employee201.employee` stub with `employee.id` **and** `employee.userId` both equal to `auth.users.id`. If an unlinked employee already matches the login email, that row’s PK is kept and only `userId` is set. Role stays in auth/RBAC (`employee`); the 201 table has no role column.
 
 ## Behavior
 
@@ -38,7 +39,8 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 - Photo from current user (`/users/me` image) passed as `linkedUser`; `/me` does not return `linkedUser`.
 - No “Back to employees”, no sidenav Employees link, no roster.
 - `/me` resolves the row by `employee.userId` first; if missing, by matching login email to `employee.email`. Unlinked email matches are auto-linked (`userId` set). Email match already owned by another user → treated as not found.
-- 404 when no employee row matches `userId` or email.
+- Fresh Google / register users normally already have a stub from signup (`id` = `userId` = auth id), so `/me` should resolve without a 404.
+- 404 when no employee row matches `userId` or email (legacy accounts created before stub-on-signup, or email owned by another user).
 - Super-admin dashboard home stays empty; they use the Employees sidenav.
 
 ## Routes
@@ -72,6 +74,7 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 - `GET /api/employee201/employees/:id`
   - Returns `{ data: { accessLevel, employee, hasSalary, linkedUser }, message }`
   - Permission: `employee201.employees.view_own` (+ service IDOR)
+  - Detail may include benefits flags (`withHmo`, coverage booleans). Salary/hourly amounts are never included — use audited reveal (see [payroll-source-data.md](./payroll-source-data.md)).
 
 ## Components
 
@@ -82,5 +85,5 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 ## Notes
 
 - HRIS list currently returns `userImage: null` for most rows; initials are the common case until photos are stored.
-- “Employment Type” on the detail header maps to `employmentStatus` (no full-time/part-time column).
+- “Employment Type” on the detail header maps to `employmentStatus` (no full-time/part-time column). `consultant` selects the Consultant pay branch (Hours × Rate).
 - Salary is never typed or displayed on list, detail, or self profile.
