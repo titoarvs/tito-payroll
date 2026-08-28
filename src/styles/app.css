@@ -211,6 +211,35 @@
       ),
       var(--background);
   }
+
+  .auth-page {
+    @apply relative min-h-screen;
+    background:
+      radial-gradient(
+        ellipse 70% 45% at 50% -10%,
+        color-mix(in srgb, var(--tito-green) 10%, transparent),
+        transparent
+      ),
+      radial-gradient(
+        ellipse 55% 40% at 100% 100%,
+        color-mix(in srgb, var(--tito-dull-blue) 8%, transparent),
+        transparent
+      ),
+      var(--background);
+  }
+
+  .auth-card {
+    @apply overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-xl backdrop-blur-sm;
+    box-shadow:
+      0 24px 48px color-mix(in srgb, var(--tito-blue) 8%, transparent),
+      0 1px 0 color-mix(in srgb, var(--tito-foreground) 40%, transparent) inset;
+  }
+
+  .dark .auth-card {
+    box-shadow:
+      0 24px 48px rgb(0 0 0 / 35%),
+      0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent) inset;
+  }
 }
 
 @keyframes nav-progress {

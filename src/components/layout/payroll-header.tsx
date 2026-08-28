@@ -21,7 +21,6 @@ import {
 } from "~/components/ui/sheet";
 import {
   PAYROLL_NAV_ITEMS,
-  resolvePageTitle,
   type PayrollNavItem,
 } from "~/config/payroll-navigation";
 import { useCurrentUser, useLogout } from "~/hooks/use-current-user";
@@ -78,7 +77,6 @@ export const PayrollHeader = () => {
   const navItems = PAYROLL_NAV_ITEMS.filter(
     (item) => !item.requiresPayrollOps || isOps,
   );
-  const pageTitle = resolvePageTitle(pathname);
 
   const handleLogout = () => {
     logout.mutate();
@@ -142,10 +140,6 @@ export const PayrollHeader = () => {
               </nav>
             </SheetContent>
           </Sheet>
-
-          <h1 className="truncate text-lg font-semibold tracking-tight">
-            {pageTitle}
-          </h1>
         </div>
 
         <div className="flex shrink-0 items-center gap-1">

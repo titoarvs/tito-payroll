@@ -46,25 +46,32 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
   return (
     <aside
       className={cn(
-        "fixed top-0 left-0 z-30 hidden h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-300 md:flex",
+        "fixed top-0 left-0 z-30 hidden h-screen flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out md:flex",
         isCollapsed ? "w-16" : "w-64",
         className,
       )}
     >
       <div
         className={cn(
-          "flex h-14 shrink-0 items-center gap-2 border-b border-sidebar-border px-3",
-          isCollapsed && "justify-center px-2",
+          "flex h-14 shrink-0 items-center gap-2 overflow-hidden border-b border-sidebar-border px-3 transition-[padding] duration-300 ease-in-out",
+          isCollapsed ? "justify-center px-2" : "justify-between",
         )}
       >
-        {!isCollapsed ? <TitoLogo size="sm" variant="sidebar" /> : null}
+        <div
+          className={cn(
+            "min-w-0 overflow-hidden transition-[opacity,width,margin] duration-300 ease-in-out",
+            isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100",
+          )}
+          aria-hidden={isCollapsed}
+        >
+          <TitoLogo size="sm" variant="sidebar" />
+        </div>
         <Button
           variant="ghost"
           size="icon"
           className={cn(
-            "h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-            !isCollapsed && "ml-auto",
-            isCollapsed && "rotate-180",
+            "h-8 w-8 shrink-0 text-sidebar-foreground/70 transition-transform duration-300 ease-in-out hover:bg-sidebar-accent hover:text-sidebar-foreground",
+            isCollapsed ? "rotate-180" : "rotate-0",
           )}
           onClick={toggleCollapsed}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -75,7 +82,7 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
       </div>
 
       <nav
-        className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2"
+        className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-2"
         aria-label="Main"
       >
         {navItems.map((item) => {
@@ -89,28 +96,38 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
               aria-label={isCollapsed ? item.label : undefined}
               title={isCollapsed ? item.label : undefined}
               className={cn(
-                "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-[background-color,color] duration-150",
+                "relative flex items-center overflow-hidden rounded-lg py-2 text-sm font-medium transition-[background-color,color,padding,gap] duration-300 ease-in-out",
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                isCollapsed && "justify-center px-2",
+                isCollapsed ? "justify-center gap-0 px-2" : "gap-3 px-3",
               )}
             >
               {active && !isCollapsed ? (
                 <span
                   aria-hidden
-                  className="absolute top-1/2 left-0 h-4 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary"
+                  className="absolute top-1/2 left-0 h-4 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary transition-opacity duration-300 ease-in-out"
                 />
               ) : null}
               <Icon
                 className={cn(
-                  "h-[18px] w-[18px] shrink-0",
+                  "h-[18px] w-[18px] shrink-0 transition-colors duration-150",
                   active
                     ? "text-sidebar-primary"
                     : "text-sidebar-foreground/60",
                 )}
               />
-              {!isCollapsed ? <span>{item.label}</span> : null}
+              <span
+                className={cn(
+                  "truncate whitespace-nowrap transition-[opacity,width,margin] duration-300 ease-in-out",
+                  isCollapsed
+                    ? "ml-0 w-0 opacity-0"
+                    : "ml-0 w-auto opacity-100",
+                )}
+                aria-hidden={isCollapsed}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}

@@ -1,18 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { PayrollSignInCard } from "~/components/auth/payroll-sign-in-card";
 import { ModeToggle } from "~/components/mode-toggle";
-import { Alert } from "~/components/ui/alert";
-import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { HrisApiError } from "~/lib/hris-api-client";
 import {
   getGoogleSignInUrl,
@@ -118,131 +107,32 @@ function SignInPage() {
   };
 
   return (
-    <main className="auth-gradient-bg relative flex min-h-screen flex-col items-center justify-center p-6">
+    <main className="auth-page relative flex min-h-screen flex-col items-center justify-center p-6">
       <div aria-hidden className="noise-overlay" />
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-20">
         <ModeToggle />
       </div>
-      <Card className="animate-auth-enter relative z-10 w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="font-mont text-2xl">Sign in to Tito Payroll</CardTitle>
-          <CardDescription>
-            Use your HRIS account (same users as T201).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {authError || googleErrorMessage ? (
-            <Alert variant="error">{authError || googleErrorMessage}</Alert>
-          ) : null}
-
-          {mfaToken ? (
-            <form className="space-y-4" onSubmit={handleMfaSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="mfa-code">Authentication code</Label>
-                <Input
-                  id="mfa-code"
-                  name="mfa-code"
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  value={mfaCode}
-                  onChange={(event) => setMfaCode(event.target.value)}
-                  aria-label="MFA authentication code"
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleCancelMfa}
-                  disabled={isSubmitting}
-                >
-                  Back
-                </Button>
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
-                  {isSubmitting ? "Verifying…" : "Verify"}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={isSubmitting}
-                aria-label="Continue with Google"
-              >
-                {isSubmitting ? "Signing in…" : "Continue with Google"}
-              </Button>
-
-              <div className="relative text-center text-xs text-muted-foreground">
-                <span className="relative z-10 bg-card px-2">or email</span>
-                <div
-                  className="absolute inset-x-0 top-1/2 border-t border-border"
-                  aria-hidden="true"
-                />
-              </div>
-
-              <form className="space-y-4" onSubmit={handleLoginSubmit}>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    aria-label="Email address"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={isPasswordVisible ? "text" : "password"}
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      className="pr-10"
-                      aria-label="Password"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      aria-label={
-                        isPasswordVisible ? "Hide password" : "Show password"
-                      }
-                      onClick={() =>
-                        setIsPasswordVisible((isVisible) => !isVisible)
-                      }
-                      disabled={isSubmitting}
-                    >
-                      {isPasswordVisible ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Signing in…" : "Sign in"}
-                </Button>
-              </form>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <PayrollSignInCard
+        email={email}
+        password={password}
+        isPasswordVisible={isPasswordVisible}
+        mfaToken={mfaToken}
+        mfaCode={mfaCode}
+        authError={authError}
+        googleErrorMessage={googleErrorMessage}
+        isSubmitting={isSubmitting}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onTogglePasswordVisibility={() =>
+          setIsPasswordVisible((isVisible) => !isVisible)
+        }
+        onMfaCodeChange={setMfaCode}
+        onLoginSubmit={handleLoginSubmit}
+        onGoogleSignIn={handleGoogleSignIn}
+        onMfaSubmit={handleMfaSubmit}
+        onCancelMfa={handleCancelMfa}
+        className="relative z-10"
+      />
     </main>
   );
 }

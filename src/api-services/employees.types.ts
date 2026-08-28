@@ -1,8 +1,13 @@
 export interface EmployeeListItem {
   id: string;
+  employeeCode: string;
   firstName: string;
   lastName: string;
+  department: string | null;
   position: string | null;
+  employmentStatus: string;
+  startDate: string | null;
+  createdAt: string;
   userImage: string | null;
 }
 
@@ -10,9 +15,18 @@ export interface EmployeeListParams {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortDir?: string;
+  sortBy?: EmployeeSortBy;
+  sortDir?: EmployeeSortDir;
 }
+
+export type EmployeeSortBy =
+  | "name"
+  | "department"
+  | "position"
+  | "status"
+  | "start_date";
+
+export type EmployeeSortDir = "asc" | "desc";
 
 export interface EmployeeListMeta {
   page: number;
