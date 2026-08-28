@@ -1,5 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import type { EmployeeListItem } from "~/api-services/employees.types";
+import {
+  departmentLabel,
+  displayName,
+  employeeCodeLabel,
+  formatEmployeeDate,
+  initialsFrom,
+  isHttpImage,
+  positionLabel,
+  titleCaseStatus,
+} from "~/components/employees/employee-display";
 import { cn } from "~/lib/utils";
 
 interface EmployeeCardProps {
@@ -7,23 +17,9 @@ interface EmployeeCardProps {
   className?: string;
 }
 
-const isHttpImage = (image: string | null | undefined): image is string =>
-  typeof image === "string" && /^https?:\/\//i.test(image);
-
-const displayName = (employee: EmployeeListItem): string =>
-  [employee.firstName, employee.lastName].filter(Boolean).join(" ").trim();
-
-const initialsFrom = (name: string): string => {
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0]![0]!}${parts[1]![0]!}`.toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase() || "?";
-};
-
 export const EmployeeCard = ({ employee, className }: EmployeeCardProps) => {
   const name = displayName(employee);
-  const position = employee.position?.trim() || "—";
+  const position = positionLabel(employee);
   const photoUrl = isHttpImage(employee.userImage)
     ? employee.userImage
     : null;
@@ -59,6 +55,38 @@ export const EmployeeCard = ({ employee, className }: EmployeeCardProps) => {
           </h2>
           <p className="truncate text-sm text-muted-foreground">{position}</p>
         </div>
+        <dl className="grid grid-cols-1 gap-2 border-t border-border/60 pt-4 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Employee ID</dt>
+            <dd className="truncate font-mono text-xs text-foreground">
+              {employeeCodeLabel(employee)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Department</dt>
+            <dd className="truncate text-foreground">
+              {departmentLabel(employee)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Status</dt>
+            <dd className="truncate text-foreground">
+              {titleCaseStatus(employee.employmentStatus)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Hire date</dt>
+            <dd className="tabular-nums text-foreground">
+              {formatEmployeeDate(employee.startDate)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Created</dt>
+            <dd className="tabular-nums text-foreground">
+              {formatEmployeeDate(employee.createdAt)}
+            </dd>
+          </div>
+        </dl>
       </div>
     </Link>
   );
@@ -66,10 +94,20 @@ export const EmployeeCard = ({ employee, className }: EmployeeCardProps) => {
 
 interface EmployeeCardGridProps {
   employees: EmployeeListItem[];
+  className?: string;
 }
 
-export const EmployeeCardGrid = ({ employees }: EmployeeCardGridProps) => (
-  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+export const EmployeeCardGrid = ({
+  employees,
+  className,
+}: EmployeeCardGridProps) => (
+  <ul
+    className={cn(
+      "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+      className,
+    )}
+    aria-label="Employee roster cards"
+  >
     {employees.map((employee) => (
       <li key={employee.id}>
         <EmployeeCard employee={employee} />

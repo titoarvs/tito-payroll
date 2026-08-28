@@ -1,8 +1,30 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const SIDEBAR_STORAGE_KEY = "payroll.sidebar.collapsed";
 
-export const useSidebarCollapsed = () => {
+export interface SidebarContextValue {
+  isCollapsed: boolean;
+  isHydrated: boolean;
+  toggleCollapsed: () => void;
+}
+
+export const SidebarContext = createContext<SidebarContextValue | null>(null);
+
+export const useSidebarCollapsed = (): SidebarContextValue => {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error("useSidebarCollapsed must be used within SidebarProvider");
+  }
+  return context;
+};
+
+export const useSidebarCollapsedState = (): SidebarContextValue => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 

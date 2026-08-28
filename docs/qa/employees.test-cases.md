@@ -2,7 +2,7 @@
 
 ## Overview
 
-Super-admin employee card grid with search and 15-per-page pagination. Click a card to open the employee detail header.
+Super-admin employee roster with search and paginated results (default 10 per page; selectable 10, 20, 50, 100, 200). Mobile shows profile cards; desktop (`md+`) shows a table inside a card. Click a card or **Open** to open the employee detail header.
 
 Regular employees see only their own profile header on `/dashboard` (no roster).
 
@@ -20,13 +20,14 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 
 ## Test Cases
 
-### TC-01: Super admin sees employee cards
+### TC-01: Super admin sees employee cards and table
 
 - **Priority:** High
 - **Preconditions:** Signed in as `super_admin`; employees exist in HRIS.
 - **Steps:**
-  1. Open `/dashboard/employees`.
-- **Expected result:** Page title “Employees”. Cards show avatar (or initials), name, and position. No Get in touch / bookmark / share buttons. At most 15 cards on page 1.
+  1. Open `/dashboard/employees` on a viewport below `md`.
+  2. Widen the viewport to `md` or above.
+- **Expected result:** Below `md`: cards show avatar (or initials), name, position, employee ID, department, status, hire date, and created date (at most 10 by default). At `md+`: a table in a card lists Employee, Employee ID, Department, Position, Status, Hire date, Created, and Open. No page title bar, Get in touch / bookmark / share buttons.
 
 ### TC-02: Non-super-admin redirected from list
 
@@ -43,7 +44,7 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Steps:**
   1. Type a matching fragment in the search box.
   2. Wait ~300ms.
-- **Expected result:** Cards update to matching employees. Range text reflects filtered total.
+- **Expected result:** Roster updates to matching employees (cards and/or table). Range text reflects filtered total.
 
 ### TC-04: Search with no matches
 
@@ -56,21 +57,30 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 ### TC-05: Search resets to page 1
 
 - **Priority:** Medium
-- **Preconditions:** More than 15 employees; on page 2+.
+- **Preconditions:** More than 10 employees; on page 2+.
 - **Steps:**
   1. Go to page 2.
   2. Enter a search term.
 - **Expected result:** After debounce, page indicator is page 1 of the filtered result set.
 
-### TC-06: Pagination — 15 per page
+### TC-06: Pagination — default 10 per page
 
 - **Priority:** High
-- **Preconditions:** At least 16 employees; empty search.
+- **Preconditions:** At least 11 employees; empty search.
 - **Steps:**
   1. Open Employees.
   2. Click Next.
   3. Click Previous.
-- **Expected result:** Page 1 shows up to 15 cards. Next loads page 2. Previous returns to page 1. Range text like `1–15 of N` then `16–… of N`.
+- **Expected result:** Page 1 shows up to 10 rows/cards. Next loads page 2. Previous returns to page 1. Range text like `1–10 of N` then `11–… of N`.
+
+### TC-06b: Page size selector
+
+- **Priority:** Medium
+- **Preconditions:** At least 11 employees; empty search.
+- **Steps:**
+  1. Open Employees (default 10 per page).
+  2. Change **Rows per page** to 20, then 50, 100, and 200.
+- **Expected result:** Each change resets to page 1 and refetches with the selected limit. Options are 10, 20, 50, 100, and 200 only.
 
 ### TC-07: Pagination ends disabled
 
@@ -105,13 +115,13 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
   1. Open Employees.
 - **Expected result:** Error message shown; no silent empty grid pretending success.
 
-### TC-11: Click card opens detail header
+### TC-11: Open employee detail from card or table
 
 - **Priority:** High
 - **Preconditions:** Signed in as `super_admin`; at least one employee on the list.
 - **Steps:**
-  1. Open `/dashboard/employees`.
-  2. Click an employee card.
+  1. Open `/dashboard/employees` below `md` and click an employee card.
+  2. Widen to `md+` and click **Open** on a table row.
 - **Expected result:** Navigates to `/dashboard/employees/<id>`. Detail header shows cover, avatar (or initials), name, `#code • position`, Active/Inactive pill, and four cards (Department, Employment Type, Email, Phone Number). “Back to employees” link is visible.
 
 ### TC-12: Detail header field mapping

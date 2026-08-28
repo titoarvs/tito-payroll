@@ -1,6 +1,6 @@
 # Employees
 
-Super-admin roster as profile cards (avatar, name, position). Search and 15-per-page pagination. Click a card to open that employee’s detail header.
+Super-admin roster with **cards on small screens** and a **table inside a card on `md+`**. Search and 15-per-page pagination. Click a card or **Open** in the table to open that employee’s detail header.
 
 Regular employees (`user` role, not `super_admin`) see **only their own** profile header on `/dashboard` via `GET /employee201/employees/me`. They never see the roster or another person’s detail page.
 
@@ -17,12 +17,13 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 ### List
 
 - Route `/dashboard/employees` is `super_admin` only (UI redirect). API still enforces `employee201.employees.view`.
-- Cards show circular avatar (photo if `userImage` is an `http(s)` URL, else initials), full name, and position (or em dash).
-- Cards link to `/dashboard/employees/$id`.
-- No action buttons, share/bookmark icons, skill tags, or stats on the list.
+- **Cards** (`md:hidden`): circular avatar, name, position, plus employee ID, department, status, hire date, and created date.
+- **Table** (`hidden md:block`, wrapped in `Card`): columns Employee, Employee ID, Department, Position, Status, Hire date, Created, Actions (`Open` link). Sortable headers (asc/desc toggle) on Employee, Department, Position, Status, and Hire date via HRIS `sortBy` / `sortDir`.
+- No share/bookmark icons, skill tags, or stats on the list.
 - Search box (debounced ~300ms) filters by name, email, or employee code via HRIS `search`.
 - Changing search resets to page 1.
-- Pagination: 15 employees per page; Previous / Page N of M / Next from `meta`.
+- Pagination sits **below** the roster (table footer on desktop; below card grid on mobile): default **10** employees per page with a **Rows per page** selector (10, 20, 50, 100, 200); Previous / Page N of M / Next from `meta`.
+- Table area scrolls inside the card (max height tied to viewport) with a sticky header; skeleton rows match the same layout while loading.
 
 ### Detail (super_admin)
 
@@ -48,7 +49,7 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 | Path | File | Notes |
 | --- | --- | --- |
 | `/dashboard` | `src/routes/dashboard/index.tsx` | Self profile header for non-`super_admin` |
-| `/dashboard/employees` | `src/routes/dashboard/employees.tsx` (layout) + `employees.index.tsx` | Card grid + search + pager (`super_admin` only) |
+| `/dashboard/employees` | `src/routes/dashboard/employees.tsx` (layout) + `employees.index.tsx` | Card grid (mobile) + table in card (desktop) + search + pager (`super_admin` only) |
 | `/dashboard/employees/$id` | `src/routes/dashboard/employees.$id.tsx` | Detail header (`super_admin` only) |
 
 `employees.tsx` is a layout with `<Outlet />` so the `$id` child can render. List UI lives in `employees.index.tsx`.
@@ -65,7 +66,7 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 
 ## HRIS endpoints
 
-- `GET /api/employee201/employees?page=&limit=15&search=&sortBy=name&sortDir=asc`
+- `GET /api/employee201/employees?page=&limit=10&search=&sortBy=name&sortDir=asc`
   - Reads `employee201.employee`
   - Permission: `employee201.employees.view`
 - `GET /api/employee201/employees/me`
@@ -78,8 +79,12 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 
 ## Components
 
-- `src/components/employees/employee-card.tsx` — `EmployeeCard`, `EmployeeCardGrid` (cards are links)
-- `src/components/employees/employee-list-controls.tsx` — search + pagination controls
+- `src/components/employees/employee-display.ts` — shared name / initials / photo helpers
+- `src/components/employees/employee-card.tsx` — `EmployeeCard`, `EmployeeCardGrid` (cards are links; shown below `md`)
+- `src/components/employees/employee-table.tsx` — `EmployeeTable` (table inside `Card`; shown at `md+`)
+- `src/components/employees/employee-list-controls.tsx` — search input only
+- `src/components/employees/employee-list-pagination.tsx` — range + pager (below roster)
+- `src/components/employees/employee-roster-skeleton.tsx` — table/card loading skeletons
 - `src/components/employees/employee-detail-header.tsx` — profile header matching the detail mock
 
 ## Notes

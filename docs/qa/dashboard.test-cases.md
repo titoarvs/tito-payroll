@@ -21,7 +21,7 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 - **Preconditions:** Signed out; `super_admin` credentials available.
 - **Steps:**
   1. Open `/sign-in` and sign in successfully.
-- **Expected result:** Redirect to `/dashboard`. Sidenav shows **Dashboard** (active) and **Employees** with icons and labels. Topnav shows “Payroll”, notifications button, and user avatar. Main area is empty (no cards/widgets).
+- **Expected result:** Redirect to `/dashboard`. Sidenav shows **Dashboard** (active) and **Employees** with icons and labels. Topnav shows theme toggle, notifications button, and user avatar. Main area shows welcome message, KPI metric tiles (employees, pay runs, draft/computed/released counts, contribution tables), and quick-action cards.
 
 ### TC-02: Employee sees topnav only
 
@@ -29,7 +29,7 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 - **Preconditions:** Signed out; `employee` credentials available.
 - **Steps:**
   1. Sign in as employee.
-- **Expected result:** Land on `/dashboard`. Topnav present. No sidenav. Main area empty.
+- **Expected result:** Land on `/dashboard`. Topnav present. No sidenav. Main area shows own employee profile header (not KPI dashboard).
 
 ### TC-03: Employee cannot open Employees route
 
@@ -76,5 +76,5 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 
 - Notification list or API.
 - Employee card search/pagination detail — see [employees.test-cases.md](./employees.test-cases.md).
-- Branch selector, dashboard widgets from the design mock.
+- Branch selector or extra dashboard widgets beyond KPI tiles and quick actions.
 - Full theme matrix — see [theme.test-cases.md](./theme.test-cases.md).
