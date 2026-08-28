@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { AppShell } from "~/components/layout/app-shell";
+import { PayrollLayout } from "~/components/layout/payroll-layout";
 import { hasHrisSession } from "~/lib/hris-auth";
 
 export const Route = createFileRoute("/dashboard")({
@@ -14,8 +14,8 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   return (
-    <AppShell>
+    <PayrollLayout>
       <Outlet />
-    </AppShell>
+    </PayrollLayout>
   );
 }

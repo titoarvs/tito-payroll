@@ -1,6 +1,31 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import {
   useComputePayRun,
   usePayRun,
@@ -18,7 +43,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const payslipsQuery = usePayRunPayslips(payRunId);
   const compute = useComputePayRun();
   const release = useReleasePayRun();
-  const [confirmRelease, setConfirmRelease] = useState(false);
+  const [releaseOpen, setReleaseOpen] = useState(false);
 
   const payRun = data?.data;
   const payslips = payslipsQuery.data?.data ?? [];
@@ -29,9 +54,10 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
 
   if (isPending) {
     return (
-      <p className="text-sm text-muted-foreground" role="status">
-        Loading pay run…
-      </p>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
@@ -46,6 +72,12 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const canCompute = payRun.status === "draft" || payRun.status === "computed";
   const canRelease = payRun.status === "computed";
 
+  const handleRelease = () => {
+    release.mutate(payRunId, {
+      onSuccess: () => setReleaseOpen(false),
+    });
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -56,9 +88,10 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
           <h2 className="text-xl font-semibold text-foreground">
             {payRun.periodStart} → {payRun.periodEnd}
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Half: {payRun.cutoffHalf} · Status: {payRun.status}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="capitalize">Half: {payRun.cutoffHalf}</span>
+            <PayRunStatusBadge status={payRun.status} />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {canCompute ? (
@@ -71,34 +104,38 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
             </Button>
           ) : null}
           {canRelease ? (
-            confirmRelease ? (
-              <>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => release.mutate(payRunId)}
-                  disabled={release.isPending}
-                >
-                  {release.isPending ? "Releasing…" : "Confirm release"}
+            <AlertDialog open={releaseOpen} onOpenChange={setReleaseOpen}>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline">
+                  Release
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setConfirmRelease(false)}
-                  disabled={release.isPending}
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setConfirmRelease(true)}
-              >
-                Release
-              </Button>
-            )
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Release pay run?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will finalize payslips for {payRun.periodStart} →{" "}
+                    {payRun.periodEnd}. Employees will see them under My
+                    payslips.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={release.isPending}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleRelease();
+                    }}
+                    disabled={release.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {release.isPending ? "Releasing…" : "Confirm release"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : null}
         </div>
       </div>
@@ -109,56 +146,65 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
         </p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full min-w-[56rem] text-left text-sm">
-          <thead className="border-b border-border bg-muted/40">
-            <tr>
-              <th className="px-3 py-2 font-medium">Employee</th>
-              <th className="px-3 py-2 font-medium">Hours</th>
-              <th className="px-3 py-2 font-medium">Rate</th>
-              <th className="px-3 py-2 font-medium">Basic</th>
-              <th className="px-3 py-2 font-medium">Allowance</th>
-              <th className="px-3 py-2 font-medium">Gross</th>
-              <th className="px-3 py-2 font-medium">SSS</th>
-              <th className="px-3 py-2 font-medium">HDMF</th>
-              <th className="px-3 py-2 font-medium">PhilHealth</th>
-              <th className="px-3 py-2 font-medium">Net</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payslipsQuery.isPending ? (
-              <tr>
-                <td colSpan={10} className="px-3 py-6 text-muted-foreground">
-                  Loading payslips…
-                </td>
-              </tr>
-            ) : payslips.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="px-3 py-6 text-muted-foreground">
-                  No payslips yet. Run Compute.
-                </td>
-              </tr>
-            ) : (
-              payslips.map((row) => (
-                <tr key={row.id} className="border-b border-border/60">
-                  <td className="px-3 py-2 font-mono text-xs">{row.employeeId}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.hoursWorked}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.hourlyRate}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.basicPay}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.allowance}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.grossPay}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.sss}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.hdmf}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.philhealth}</td>
-                  <td className="px-3 py-2 tabular-nums font-medium">
-                    {row.netPay}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardContent className="overflow-x-auto p-0">
+          <Table className="min-w-[56rem]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Hours</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>Basic</TableHead>
+                <TableHead>Allowance</TableHead>
+                <TableHead>Gross</TableHead>
+                <TableHead>SSS</TableHead>
+                <TableHead>HDMF</TableHead>
+                <TableHead>PhilHealth</TableHead>
+                <TableHead>Net</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {payslipsQuery.isPending ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={10}>
+                      <Skeleton className="h-8 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : payslips.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={10}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    No payslips yet. Run Compute.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                payslips.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-mono text-xs">
+                      {row.employeeId}
+                    </TableCell>
+                    <TableCell className="tabular-nums">{row.hoursWorked}</TableCell>
+                    <TableCell className="tabular-nums">{row.hourlyRate}</TableCell>
+                    <TableCell className="tabular-nums">{row.basicPay}</TableCell>
+                    <TableCell className="tabular-nums">{row.allowance}</TableCell>
+                    <TableCell className="tabular-nums">{row.grossPay}</TableCell>
+                    <TableCell className="tabular-nums">{row.sss}</TableCell>
+                    <TableCell className="tabular-nums">{row.hdmf}</TableCell>
+                    <TableCell className="tabular-nums">{row.philhealth}</TableCell>
+                    <TableCell className="tabular-nums font-medium">
+                      {row.netPay}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

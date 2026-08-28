@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 import { ThemeProvider } from "~/components/theme-provider";
+import { Toaster } from "~/components/ui/sonner";
 import appCss from "~/styles/app.css?url";
 
 const isDev = import.meta.env.DEV;
@@ -83,6 +84,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       <body className="min-h-full flex flex-col antialiased">
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           {children}
+          <Toaster richColors closeButton position="top-right" />
           {isDev ? <TanStackRouterDevtools position="bottom-right" /> : null}
           {isDev ? <ReactQueryDevtools buttonPosition="bottom-left" /> : null}
           <Scripts />
