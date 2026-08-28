@@ -21,7 +21,7 @@ export const Alert = ({
         variant === "error" &&
           "border-destructive/40 bg-destructive/10 text-destructive",
         variant === "success" &&
-          "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-400",
+          "border-primary/30 bg-primary/10 text-tito-green-text dark:text-primary",
         variant === "info" && "border-border bg-muted text-foreground",
         className,
       )}

@@ -1,8 +1,32 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
 import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import {
   useCreatePayRun,
   usePayRuns,
@@ -47,64 +71,76 @@ export const PayRunsList = () => {
         </p>
       </div>
 
-      <section
-        className="rounded-xl border border-border bg-card p-4"
-        aria-label="Create pay run"
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-          <div className="space-y-2">
-            <Label htmlFor="period-start">Period start</Label>
-            <Input
-              id="period-start"
-              type="date"
-              value={periodStart}
-              onChange={(e) => setPeriodStart(e.target.value)}
-            />
+      <Card aria-label="Create pay run">
+        <CardHeader>
+          <CardTitle>Create pay run</CardTitle>
+          <CardDescription>
+            Set the period and cutoff half, then create a draft run.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="period-start">Period start</Label>
+              <Input
+                id="period-start"
+                type="date"
+                value={periodStart}
+                onChange={(e) => setPeriodStart(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="period-end">Period end</Label>
+              <Input
+                id="period-end"
+                type="date"
+                value={periodEnd}
+                onChange={(e) => setPeriodEnd(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cutoff-half">Cutoff half</Label>
+              <Select
+                value={cutoffHalf}
+                onValueChange={(value) => setCutoffHalf(value as CutoffHalf)}
+              >
+                <SelectTrigger id="cutoff-half" className="w-full">
+                  <SelectValue placeholder="Select half" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first">1st (HDMF + PhilHealth)</SelectItem>
+                  <SelectItem value="second">2nd (SSS)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                type="button"
+                onClick={handleCreate}
+                disabled={create.isPending || !periodStart || !periodEnd}
+              >
+                {create.isPending ? "Creating…" : "Create pay run"}
+              </Button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="period-end">Period end</Label>
-            <Input
-              id="period-end"
-              type="date"
-              value={periodEnd}
-              onChange={(e) => setPeriodEnd(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cutoff-half">Cutoff half</Label>
-            <select
-              id="cutoff-half"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-              value={cutoffHalf}
-              onChange={(e) => setCutoffHalf(e.target.value as CutoffHalf)}
-              aria-label="Cutoff half"
-            >
-              <option value="first">1st (HDMF + PhilHealth)</option>
-              <option value="second">2nd (SSS)</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <Button
-              type="button"
-              onClick={handleCreate}
-              disabled={create.isPending || !periodStart || !periodEnd}
-            >
-              {create.isPending ? "Creating…" : "Create pay run"}
-            </Button>
-          </div>
-        </div>
-        {createError ? (
-          <p className="mt-2 text-sm text-destructive" role="alert">
-            {createError}
-          </p>
-        ) : null}
-      </section>
+          {createError ? (
+            <p className="mt-3 text-sm text-destructive" role="alert">
+              {createError}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       {isPending ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          Loading pay runs…
-        </p>
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
       ) : null}
+
       {isError ? (
         <p className="text-sm text-destructive" role="alert">
           {error instanceof HrisApiError
@@ -114,47 +150,54 @@ export const PayRunsList = () => {
       ) : null}
 
       {!isPending && !isError ? (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[40rem] text-left text-sm">
-            <thead className="border-b border-border bg-muted/40">
-              <tr>
-                <th className="px-3 py-2 font-medium">Period</th>
-                <th className="px-3 py-2 font-medium">Half</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-3 py-6 text-center text-muted-foreground"
-                  >
-                    No pay runs yet.
-                  </td>
-                </tr>
-              ) : (
-                runs.map((run) => (
-                  <tr key={run.id} className="border-b border-border/60">
-                    <td className="px-3 py-2 tabular-nums">
-                      {run.periodStart} → {run.periodEnd}
-                    </td>
-                    <td className="px-3 py-2">{run.cutoffHalf}</td>
-                    <td className="px-3 py-2">{run.status}</td>
-                    <td className="px-3 py-2">
-                      <Button asChild variant="outline" size="sm">
-                        <Link to="/dashboard/pay-runs/$id" params={{ id: run.id }}>
-                          Open
-                        </Link>
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Card>
+          <CardContent className="overflow-x-auto p-0 pt-0">
+            <Table className="min-w-[40rem]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Half</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {runs.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      No pay runs yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  runs.map((run) => (
+                    <TableRow key={run.id}>
+                      <TableCell className="tabular-nums">
+                        {run.periodStart} → {run.periodEnd}
+                      </TableCell>
+                      <TableCell className="capitalize">{run.cutoffHalf}</TableCell>
+                      <TableCell>
+                        <PayRunStatusBadge status={run.status} />
+                      </TableCell>
+                      <TableCell>
+                        <Button asChild variant="outline" size="sm">
+                          <Link
+                            to="/dashboard/pay-runs/$id"
+                            params={{ id: run.id }}
+                          >
+                            Open
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : null}
     </div>
   );

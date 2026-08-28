@@ -1,5 +1,18 @@
 import { useMyPayslips } from "~/hooks/use-pay-runs";
 import { HrisApiError } from "~/lib/hris-api-client";
+import {
+  Card,
+  CardContent,
+} from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 
 export const MyPayslipsPage = () => {
   const { data, isPending, isError, error } = useMyPayslips();
@@ -15,10 +28,15 @@ export const MyPayslipsPage = () => {
       </div>
 
       {isPending ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          Loading…
-        </p>
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
       ) : null}
+
       {isError ? (
         <p className="text-sm text-destructive" role="alert">
           {error instanceof HrisApiError
@@ -28,47 +46,49 @@ export const MyPayslipsPage = () => {
       ) : null}
 
       {!isPending && !isError ? (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[40rem] text-left text-sm">
-            <thead className="border-b border-border bg-muted/40">
-              <tr>
-                <th className="px-3 py-2 font-medium">Period</th>
-                <th className="px-3 py-2 font-medium">Half</th>
-                <th className="px-3 py-2 font-medium">Gross</th>
-                <th className="px-3 py-2 font-medium">Deductions</th>
-                <th className="px-3 py-2 font-medium">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payslips.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-3 py-6 text-center text-muted-foreground"
-                  >
-                    No released payslips yet.
-                  </td>
-                </tr>
-              ) : (
-                payslips.map((row) => (
-                  <tr key={row.id} className="border-b border-border/60">
-                    <td className="px-3 py-2 tabular-nums">
-                      {row.periodStart} → {row.periodEnd}
-                    </td>
-                    <td className="px-3 py-2">{row.cutoffHalf}</td>
-                    <td className="px-3 py-2 tabular-nums">{row.grossPay}</td>
-                    <td className="px-3 py-2 tabular-nums">
-                      {row.totalDeductions}
-                    </td>
-                    <td className="px-3 py-2 tabular-nums font-medium">
-                      {row.netPay}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <Table className="min-w-[40rem]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Half</TableHead>
+                  <TableHead>Gross</TableHead>
+                  <TableHead>Deductions</TableHead>
+                  <TableHead>Net</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payslips.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      No released payslips yet.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  payslips.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="tabular-nums">
+                        {row.periodStart} → {row.periodEnd}
+                      </TableCell>
+                      <TableCell className="capitalize">{row.cutoffHalf}</TableCell>
+                      <TableCell className="tabular-nums">{row.grossPay}</TableCell>
+                      <TableCell className="tabular-nums">
+                        {row.totalDeductions}
+                      </TableCell>
+                      <TableCell className="tabular-nums font-medium">
+                        {row.netPay}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : null}
     </div>
   );

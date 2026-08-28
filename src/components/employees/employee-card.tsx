@@ -33,14 +33,12 @@ export const EmployeeCard = ({ employee, className }: EmployeeCardProps) => {
       to="/dashboard/employees/$id"
       params={{ id: employee.id }}
       className={cn(
-        "relative block overflow-hidden rounded-3xl border border-white/60 bg-card/70 p-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] backdrop-blur-md transition-shadow hover:shadow-[0_12px_36px_rgba(15,23,42,0.1)] dark:border-white/10 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)] dark:hover:shadow-[0_12px_36px_rgba(0,0,0,0.45)]",
-        "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-20 before:bg-linear-to-t before:from-sky-100/40 before:to-transparent dark:before:from-sky-950/30",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "tito-widget card-hover-lift block p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className,
       )}
       aria-label={`View ${name}, ${position}`}
     >
-      <div className="relative z-10 flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <div
           className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted text-sm font-semibold text-foreground"
           aria-hidden={photoUrl ? undefined : true}
