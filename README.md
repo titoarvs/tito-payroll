@@ -1,4 +1,4 @@
-# Tito Payroll 
+# Tito Payroll
 
 Web client for payroll. **No local database.** Auth and data live in
 [`tito-hris-api`](../tito-hris-api).
