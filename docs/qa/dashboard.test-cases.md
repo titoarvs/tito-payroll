@@ -21,7 +21,7 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 - **Preconditions:** Signed out; `super_admin` credentials available.
 - **Steps:**
   1. Open `/sign-in` and sign in successfully.
-- **Expected result:** Redirect to `/dashboard`. Light sidenav with **General** / **Organization** sections; active item is a solid navy pill. Topnav shows theme toggle, notifications, and user name + role beside avatar. Main area shows welcome `PageHeader`, white KPI tiles, and quick-action cards.
+- **Expected result:** Redirect to `/dashboard`. Light sidenav with **General** / **Organization** sections; active item is a solid navy pill. Topnav shows theme toggle, notifications, and user name + role beside avatar. Main area shows welcome `PageHeader`, employee widgets (Total / Active / New / Inactive + by department), payroll KPI tiles, and quick-action widgets.
 
 ### TC-02: Employee sees topnav only
 
@@ -29,7 +29,7 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 - **Preconditions:** Signed out; `employee` credentials available.
 - **Steps:**
   1. Sign in as employee.
-- **Expected result:** Land on `/dashboard`. Topnav present. No sidenav. Main area shows own employee profile header (not KPI dashboard).
+- **Expected result:** Land on `/dashboard`. Topnav present. Sidenav shows Dashboard + My payslips (no Employees). Main area shows employee welcome widgets (payslip KPIs + latest payslip), not the ops payroll KPI dashboard and not the profile/personal header cards.
 
 ### TC-03: Employee cannot open Employees route
 
@@ -37,7 +37,7 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 - **Preconditions:** Signed in as `employee`.
 - **Steps:**
   1. Navigate to `/dashboard/employees` (paste URL).
-- **Expected result:** Redirect to `/dashboard`. Still no sidenav.
+- **Expected result:** Redirect to `/dashboard`. Still no Employees sidenav item.
 
 ### TC-04: Super admin can open Employees page
 
@@ -76,5 +76,5 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 
 - Notification list or API.
 - Employee card search/pagination detail — see [employees.test-cases.md](./employees.test-cases.md).
-- Branch selector or extra dashboard widgets beyond KPI tiles and quick actions.
+- Branch selector or HR milestone/birthday panels (API returns them; payroll UI shows counts + department only).
 - Full theme matrix — see [theme.test-cases.md](./theme.test-cases.md).

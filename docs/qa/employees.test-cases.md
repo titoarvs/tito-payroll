@@ -184,21 +184,21 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
   1. Click “Back to employees”.
 - **Expected result:** Returns to `/dashboard/employees`.
 
-### TC-16: Employee sees own profile on dashboard
+### TC-16: Employee sees payslip welcome widgets on dashboard
 
 - **Priority:** High
-- **Preconditions:** Signed in as non-`super_admin` with a linked `employee201.employee` row (e.g. Ada Lovelace seed).
+- **Preconditions:** Signed in as non-ops employee.
 - **Steps:**
   1. Open `/dashboard` (or land there after sign-in).
-- **Expected result:** `EmployeeDetailHeader` shows own profile + personal/benefits cards (name, code, Active/Inactive, employment type, join date, email, phone). No pay snapshot. No “Back to employees”. No Employees sidenav. No salary amounts. Avatar from account photo if present, else initials.
+- **Expected result:** `EmployeeWelcomeDashboard` shows welcome header, payslip KPI widgets, and latest-payslip widget. No profile/personal `EmployeeDetailHeader`. No pay snapshot. No “Back to employees”. No Employees sidenav. No salary amounts.
 
-### TC-17: Employee self-profile — no linked record
+### TC-17: Employee dashboard without linked employee record
 
-- **Priority:** High
-- **Preconditions:** Signed in as non-`super_admin` with no `employee.userId` link **and** login email does not match any `employee.email` (legacy account created before stub-on-signup).
+- **Priority:** Medium
+- **Preconditions:** Signed in as non-ops with no `employee.userId` link **and** login email does not match any `employee.email` (legacy account).
 - **Steps:**
   1. Open `/dashboard`.
-- **Expected result:** Message “No employee record linked to your account.” No header card. Still no Employees sidenav/roster.
+- **Expected result:** Payslip welcome widgets still render (empty/zero payslips). No “No employee record linked” banner. Still no Employees sidenav/roster.
 
 ### TC-17b: Fresh Google / register creates employee201 stub
 
@@ -208,7 +208,7 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
   1. Sign in to payroll with Google (or complete register).
   2. As that user, open `/dashboard`.
   3. As a `super_admin`, open `/dashboard/employees` and search the new user’s email/name.
-- **Expected result:** Self-profile header appears (not the “No employee record” message). New stub is `probationary`, position may be `—`. In HRIS DB, `employee.id` and `employee.userId` both equal the new `auth.users.id`. Super-admin roster includes the stub.
+- **Expected result:** Welcome payslip widgets appear (not a missing-employee error). New stub is `probationary`. In HRIS DB, `employee.id` and `employee.userId` both equal the new `auth.users.id`. Super-admin roster includes the stub.
 
 ### TC-18: Super-admin dashboard has no self-profile header
 
@@ -216,16 +216,16 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Preconditions:** Signed in as `super_admin`.
 - **Steps:**
   1. Open `/dashboard`.
-- **Expected result:** Empty home (no self `EmployeeDetailHeader`). Employees available via sidenav.
+- **Expected result:** Ops welcome dashboard with employee widgets + payroll KPIs (no self `EmployeeDetailHeader`). Employees available via sidenav.
 
 ### TC-19: Email match auto-links unlinked employee row
 
 - **Priority:** High
-- **Preconditions:** Auth user email equals an `employee201.employee.email` whose `userId` is null. Signed in as that non-`super_admin` user.
+- **Preconditions:** Auth user email equals an `employee201.employee.email` whose `userId` is null. Signed in as that non-ops user.
 - **Steps:**
-  1. Open `/dashboard`.
-  2. Optionally re-open `/dashboard` or call `GET /api/employee201/employees/me` again.
-- **Expected result:** Profile header shows that employee’s details. Row’s `userId` is now the signed-in user. Second load still works via `userId`.
+  1. Call `GET /api/employee201/employees/me` (or open an HRIS client that uses `/me`).
+  2. Optionally call `/me` again.
+- **Expected result:** Response returns that employee’s details. Row’s `userId` is now the signed-in user. Second load still works via `userId`. Dashboard home does not show the profile header.
 
 ### TC-20: Email match owned by another user
 

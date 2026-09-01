@@ -2,7 +2,7 @@
 
 Super-admin roster with **cards on small screens** and a **table inside a card on `md+`**. Search and 15-per-page pagination. Click a card or **Open** in the table to open that employee’s detail header.
 
-Regular employees (`user` role, not `super_admin`) see **only their own** profile header on `/dashboard` via `GET /employee201/employees/me`. They never see the roster or another person’s detail page.
+Regular employees (`user` role, not ops) land on a payslip-focused welcome dashboard. They never see the roster or another person’s detail page.
 
 ## Source of truth
 
@@ -40,20 +40,19 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 
 ### Self profile (employee / `user`)
 
-- Route `/dashboard` shows `EmployeeDetailHeader` for the signed-in non-`super_admin` user (**profile + personal only** — no pay snapshot).
-- Data from `GET /api/employee201/employees/me` (`useMyEmployee`).
-- Photo from current user (`/users/me` image) passed as `linkedUser`; `/me` does not return `linkedUser`.
+- Route `/dashboard` shows `EmployeeWelcomeDashboard` for the signed-in non-ops user:
+  - Welcome `PageHeader` + My payslips CTA
+  - Payslip KPI widgets (released count, latest net) from `GET /payroll/payslips/me`
+  - Latest payslip `tito-widget` with open link
+  - No profile / personal `EmployeeDetailHeader` on home
 - No “Back to employees”, no sidenav Employees link, no roster.
-- `/me` resolves the row by `employee.userId` first; if missing, by matching login email to `employee.email`. Unlinked email matches are auto-linked (`userId` set). Email match already owned by another user → treated as not found.
-- Fresh Google / register users normally already have a stub from signup (`id` = `userId` = auth id), so `/me` should resolve without a 404.
-- 404 when no employee row matches `userId` or email (legacy accounts created before stub-on-signup, or email owned by another user).
-- Super-admin dashboard home stays empty; they use the Employees sidenav.
+- Ops dashboard home uses `PayrollWelcomeDashboard`; `super_admin` also sees employee widgets from `GET /employee201/dashboard`.
 
 ## Routes
 
 | Path                       | File                                                                  | Notes                                                                              |
 | -------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `/dashboard`               | `src/routes/dashboard/index.tsx`                                      | Self profile header for non-`super_admin`                                          |
+| `/dashboard`               | `src/routes/dashboard/index.tsx`                                      | Ops welcome or employee welcome widgets                                                                 |
 | `/dashboard/employees`     | `src/routes/dashboard/employees.tsx` (layout) + `employees.index.tsx` | Card grid (mobile) + table in card (desktop) + search + pager (`super_admin` only) |
 | `/dashboard/employees/$id` | `src/routes/dashboard/employees.$id.tsx`                              | Detail header (`super_admin` only)                                                 |
 
@@ -63,18 +62,21 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 
 | Layer    | Path                                                                                                                      |
 | -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Hook     | `useEmployees` / `useEmployee` / `useMyEmployee` — `src/hooks/use-employees.ts`                                           |
+| Hook     | `useEmployees` / `useEmployee` / `useMyEmployee` / `useEmployeeDashboard` — `src/hooks/use-employees.ts` |
 | Debounce | `useDebouncedValue` — `src/hooks/use-debounced-value.ts`                                                                  |
-| Query    | `getEmployeesQuery` / `getEmployeeQuery` / `getMyEmployeeQuery` / `employeesKeys` — `src/queries/employees.ts`            |
-| Service  | `employeesService.list` / `employeesService.getById` / `employeesService.getMe` — `src/api-services/employees.service.ts` |
+| Query    | `getEmployeesQuery` / `getEmployeeQuery` / `getMyEmployeeQuery` / `getEmployeeDashboardQuery` / `employeesKeys` — `src/queries/employees.ts` |
+| Service  | `employeesService.list` / `getById` / `getMe` / `getDashboard` — `src/api-services/employees.service.ts` |
 | Types    | `src/api-services/employees.types.ts`                                                                                     |
-| UI       | `EmployeeDetailHeader`, `EmployeePaySnapshot`, `EmployeeSalaryRatesTable` — `src/components/employees/` |
+| UI       | `EmployeeDetailHeader`, `EmployeePaySnapshot`, `EmployeeSalaryRatesTable`, `EmployeeDashboardWidgets`, `EmployeeWelcomeDashboard` |
 
 ## HRIS endpoints
 
 - `GET /api/employee201/employees?page=&limit=10&search=&sortBy=name&sortDir=asc`
   - Reads `employee201.employee`
   - Permission: `employee201.employees.view`
+- `GET /api/employee201/dashboard?from=&to=`
+  - Counts (total / active / new / inactive / by department), milestones, birthdays
+  - Permission: `employee201.employees.view` (+ manage-role check in service)
 - `GET /api/employee201/employees/me`
   - Current user’s employee row via `userId`, else email match + auto-link when unlinked
   - Permission: `employee201.employees.view_own`
@@ -95,6 +97,8 @@ Rows come from **tito-hris-api** PostgreSQL schema `employee201` (table `employe
 - `src/components/employees/employee-detail-header.tsx` — profile + personal/benefits cards (optional pay `aside`)
 - `src/components/employees/employee-pay-snapshot.tsx` — ops pay amounts from salary-rates API
 - `src/components/employees/employee-salary-rates-table.tsx` — ops rate history table on detail
+- `src/components/dashboard/employee-dashboard-widgets.tsx` — ops employee KPIs from `/employee201/dashboard`
+- `src/components/dashboard/employee-welcome-dashboard.tsx` — employee self home widgets
 
 ## Notes
 

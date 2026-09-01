@@ -16,16 +16,18 @@ Authenticated app chrome for Tito Payroll. Dashboard home shows a welcome view w
 **Payroll ops** (`super_admin`, `admin`, `finance`):
 
 - Personalized welcome via shared `PageHeader` (`Welcome back, {firstName}`) with quick links to Employees / Pay runs.
-- **KPI row** (live counts from HRIS APIs) on white card tiles:
-  - **Employees** — total roster (`meta.total` from list); `super_admin` only; links to `/dashboard/employees`.
+- **Employee widgets** (`super_admin` only) from `GET /employee201/dashboard`:
+  - KPI tiles: Total / Active / New / Inactive (`tito-widget`).
+  - **By department** bar list widget.
+- **Payroll KPI row** (live counts) as `tito-widget` tiles:
   - **Pay runs** — all cutoffs; links to `/dashboard/pay-runs`.
   - **Draft runs** — status `draft`.
   - **Computed** — status `computed`.
   - **Released** — status `released`.
   - **Contribution tables** — active schedule count; links to `/dashboard/contribution-tables`.
-- **Quick actions** cards for Pay runs, Employees (`super_admin` only), and Contribution tables.
+- **Quick actions** as `tito-widget` tiles for Pay runs, Employees (`super_admin` only), and Contribution tables.
 
-**Regular employees:** own `EmployeeDetailHeader` from `GET /employee201/employees/me` — see [employees.md](./employees.md).
+**Regular employees:** `EmployeeWelcomeDashboard` — welcome header, payslip KPI widgets, and latest-payslip widget. Profile/personal header cards are not shown on home (detail remains on `/dashboard/employees/$id` for ops).
 
 ## Routes
 
@@ -42,8 +44,10 @@ Authenticated app chrome for Tito Payroll. Dashboard home shows a welcome view w
 - `src/components/layout/payroll-nav-links.tsx` — shared sectioned nav links
 - `src/components/layout/payroll-header.tsx` — sticky glass top bar (name + role)
 - `src/components/layout/page-header.tsx` — page title + description + actions
-- `src/components/dashboard/payroll-welcome-dashboard.tsx` — welcome + KPIs + quick actions
-- `src/components/dashboard/dashboard-kpi-card.tsx` — tinted metric tile
+- `src/components/dashboard/payroll-welcome-dashboard.tsx` — welcome + payroll KPIs + quick actions
+- `src/components/dashboard/employee-dashboard-widgets.tsx` — HRIS employee dashboard KPIs + department widget
+- `src/components/dashboard/employee-welcome-dashboard.tsx` — employee self home (payslip widgets + profile)
+- `src/components/dashboard/dashboard-kpi-card.tsx` — tinted metric tile (`tito-widget`)
 
 ## Auth
 
