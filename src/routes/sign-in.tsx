@@ -107,9 +107,10 @@ function SignInPage() {
   };
 
   return (
-    <main className="auth-page relative flex min-h-screen flex-col items-center justify-center p-6">
-      <div aria-hidden className="noise-overlay" />
-      <div className="absolute top-4 right-4 z-20">
+    <main className="auth-page relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 py-14 sm:px-8">
+      <div aria-hidden className="auth-ambient" />
+      <div aria-hidden className="noise-overlay auth-noise" />
+      <div className="auth-chrome absolute top-5 right-5 z-20 sm:top-7 sm:right-7">
         <ModeToggle />
       </div>
       <PayrollSignInCard

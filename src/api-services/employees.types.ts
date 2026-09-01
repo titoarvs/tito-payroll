@@ -20,11 +20,7 @@ export interface EmployeeListParams {
 }
 
 export type EmployeeSortBy =
-  | "name"
-  | "department"
-  | "position"
-  | "status"
-  | "start_date";
+  "name" | "department" | "position" | "status" | "start_date";
 
 export type EmployeeSortDir = "asc" | "desc";
 
@@ -53,6 +49,7 @@ export interface EmployeeDetail {
   position: string | null;
   employmentStatus: string;
   isActive: boolean;
+  startDate?: string | null;
   withHmo?: boolean;
   hmoProvider?: string | null;
   hmoMemberNumber?: string | null;

@@ -27,7 +27,17 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Steps:**
   1. Open `/dashboard/employees` on a viewport below `md`.
   2. Widen the viewport to `md` or above.
-- **Expected result:** Below `md`: cards show avatar (or initials), name, position, employee ID, department, status, hire date, and created date (at most 10 by default). At `md+`: a table in a card lists Employee, Employee ID, Department, Position, Status, Hire date, Created, and Open. No page title bar, Get in touch / bookmark / share buttons.
+- **Expected result:** Below `md`: cards show avatar (or initials), name, position, employee ID, department, status, hire date, and created date (at most 10 by default). At `md+`: a bordered table in a card lists Employee, Employee ID, Department, Position, Status, Hire date, Created, and Open. **Columns** control is visible on desktop.
+
+### TC-01b: Columns show/hide and reorder
+
+- **Priority:** Medium
+- **Preconditions:** Desktop employees roster with rows.
+- **Steps:**
+  1. Click **Columns**.
+  2. Hide Department; drag Status above Position.
+  3. Refresh the page.
+- **Expected result:** Department column gone; Status appears before Position; preference persists after refresh. Employee and Actions remain.
 
 ### TC-02: Non-super-admin redirected from list
 
@@ -121,16 +131,34 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Preconditions:** Signed in as `super_admin`; at least one employee on the list.
 - **Steps:**
   1. Open `/dashboard/employees` below `md` and click an employee card.
-  2. Widen to `md+` and click **Open** on a table row.
-- **Expected result:** Navigates to `/dashboard/employees/<id>`. Detail header shows cover, avatar (or initials), name, `#code • position`, Active/Inactive pill, and four cards (Department, Employment Type, Email, Phone Number). “Back to employees” link is visible.
+  2. Widen to `md+` and click **Open** / **View** on a table row.
+- **Expected result:** Navigates to `/dashboard/employees/<id>`. Three-card layout: profile (avatar, name, code chip, Active/Inactive, employment type, join date), personal info + benefits, and pay snapshot (or empty/unavailable). “Back to employees” link is visible.
 
-### TC-12: Detail header field mapping
+### TC-12: Detail field mapping + pay snapshot
 
 - **Priority:** High
-- **Preconditions:** Known employee with department, employment status, email, phone.
+- **Preconditions:** Known employee with department, employment status, email, phone; preferably a salary rate on file.
 - **Steps:**
   1. Open that employee’s detail page.
-- **Expected result:** Department shown as a blue-dot pill (or `—` if missing). Employment Type shows title-cased `employmentStatus`. Email and phone match HRIS (or `—`). No salary anywhere on the page. No three-dot menu / action menu.
+- **Expected result:** Profile shows name, position, department, code, status pill. Personal card shows email/phone/civil status and benefits coverage. Pay snapshot shows monthly/hourly/allowance when rates exist (ops with `payroll.salary_rates.view`); “Manage rates” goes to Salary rates. Below the cards, a **Salary rate history** table lists From / To / Monthly / Hourly / Status (or empty state). No salary amounts on the list route. No three-dot menu.
+
+### TC-12b: Pay snapshot permission / unlinked
+
+- **Priority:** Medium
+- **Preconditions:** Ops without salary-rates view, or employee without linked `userId`.
+- **Steps:**
+  1. Open detail for that employee / role.
+- **Expected result:** Without permission, pay card and rate history table are hidden. Unlinked account shows a clear message on both; profile/personal cards still render.
+
+### TC-12c: Salary rate history table
+
+- **Priority:** High
+- **Preconditions:** Employee with one or more Clock salary rates; ops with `payroll.salary_rates.view`.
+- **Steps:**
+  1. Open `/dashboard/employees/<id>`.
+  2. Scroll below the three cards.
+  3. Click **Manage rates** in the history card header.
+- **Expected result:** Table shows rate rows newest-first with money as formatted currency and Active/Inactive. CTA opens `/dashboard/salary-rates?employeeId=<id>`.
 
 ### TC-13: Detail 404
 
@@ -162,7 +190,7 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Preconditions:** Signed in as non-`super_admin` with a linked `employee201.employee` row (e.g. Ada Lovelace seed).
 - **Steps:**
   1. Open `/dashboard` (or land there after sign-in).
-- **Expected result:** `EmployeeDetailHeader` shows own name, `#employeeCode • position`, Active/Inactive, and four info cards (Department, Employment Type, Email, Phone). No “Back to employees”. No Employees sidenav. No salary. Avatar from account photo if present, else initials.
+- **Expected result:** `EmployeeDetailHeader` shows own profile + personal/benefits cards (name, code, Active/Inactive, employment type, join date, email, phone). No pay snapshot. No “Back to employees”. No Employees sidenav. No salary amounts. Avatar from account photo if present, else initials.
 
 ### TC-17: Employee self-profile — no linked record
 
@@ -219,7 +247,8 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 ## Out of Scope
 
 - Division/department/status filters on the list.
-- Tabs, edit, documents, evaluations, salary reveal.
+- Tabs, edit, documents, evaluations, leave/performance charts.
+- Audited salary reveal POST on the detail page (pay snapshot uses salary-rates instead).
 - Avatar upload.
 - Auto-creating `employee201.employee` rows on first login.
 - Manager/admin roster access (still `super_admin` only).

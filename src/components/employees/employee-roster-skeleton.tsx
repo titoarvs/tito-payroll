@@ -10,8 +10,10 @@ import {
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
 
-export const EMPLOYEE_ROSTER_TABLE_BODY_CLASS =
-  "max-h-[calc(100vh-11.5rem)] overflow-auto md:max-h-[calc(100vh-11.5rem)]";
+export const EMPLOYEE_ROSTER_TABLE_BODY_CLASS = "min-h-0 flex-1 overflow-auto";
+
+/** @deprecated Borders come from shared `Table`; kept for call-site compatibility. */
+export const EMPLOYEE_ROSTER_TABLE_CLASS = "";
 
 interface EmployeeTableSkeletonProps {
   rowCount?: number;
@@ -23,15 +25,18 @@ export const EmployeeTableSkeleton = ({
   className,
 }: EmployeeTableSkeletonProps) => (
   <Card
-    className={cn("flex flex-col overflow-hidden", className)}
+    className={cn(
+      "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-border/40 shadow-sm",
+      className,
+    )}
     aria-busy="true"
     aria-label="Loading employee roster"
   >
-    <CardContent className="flex flex-col p-0">
+    <CardContent className="flex min-h-0 flex-1 flex-col p-0">
       <div className={EMPLOYEE_ROSTER_TABLE_BODY_CLASS}>
-        <Table>
-          <TableHeader>
-            <TableRow>
+        <Table className={EMPLOYEE_ROSTER_TABLE_CLASS}>
+          <TableHeader className="sticky top-0 z-10 bg-muted/80 [&_th]:bg-muted/80">
+            <TableRow className="border-0 hover:bg-transparent">
               <TableHead className="min-w-[12rem]">Employee</TableHead>
               <TableHead className="min-w-[8rem]">Employee ID</TableHead>
               <TableHead className="min-w-[8rem]">Department</TableHead>
@@ -39,12 +44,14 @@ export const EmployeeTableSkeleton = ({
               <TableHead className="min-w-[6rem]">Status</TableHead>
               <TableHead className="min-w-[6rem]">Hire date</TableHead>
               <TableHead className="min-w-[6rem]">Created</TableHead>
-              <TableHead className="w-28 min-w-28 text-right">Actions</TableHead>
+              <TableHead className="w-28 min-w-28 text-right">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: rowCount }, (_, index) => (
-              <TableRow key={index}>
+              <TableRow key={index} className="hover:bg-transparent">
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-10 w-10 shrink-0 rounded-full" />

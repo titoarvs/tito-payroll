@@ -4,7 +4,7 @@
 
 Authenticated shell: topnav for all roles; icon sidenav (Dashboard + Employees) for `super_admin` only.
 
-Routes: `/dashboard`, `/dashboard/employees`. Layout: `src/components/layout/app-shell.tsx`.
+Routes: `/dashboard`, `/dashboard/employees`. Layout: `src/components/layout/payroll-layout.tsx`.
 
 Employees page content (cards, search, pagination) is covered in [employees.test-cases.md](./employees.test-cases.md).
 
@@ -21,7 +21,7 @@ Employees page content (cards, search, pagination) is covered in [employees.test
 - **Preconditions:** Signed out; `super_admin` credentials available.
 - **Steps:**
   1. Open `/sign-in` and sign in successfully.
-- **Expected result:** Redirect to `/dashboard`. Sidenav shows **Dashboard** (active) and **Employees** with icons and labels. Topnav shows theme toggle, notifications button, and user avatar. Main area shows welcome message, KPI metric tiles (employees, pay runs, draft/computed/released counts, contribution tables), and quick-action cards.
+- **Expected result:** Redirect to `/dashboard`. Light sidenav with **General** / **Organization** sections; active item is a solid navy pill. Topnav shows theme toggle, notifications, and user name + role beside avatar. Main area shows welcome `PageHeader`, white KPI tiles, and quick-action cards.
 
 ### TC-02: Employee sees topnav only
 

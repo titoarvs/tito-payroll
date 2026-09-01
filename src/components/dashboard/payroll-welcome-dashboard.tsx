@@ -5,11 +5,13 @@ import {
   CheckCircle2,
   Clock3,
   FileCheck,
+  Plus,
   Table2,
   Users,
 } from "lucide-react";
 import type { PayRun } from "~/api-services/pay-runs.types";
 import { DashboardKpiCard } from "~/components/dashboard/dashboard-kpi-card";
+import { PageHeader } from "~/components/layout/page-header";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -73,24 +75,35 @@ export const PayrollWelcomeDashboard = ({
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-6">
-      <div className="space-y-1">
-        {metricsLoading ? (
-          <>
-            <Skeleton className="h-8 w-56" />
-            <Skeleton className="h-4 w-72" />
-          </>
-        ) : (
-          <>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Welcome back, {displayFirstName(user)}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Track payroll activity, employee records, and contribution setup at
-              a glance.
-            </p>
-          </>
-        )}
-      </div>
+      {metricsLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+      ) : (
+        <PageHeader
+          title={`Welcome back, ${displayFirstName(user)}`}
+          description="Track payroll activity, employee records, and contribution setup at a glance."
+          actions={
+            <>
+              {showEmployeeMetrics ? (
+                <Button asChild variant="outline">
+                  <Link to="/dashboard/employees">
+                    <Users className="h-4 w-4" />
+                    Employees
+                  </Link>
+                </Button>
+              ) : null}
+              <Button asChild>
+                <Link to="/dashboard/pay-runs">
+                  <Plus className="h-4 w-4" />
+                  Pay runs
+                </Link>
+              </Button>
+            </>
+          }
+        />
+      )}
 
       <section
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
@@ -155,7 +168,7 @@ export const PayrollWelcomeDashboard = ({
         <Card className="card-hover-lift lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <CalendarDays className="h-5 w-5 text-primary" />
+              <CalendarDays className="h-5 w-5 text-tito-green-text dark:text-primary" />
               Pay runs
             </CardTitle>
             <CardDescription>
@@ -173,7 +186,7 @@ export const PayrollWelcomeDashboard = ({
           <Card className="card-hover-lift lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-5 w-5 text-primary" />
+                <Users className="h-5 w-5 text-tito-green-text dark:text-primary" />
                 Employees
               </CardTitle>
               <CardDescription>
@@ -196,7 +209,7 @@ export const PayrollWelcomeDashboard = ({
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Table2 className="h-5 w-5 text-primary" />
+              <Table2 className="h-5 w-5 text-tito-green-text dark:text-primary" />
               Contribution tables
             </CardTitle>
             <CardDescription>

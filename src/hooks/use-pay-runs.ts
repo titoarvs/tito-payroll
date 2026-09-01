@@ -14,6 +14,7 @@ import {
   getPayRunPayslipsQuery,
   getPayRunQuery,
   getPayRunsQuery,
+  getPayslipQuery,
   payRunsKeys,
 } from "~/queries/pay-runs";
 
@@ -77,3 +78,5 @@ export const useReplaceBrackets = () => {
 };
 
 export const useMyPayslips = () => useQuery(getMyPayslipsQuery());
+
+export const usePayslip = (id: string) => useQuery(getPayslipQuery(id));

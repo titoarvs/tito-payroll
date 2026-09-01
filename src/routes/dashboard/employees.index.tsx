@@ -16,8 +16,17 @@ import {
   EmployeeTableSkeleton,
 } from "~/components/employees/employee-roster-skeleton";
 import { EmployeeTable } from "~/components/employees/employee-table";
+import {
+  EMPLOYEE_TABLE_COLUMN_DEFS,
+  EMPLOYEE_TABLE_COLUMNS_STORAGE_KEY,
+} from "~/components/employees/employee-table-columns";
 import { toggleEmployeeSort } from "~/components/employees/employee-table-sort";
+import { PageHeader } from "~/components/layout/page-header";
 import { Card, CardContent } from "~/components/ui/card";
+import {
+  TableColumnVisibility,
+  useTableColumns,
+} from "~/components/ui/table-column-visibility";
 import { useDebouncedValue } from "~/hooks/use-debounced-value";
 import { useEmployees } from "~/hooks/use-employees";
 import { HrisApiError } from "~/lib/hris-api-client";
@@ -36,16 +45,23 @@ function EmployeesPage() {
   const [sortBy, setSortBy] = useState<EmployeeSortBy>("name");
   const [sortDir, setSortDir] = useState<EmployeeSortDir>("asc");
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const { columns, setColumns, labelById } = useTableColumns(
+    EMPLOYEE_TABLE_COLUMNS_STORAGE_KEY,
+    EMPLOYEE_TABLE_COLUMN_DEFS,
+  );
 
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, pageSize, sortBy, sortDir]);
 
-  const handleSort = useCallback((nextKey: EmployeeSortBy) => {
-    const next = toggleEmployeeSort(sortBy, sortDir, nextKey);
-    setSortBy(next.sortBy);
-    setSortDir(next.sortDir);
-  }, [sortBy, sortDir]);
+  const handleSort = useCallback(
+    (nextKey: EmployeeSortBy) => {
+      const next = toggleEmployeeSort(sortBy, sortDir, nextKey);
+      setSortBy(next.sortBy);
+      setSortDir(next.sortDir);
+    },
+    [sortBy, sortDir],
+  );
 
   const { data, isPending, isError, error, isFetching } = useEmployees({
     search: debouncedSearch.trim() || undefined,
@@ -71,43 +87,58 @@ function EmployeesPage() {
       pageSize={pageSize}
       isLoading={isLoading}
       onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
-      onNextPage={() =>
-        setPage((current) => Math.min(totalPages, current + 1))
-      }
+      onNextPage={() => setPage((current) => Math.min(totalPages, current + 1))}
       onPageSizeChange={setPageSize}
     />
   );
 
   const errorMessage =
-    error instanceof HrisApiError
-      ? error.message
-      : "Failed to load employees.";
+    error instanceof HrisApiError ? error.message : "Failed to load employees.";
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4 md:gap-6">
-      <EmployeeListControls
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isLoading={isLoading}
-        className="w-full sm:max-w-sm"
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4 md:gap-6">
+      <PageHeader
+        className="shrink-0"
+        title="Employees"
+        description="Browse employee records linked to payroll."
+        actions={
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <TableColumnVisibility
+              columns={columns}
+              labelById={labelById}
+              onChange={setColumns}
+              lockedHint="Employee and Actions stay fixed."
+              className="hidden md:inline-flex"
+            />
+            <EmployeeListControls
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              isLoading={isLoading}
+              className="w-full min-w-[14rem] sm:w-72"
+            />
+          </div>
+        }
       />
 
       {showInitialSkeleton ? (
         <>
           <EmployeeCardGridSkeleton className="md:hidden" />
-          <EmployeeTableSkeleton className="hidden md:block" rowCount={DEFAULT_EMPLOYEE_PAGE_SIZE} />
+          <EmployeeTableSkeleton
+            className="hidden min-h-0 md:flex"
+            rowCount={DEFAULT_EMPLOYEE_PAGE_SIZE}
+          />
         </>
       ) : null}
 
       {isError ? (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="shrink-0 text-sm text-destructive" role="alert">
           {errorMessage}
         </p>
       ) : null}
 
       {!showInitialSkeleton && !isError && employees.length === 0 ? (
-        <Card className="overflow-hidden">
-          <CardContent className="flex min-h-[12rem] items-center justify-center py-8">
+        <Card className="min-h-0 flex-1 overflow-hidden">
+          <CardContent className="flex min-h-[12rem] flex-1 items-center justify-center py-8">
             <p className="text-sm text-muted-foreground" role="status">
               {hasActiveSearch
                 ? "No employees match your search."
@@ -120,23 +151,22 @@ function EmployeesPage() {
 
       {!showInitialSkeleton && !isError && employees.length > 0 ? (
         <>
-          <div className="flex flex-col gap-4 md:hidden">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto md:hidden">
             <EmployeeCardGrid
               employees={employees}
               className={showRefreshing ? "opacity-60" : undefined}
             />
-            <Card className="overflow-hidden">
-              {pagination}
-            </Card>
+            <Card className="shrink-0 overflow-hidden">{pagination}</Card>
           </div>
           <EmployeeTable
             employees={employees}
             sortBy={sortBy}
             sortDir={sortDir}
             onSort={handleSort}
+            columns={columns}
             footer={pagination}
             isRefreshing={showRefreshing}
-            className="hidden md:block"
+            className="hidden min-h-0 md:flex"
           />
         </>
       ) : null}

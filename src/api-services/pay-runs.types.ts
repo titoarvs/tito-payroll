@@ -36,6 +36,17 @@ export interface Payslip {
   id: string;
   payRunId: string;
   employeeId: string;
+  /** Present on pay-run payslip list / get when HRIS joins employee201. */
+  employeeName?: string | null;
+  employeeCode?: string | null;
+  /** Enriched on `GET /payroll/payslips/:id` from employee201. */
+  department?: string | null;
+  position?: string | null;
+  employmentStatus?: string | null;
+  sssNumber?: string | null;
+  philhealthNumber?: string | null;
+  pagibigNumber?: string | null;
+  tinNumber?: string | null;
   hoursWorked: string;
   hourlyRate: string;
   basicPay: string;

@@ -47,7 +47,7 @@ function DashboardHomePage() {
 
   if (isUserPending) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -68,7 +68,7 @@ function DashboardHomePage() {
   const employee = data?.data;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="flex w-full min-w-0 flex-col gap-6">
       {isPending ? (
         <Skeleton className="h-48 w-full" role="status" aria-label="Loading employee" />
       ) : null}

@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Banknote,
   CalendarDays,
   FileText,
   LayoutDashboard,
@@ -7,49 +8,75 @@ import {
   Users,
 } from "lucide-react";
 
+export type PayrollNavSectionId = "general" | "organization";
+
 export interface PayrollNavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  section: PayrollNavSectionId;
   exact?: boolean;
   requiresPayrollOps?: boolean;
 }
+
+export interface PayrollNavSection {
+  id: PayrollNavSectionId;
+  label: string;
+}
+
+export const PAYROLL_NAV_SECTIONS: PayrollNavSection[] = [
+  { id: "general", label: "General" },
+  { id: "organization", label: "Organization" },
+];
 
 export const PAYROLL_NAV_ITEMS: PayrollNavItem[] = [
   {
     to: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
+    section: "general",
     exact: true,
   },
   {
     to: "/dashboard/employees",
     label: "Employees",
     icon: Users,
+    section: "organization",
+    requiresPayrollOps: true,
+  },
+  {
+    to: "/dashboard/salary-rates",
+    label: "Salary rates",
+    icon: Banknote,
+    section: "organization",
     requiresPayrollOps: true,
   },
   {
     to: "/dashboard/pay-runs",
     label: "Pay runs",
     icon: CalendarDays,
+    section: "organization",
     requiresPayrollOps: true,
   },
   {
     to: "/dashboard/contribution-tables",
     label: "Contribution tables",
     icon: Table2,
+    section: "organization",
     requiresPayrollOps: true,
   },
   {
     to: "/dashboard/my-payslips",
     label: "My payslips",
     icon: FileText,
+    section: "organization",
   },
 ];
 
 export const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/employees": "Employees",
+  "/dashboard/salary-rates": "Salary rates",
   "/dashboard/pay-runs": "Pay runs",
   "/dashboard/contribution-tables": "Contribution tables",
   "/dashboard/my-payslips": "My payslips",
@@ -64,3 +91,11 @@ export const resolvePageTitle = (pathname: string): string => {
   }
   return PAGE_TITLES[pathname] ?? "Payroll";
 };
+
+export const isNavActive = (
+  pathname: string,
+  item: Pick<PayrollNavItem, "to" | "exact">,
+): boolean =>
+  item.exact
+    ? pathname === item.to
+    : pathname === item.to || pathname.startsWith(`${item.to}/`);
