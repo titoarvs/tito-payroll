@@ -20,6 +20,7 @@ export const contributionKeys = {
 
 export const myPayslipsKeys = {
   all: ["my-payslips"] as const,
+  detail: (id: string) => [...myPayslipsKeys.all, "detail", id] as const,
 };
 
 export const getPayRunsQuery = () =>
@@ -52,4 +53,11 @@ export const getMyPayslipsQuery = () =>
   queryOptions({
     queryKey: myPayslipsKeys.all,
     queryFn: () => payslipsService.listMine(),
+  });
+
+export const getMyPayslipQuery = (id: string) =>
+  queryOptions({
+    queryKey: myPayslipsKeys.detail(id),
+    queryFn: () => payslipsService.getById(id),
+    enabled: Boolean(id),
   });

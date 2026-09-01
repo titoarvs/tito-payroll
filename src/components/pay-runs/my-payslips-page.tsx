@@ -1,9 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { useMyPayslips } from "~/hooks/use-pay-runs";
 import { HrisApiError } from "~/lib/hris-api-client";
-import {
-  Card,
-  CardContent,
-} from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Table,
@@ -23,7 +21,7 @@ export const MyPayslipsPage = () => {
       <div>
         <h2 className="text-xl font-semibold text-foreground">My payslips</h2>
         <p className="text-sm text-muted-foreground">
-          Released cutoffs only.
+          Released cutoffs only. Open a row to view or print the paper payslip.
         </p>
       </div>
 
@@ -70,12 +68,22 @@ export const MyPayslipsPage = () => {
                   </TableRow>
                 ) : (
                   payslips.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="hover:bg-muted/40">
                       <TableCell className="tabular-nums">
-                        {row.periodStart} → {row.periodEnd}
+                        <Link
+                          to="/dashboard/my-payslips/$id"
+                          params={{ id: row.id }}
+                          className="font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                          {row.periodStart} → {row.periodEnd}
+                        </Link>
                       </TableCell>
-                      <TableCell className="capitalize">{row.cutoffHalf}</TableCell>
-                      <TableCell className="tabular-nums">{row.grossPay}</TableCell>
+                      <TableCell className="capitalize">
+                        {row.cutoffHalf}
+                      </TableCell>
+                      <TableCell className="tabular-nums">
+                        {row.grossPay}
+                      </TableCell>
                       <TableCell className="tabular-nums">
                         {row.totalDeductions}
                       </TableCell>

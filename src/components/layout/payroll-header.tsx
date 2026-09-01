@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { ModeToggle } from "~/components/mode-toggle";
+import { PayrollNotificationBell } from "~/components/layout/payroll-notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -144,15 +145,7 @@ export const PayrollHeader = () => {
 
         <div className="flex shrink-0 items-center gap-1">
           <ModeToggle />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
+          <PayrollNotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -2,18 +2,22 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   contributionTablesService,
   payRunsService,
+  payslipsService,
 } from "~/api-services/pay-runs.service";
 import type {
   CreatePayRunInput,
   ReplaceBracketsInput,
+  UpdatePayslipInput,
 } from "~/api-services/pay-runs.types";
 import {
   contributionKeys,
   getContributionSchedulesQuery,
+  getMyPayslipQuery,
   getMyPayslipsQuery,
   getPayRunPayslipsQuery,
   getPayRunQuery,
   getPayRunsQuery,
+  myPayslipsKeys,
   payRunsKeys,
 } from "~/queries/pay-runs";
 
@@ -53,6 +57,7 @@ export const useReleasePayRun = () => {
     onSuccess: async (_data, id) => {
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.detail(id) });
+      await queryClient.invalidateQueries({ queryKey: myPayslipsKeys.all });
     },
   });
 };
@@ -77,3 +82,26 @@ export const useReplaceBrackets = () => {
 };
 
 export const useMyPayslips = () => useQuery(getMyPayslipsQuery());
+
+export const useMyPayslip = (id: string) => useQuery(getMyPayslipQuery(id));
+
+export const useUpdatePayslip = (payRunId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdatePayslipInput;
+    }) => payslipsService.update(id, input),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: payRunsKeys.payslips(payRunId),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: myPayslipsKeys.detail(variables.id),
+      });
+    },
+  });
+};

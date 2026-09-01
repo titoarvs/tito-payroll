@@ -32,7 +32,8 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: process.cwd(),
     server: {
-      port: 3000,
+      port: 3002,
+      strictPort: true,
     },
     plugins: [
       tsConfigPaths(),

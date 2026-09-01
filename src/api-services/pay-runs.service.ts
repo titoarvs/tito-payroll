@@ -6,6 +6,7 @@ import type {
   PayRun,
   Payslip,
   ReplaceBracketsInput,
+  UpdatePayslipInput,
 } from "./pay-runs.types";
 
 const PAY_RUNS = "/payroll/pay-runs";
@@ -51,5 +52,10 @@ export const payslipsService = {
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<Payslip>>(
       `${PAYSLIPS}/${encodeURIComponent(id)}`,
+    ),
+  update: (id: string, input: UpdatePayslipInput) =>
+    hrisApi.patch<ApiListResponse<Payslip>>(
+      `${PAYSLIPS}/${encodeURIComponent(id)}`,
+      input,
     ),
 };

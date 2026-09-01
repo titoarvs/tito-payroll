@@ -43,4 +43,4 @@
 
 1. Payroll on `http://localhost:3002` can call `http://localhost:8000/api`.
 2. Missing `VITE_HRIS_API_BASE_URL` still defaults to `http://localhost:8000/api`.
-3. OAuth `returnTo` for an unknown origin is ignored (callback goes to `FRONTEND_URL`).
+3. OAuth `returnTo` for an unknown origin with `client=payroll` lands on `PAYROLL_FRONTEND_URL`, not T201.

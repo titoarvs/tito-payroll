@@ -151,6 +151,7 @@ export const getGoogleSignInUrl = (): string => {
   const url = new URL(`${getHrisApiBaseUrl()}/auth/google`);
   if (typeof window !== "undefined") {
     url.searchParams.set("returnTo", window.location.origin);
+    url.searchParams.set("client", "payroll");
   }
   return url.toString();
 };

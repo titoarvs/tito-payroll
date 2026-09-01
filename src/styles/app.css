@@ -270,6 +270,33 @@
   animation: nav-progress 0.8s var(--ease-out) infinite;
 }
 
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .payslip-document,
+  .payslip-document * {
+    visibility: visible !important;
+  }
+
+  .payslip-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-hover-lift,
   .card-hover-lift:hover {
