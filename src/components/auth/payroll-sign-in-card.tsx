@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import type { FormEvent } from "react";
 import { TitoLogo } from "~/components/branding/TitoLogo";
 import { Alert } from "~/components/ui/alert";
@@ -27,6 +27,9 @@ const GoogleMark = () => (
     />
   </svg>
 );
+
+const authFieldClass =
+  "auth-field h-12 rounded-xl border-transparent bg-muted/55 px-3.5 shadow-none transition-[border-color,box-shadow,background-color] duration-100 ease-out focus-visible:border-primary/35 focus-visible:bg-background focus-visible:ring-primary/25";
 
 interface PayrollSignInCardProps {
   email: string;
@@ -69,168 +72,160 @@ export const PayrollSignInCard = ({
 }: PayrollSignInCardProps) => (
   <div
     className={cn(
-      "auth-card animate-auth-enter w-full max-w-xl",
+      "auth-sheet-wrap w-full max-w-[26rem] sm:max-w-[28rem]",
       className,
     )}
   >
-    <div className="border-b border-border/60 px-6 py-6 text-center sm:px-8">
-      <div className="mb-5 flex justify-center">
-        <TitoLogo size="default" />
-      </div>
-      <h1 className="font-mont text-2xl font-semibold tracking-tight text-foreground">
-        {mfaToken ? "Verify your identity" : "Welcome back"}
-      </h1>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        {mfaToken
-          ? "Enter the authentication code from your authenticator app."
-          : "Sign in with your HRIS account to access payroll."}
-      </p>
-    </div>
+    <div className="auth-card animate-auth-enter">
+      <header className="px-8 pt-10 text-center sm:px-9 sm:pt-11">
+        <div className="auth-brand mb-8 flex justify-center">
+          <TitoLogo size="lg" />
+        </div>
+        <h1 className="font-sans text-[1.0625rem] leading-snug font-semibold tracking-[-0.015em] text-foreground">
+          {mfaToken ? "Verify your identity" : "Welcome back"}
+        </h1>
+        <p className="mx-auto mt-1.5 max-w-[16rem] text-[0.8125rem] leading-relaxed text-muted-foreground">
+          {mfaToken
+            ? "Enter the code from your authenticator app."
+            : "Sign in with your T201 account."}
+        </p>
+      </header>
 
-    <div className="space-y-5 px-6 py-6 sm:px-8 sm:py-7">
-      {authError || googleErrorMessage ? (
-        <Alert variant="error">{authError || googleErrorMessage}</Alert>
-      ) : null}
+      <div className="space-y-5 px-8 pt-7 pb-2 sm:px-9">
+        {authError || googleErrorMessage ? (
+          <Alert variant="error">{authError || googleErrorMessage}</Alert>
+        ) : null}
 
-      {mfaToken ? (
-        <form className="space-y-5" onSubmit={onMfaSubmit}>
-          <div className="flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border/60 bg-muted/50 text-primary">
-              <ShieldCheck className="h-6 w-6" aria-hidden="true" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="mfa-code">Authentication code</Label>
-            <Input
-              id="mfa-code"
-              name="mfa-code"
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              value={mfaCode}
-              onChange={(event) => onMfaCodeChange(event.target.value)}
-              className="h-11 text-center tracking-[0.2em]"
-              placeholder="000000"
-              aria-label="MFA authentication code"
-              required
-            />
-          </div>
-          <div className="flex gap-3 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 flex-1"
-              onClick={onCancelMfa}
-              disabled={isSubmitting}
-            >
-              Back
-            </Button>
-            <Button
-              type="submit"
-              className="h-11 flex-1"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Verifying…" : "Verify"}
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="space-y-5">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 w-full gap-3 border-border/80 bg-background text-sm font-medium shadow-sm"
-            onClick={onGoogleSignIn}
-            disabled={isSubmitting}
-            aria-label="Continue with Google"
-          >
-            <GoogleMark />
-            {isSubmitting ? "Redirecting…" : "Continue with Google"}
-          </Button>
-
-          <div className="relative py-1">
-            <div
-              className="absolute inset-x-0 top-1/2 border-t border-border/70"
-              aria-hidden="true"
-            />
-            <p className="relative mx-auto w-fit bg-card px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              or continue with email
-            </p>
-          </div>
-
-          <form className="space-y-4" onSubmit={onLoginSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail
-                  className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
+        <div key={mfaToken ? "mfa" : "login"} className="auth-panel-swap">
+          {mfaToken ? (
+            <form className="space-y-5" onSubmit={onMfaSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="mfa-code" className="text-[0.8125rem]">
+                  Authentication code
+                </Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => onEmailChange(event.target.value)}
-                  className="h-11 pl-10"
-                  placeholder="you@company.com"
-                  aria-label="Email address"
+                  id="mfa-code"
+                  name="mfa-code"
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  value={mfaCode}
+                  onChange={(event) => onMfaCodeChange(event.target.value)}
+                  className={cn(
+                    authFieldClass,
+                    "text-center text-base tracking-[0.28em]",
+                  )}
+                  placeholder="000000"
+                  aria-label="MFA authentication code"
                   required
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock
-                  className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="password"
-                  name="password"
-                  type={isPasswordVisible ? "text" : "password"}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => onPasswordChange(event.target.value)}
-                  className="h-11 pr-10 pl-10"
-                  placeholder="Enter your password"
-                  aria-label="Password"
-                  required
-                />
+              <div className="flex gap-2.5 pt-0.5">
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={
-                    isPasswordVisible ? "Hide password" : "Show password"
-                  }
-                  onClick={onTogglePasswordVisibility}
+                  variant="outline"
+                  className="auth-btn-secondary h-12 flex-1 rounded-xl"
+                  onClick={onCancelMfa}
                   disabled={isSubmitting}
                 >
-                  {isPasswordVisible ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  className="auth-btn-primary h-12 flex-1 rounded-xl text-[0.9375rem] font-semibold"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Verifying…" : "Verify"}
                 </Button>
               </div>
-            </div>
-            <Button
-              type="submit"
-              className="h-11 w-full text-sm font-semibold"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
-        </div>
-      )}
-    </div>
+            </form>
+          ) : (
+            <div className="space-y-5">
+              <Button
+                type="button"
+                variant="outline"
+                className="auth-btn-secondary h-12 w-full gap-2.5 rounded-xl text-[0.875rem] font-medium"
+                onClick={onGoogleSignIn}
+                disabled={isSubmitting}
+                aria-label="Continue with Google"
+              >
+                <GoogleMark />
+                {isSubmitting ? "Redirecting…" : "Continue with Google"}
+              </Button>
 
-    <p className="border-t border-border/60 px-6 py-4 text-center text-xs text-muted-foreground sm:px-8">
-      Same account as T201 · Secured by Tito HRIS
-    </p>
+              <div className="auth-or" role="separator" aria-label="or">
+                <span>or</span>
+              </div>
+
+              <form className="space-y-3.5" onSubmit={onLoginSubmit}>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-[0.8125rem]">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => onEmailChange(event.target.value)}
+                    className={authFieldClass}
+                    placeholder="you@company.com"
+                    aria-label="Email address"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-[0.8125rem]">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={isPasswordVisible ? "text" : "password"}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(event) => onPasswordChange(event.target.value)}
+                      className={cn(authFieldClass, "pr-11")}
+                      placeholder="Password"
+                      aria-label="Password"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-1/2 right-1.5 h-9 w-9 -translate-y-1/2 rounded-lg text-muted-foreground hover:bg-transparent hover:text-foreground"
+                      aria-label={
+                        isPasswordVisible ? "Hide password" : "Show password"
+                      }
+                      onClick={onTogglePasswordVisibility}
+                      disabled={isSubmitting}
+                    >
+                      {isPasswordVisible ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="auth-btn-primary mt-1.5 h-12 w-full rounded-xl text-[0.9375rem] font-semibold"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing in…" : "Sign in"}
+                </Button>
+              </form>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="px-8 pt-5 pb-8 text-center text-[0.6875rem] tracking-wide text-muted-foreground/70 sm:px-9">
+        Same account as T201 · Secured by Tito HRIS
+      </p>
+    </div>
   </div>
 );

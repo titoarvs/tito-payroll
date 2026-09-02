@@ -1,6 +1,8 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { Bell, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
+import { TitoLogo } from "~/components/branding/TitoLogo";
+import { PayrollNavLinks } from "~/components/layout/payroll-nav-links";
 import { ModeToggle } from "~/components/mode-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -19,13 +21,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
-import {
-  PAYROLL_NAV_ITEMS,
-  type PayrollNavItem,
-} from "~/config/payroll-navigation";
+import { PAYROLL_NAV_ITEMS } from "~/config/payroll-navigation";
 import { useCurrentUser, useLogout } from "~/hooks/use-current-user";
 import type { HrisUser } from "~/lib/hris-auth";
-import { cn } from "~/lib/utils";
 
 const userRoles = (user: HrisUser | undefined): string[] => {
   if (!user) return [];
@@ -48,6 +46,15 @@ const displayName = (user: HrisUser): string => {
   return fromParts || user.name || user.email;
 };
 
+const roleLabel = (user: HrisUser): string => {
+  const role = user.role || user.roles?.[0];
+  if (!role) return "User";
+  return role
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
 const initialsFrom = (user: HrisUser): string => {
   const name = displayName(user);
   const parts = name.split(/\s+/).filter(Boolean);
@@ -59,11 +66,6 @@ const initialsFrom = (user: HrisUser): string => {
 
 const isHttpImage = (image: string | null | undefined): image is string =>
   typeof image === "string" && /^https?:\/\//i.test(image);
-
-const isNavActive = (pathname: string, item: PayrollNavItem): boolean =>
-  item.exact
-    ? pathname === item.to
-    : pathname === item.to || pathname.startsWith(`${item.to}/`);
 
 export const PayrollHeader = () => {
   const { data: user } = useCurrentUser();
@@ -107,48 +109,38 @@ export const PayrollHeader = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0">
+            <SheetContent side="left" className="gap-0 p-0">
               <SheetHeader className="border-b border-sidebar-border px-4 py-4">
                 <SheetTitle className="text-left">
-                  <span className="font-mont text-sidebar-foreground">
-                    Tito Payroll
-                  </span>
+                  <TitoLogo size="sm" variant="sidebar" />
                 </SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 p-2" aria-label="Mobile">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isNavActive(pathname, item);
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setMobileOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
-                        active
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50",
-                      )}
-                    >
-                      <Icon className="h-[18px] w-[18px] shrink-0" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
+              <nav
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5 py-4"
+                aria-label="Mobile"
+              >
+                <PayrollNavLinks
+                  items={navItems}
+                  pathname={pathname}
+                  onNavigate={() => setMobileOpen(false)}
+                />
               </nav>
+              <div className="mt-auto border-t border-sidebar-border px-4 py-4">
+                <p className="text-[11px] text-muted-foreground">
+                  © {new Date().getFullYear()} Tito
+                </p>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1.5">
           <ModeToggle />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground"
+            className="rounded-md text-muted-foreground"
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
@@ -158,22 +150,39 @@ export const PayrollHeader = () => {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="relative h-9 w-9 rounded-full p-0"
+                className="h-auto gap-2 rounded-md px-1.5 py-1 pr-2"
                 aria-label="User menu"
               >
                 <Avatar className="h-9 w-9">
                   {user && isHttpImage(user.image) ? (
                     <AvatarImage src={user.image} alt="" />
                   ) : null}
-                  <AvatarFallback>{user ? initialsFrom(user) : "…"}</AvatarFallback>
+                  <AvatarFallback>
+                    {user ? initialsFrom(user) : "…"}
+                  </AvatarFallback>
                 </Avatar>
+                {user ? (
+                  <span className="hidden min-w-0 flex-col items-start text-left sm:flex">
+                    <span className="max-w-[9rem] truncate text-sm font-medium leading-tight text-foreground">
+                      {displayName(user)}
+                    </span>
+                    <span className="max-w-[9rem] truncate text-xs leading-tight text-muted-foreground">
+                      {roleLabel(user)}
+                    </span>
+                  </span>
+                ) : null}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-52 rounded-md">
               {user ? (
                 <>
-                  <DropdownMenuLabel className="truncate font-normal">
-                    {displayName(user)}
+                  <DropdownMenuLabel className="space-y-0.5 font-normal">
+                    <p className="truncate text-sm font-medium">
+                      {displayName(user)}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {roleLabel(user)}
+                    </p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                 </>

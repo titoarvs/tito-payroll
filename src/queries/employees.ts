@@ -1,6 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { employeesService } from "~/api-services/employees.service";
-import type { EmployeeListParams } from "~/api-services/employees.types";
+import type {
+  EmployeeDashboardParams,
+  EmployeeListParams,
+} from "~/api-services/employees.types";
 
 export const employeesKeys = {
   all: ["employees"] as const,
@@ -8,6 +11,8 @@ export const employeesKeys = {
     [...employeesKeys.all, "list", params] as const,
   detail: (id: string) => [...employeesKeys.all, "detail", id] as const,
   me: () => [...employeesKeys.all, "me"] as const,
+  dashboard: (params: EmployeeDashboardParams = {}) =>
+    [...employeesKeys.all, "dashboard", params] as const,
 };
 
 export const getEmployeesQuery = (params: EmployeeListParams = {}) =>
@@ -27,4 +32,12 @@ export const getMyEmployeeQuery = () =>
   queryOptions({
     queryKey: employeesKeys.me(),
     queryFn: () => employeesService.getMe(),
+  });
+
+export const getEmployeeDashboardQuery = (
+  params: EmployeeDashboardParams = {},
+) =>
+  queryOptions({
+    queryKey: employeesKeys.dashboard(params),
+    queryFn: () => employeesService.getDashboard(params),
   });

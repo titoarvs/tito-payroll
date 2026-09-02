@@ -1,7 +1,8 @@
 import type { EmployeeListItem } from "~/api-services/employees.types";
 
-export const isHttpImage = (image: string | null | undefined): image is string =>
-  typeof image === "string" && /^https?:\/\//i.test(image);
+export const isHttpImage = (
+  image: string | null | undefined,
+): image is string => typeof image === "string" && /^https?:\/\//i.test(image);
 
 export const displayName = (employee: EmployeeListItem): string =>
   [employee.firstName, employee.lastName].filter(Boolean).join(" ").trim();
@@ -33,7 +34,9 @@ const parseEmployeeDate = (value: string): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-export const formatEmployeeDate = (value: string | null | undefined): string => {
+export const formatEmployeeDate = (
+  value: string | null | undefined,
+): string => {
   if (!value?.trim()) return "—";
   const date = parseEmployeeDate(value);
   if (!date) return "—";
@@ -50,4 +53,34 @@ export const titleCaseStatus = (status: string | null | undefined): string => {
     .trim()
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+/** Badge variant + optional class for employment status pills. */
+export const employmentStatusBadge = (
+  status: string | null | undefined,
+): {
+  label: string;
+  variant: "success" | "secondary" | "muted" | "destructive" | "outline";
+  className?: string;
+} => {
+  const raw = status?.trim().toLowerCase() ?? "";
+  const label = titleCaseStatus(status);
+  if (raw === "regular" || raw === "active") {
+    return { label, variant: "success" };
+  }
+  if (raw === "probationary" || raw === "on_leave" || raw === "onboarding") {
+    return {
+      label,
+      variant: "outline",
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+    };
+  }
+  if (raw === "consultant") {
+    return { label, variant: "secondary" };
+  }
+  if (raw === "resigned" || raw === "terminated" || raw === "inactive") {
+    return { label, variant: "muted" };
+  }
+  return { label, variant: "outline" };
 };

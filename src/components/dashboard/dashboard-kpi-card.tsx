@@ -39,7 +39,7 @@ export const DashboardKpiCard = ({
           ) : null}
         </div>
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/60 text-primary"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/50 text-tito-green-text dark:bg-muted dark:text-primary"
           aria-hidden="true"
         >
           <Icon className="h-5 w-5" />
@@ -49,8 +49,9 @@ export const DashboardKpiCard = ({
   );
 
   const cardClassName = cn(
-    "tito-widget block p-5 transition-[border-color,box-shadow] duration-200",
-    to && "card-hover-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    "tito-widget block border border-border/50 bg-card p-5 transition-[border-color,box-shadow,transform] duration-200",
+    to &&
+      "card-hover-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     className,
   );
 
