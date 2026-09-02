@@ -70,7 +70,12 @@ export const PayrollSignInCard = ({
   onCancelMfa,
   className,
 }: PayrollSignInCardProps) => (
-  <div className={cn("auth-sheet-wrap w-full max-w-[26rem] sm:max-w-[28rem]", className)}>
+  <div
+    className={cn(
+      "auth-sheet-wrap w-full max-w-[26rem] sm:max-w-[28rem]",
+      className,
+    )}
+  >
     <div className="auth-card animate-auth-enter">
       <header className="px-8 pt-10 text-center sm:px-9 sm:pt-11">
         <div className="auth-brand mb-8 flex justify-center">
@@ -82,7 +87,7 @@ export const PayrollSignInCard = ({
         <p className="mx-auto mt-1.5 max-w-[16rem] text-[0.8125rem] leading-relaxed text-muted-foreground">
           {mfaToken
             ? "Enter the code from your authenticator app."
-            : "Sign in with your HRIS account."}
+            : "Sign in with your T201 account."}
         </p>
       </header>
 
@@ -105,7 +110,10 @@ export const PayrollSignInCard = ({
                   inputMode="numeric"
                   value={mfaCode}
                   onChange={(event) => onMfaCodeChange(event.target.value)}
-                  className={cn(authFieldClass, "text-center text-base tracking-[0.28em]")}
+                  className={cn(
+                    authFieldClass,
+                    "text-center text-base tracking-[0.28em]",
+                  )}
                   placeholder="000000"
                   aria-label="MFA authentication code"
                   required

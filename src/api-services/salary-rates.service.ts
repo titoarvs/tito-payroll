@@ -1,9 +1,5 @@
 import { hrisApi } from "~/lib/hris-api-client";
-import type {
-  CreatePayrollSalaryRateInput,
-  CreatePayrollSalaryRateResponse,
-  PayrollSalaryRatesResponse,
-} from "./salary-rates.types";
+import type { PayrollSalaryRatesResponse } from "./salary-rates.types";
 
 const pathFor = (employeeId: string) =>
   `/payroll/employees/${encodeURIComponent(employeeId)}/salary-rates`;
@@ -11,6 +7,4 @@ const pathFor = (employeeId: string) =>
 export const salaryRatesService = {
   listForEmployee: (employeeId: string) =>
     hrisApi.get<PayrollSalaryRatesResponse>(pathFor(employeeId)),
-  createForEmployee: (employeeId: string, input: CreatePayrollSalaryRateInput) =>
-    hrisApi.post<CreatePayrollSalaryRateResponse>(pathFor(employeeId), input),
 };

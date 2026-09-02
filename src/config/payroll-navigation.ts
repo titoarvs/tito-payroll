@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Banknote,
   CalendarDays,
   FileText,
   LayoutDashboard,
@@ -45,13 +44,6 @@ export const PAYROLL_NAV_ITEMS: PayrollNavItem[] = [
     requiresPayrollOps: true,
   },
   {
-    to: "/dashboard/salary-rates",
-    label: "Salary rates",
-    icon: Banknote,
-    section: "organization",
-    requiresPayrollOps: true,
-  },
-  {
     to: "/dashboard/pay-runs",
     label: "Pay runs",
     icon: CalendarDays,
@@ -76,7 +68,6 @@ export const PAYROLL_NAV_ITEMS: PayrollNavItem[] = [
 export const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/employees": "Employees",
-  "/dashboard/salary-rates": "Salary rates",
   "/dashboard/pay-runs": "Pay runs",
   "/dashboard/contribution-tables": "Contribution tables",
   "/dashboard/my-payslips": "My payslips",

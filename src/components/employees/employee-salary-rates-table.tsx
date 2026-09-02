@@ -1,5 +1,3 @@
-import { Link } from "@tanstack/react-router";
-import { ChevronRightIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import type { PayrollSalaryRate } from "~/api-services/salary-rates.types";
 import {
@@ -7,7 +5,6 @@ import {
   formatPayslipMoney,
 } from "~/components/pay-runs/pay-run-display";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -43,7 +40,7 @@ const SALARY_RATE_HISTORY_COLUMN_DEFS: TableColumnDef<SalaryRateHistoryColumnId>
     { id: "status", label: "Status" },
   ];
 
-/** Shared with salary-rates Rate history so prefs stay in sync. */
+/** Employee detail salary rate history table column prefs. */
 const SALARY_RATE_HISTORY_COLUMNS_STORAGE_KEY =
   "payroll.salary-rates-history.tableColumns.v1";
 
@@ -121,8 +118,7 @@ export const EmployeeSalaryRatesTable = ({
         <div className="min-w-0 space-y-1">
           <CardTitle className="text-base">Salary rate history</CardTitle>
           <CardDescription>
-            Clock history for this employee. Newest first — change pay from
-            Salary rates.
+            Clock history for this employee. Newest first.
           </CardDescription>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -132,17 +128,6 @@ export const EmployeeSalaryRatesTable = ({
             onChange={setColumns}
             lockedHint="From stays fixed."
           />
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="h-8 shrink-0 gap-1 active:scale-[0.97] motion-reduce:active:scale-100"
-          >
-            <Link to="/dashboard/salary-rates" search={{ employeeId }}>
-              Manage rates
-              <ChevronRightIcon className="size-3.5 opacity-60" />
-            </Link>
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0">

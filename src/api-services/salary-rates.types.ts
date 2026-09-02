@@ -35,19 +35,3 @@ export interface PayrollSalaryRatesResponse {
   data: PayrollSalaryRatesData;
   message?: string;
 }
-
-export interface CreatePayrollSalaryRateInput {
-  monthlySalary: string;
-  hourlyRate: string;
-  allowance?: string | null;
-  effectiveFrom: string;
-  effectiveTo?: string | null;
-}
-
-export interface CreatePayrollSalaryRateResponse {
-  data: {
-    rate: PayrollSalaryRate;
-    employee: PayrollSalaryRateEmployee;
-  };
-  message?: string;
-}

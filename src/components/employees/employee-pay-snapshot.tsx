@@ -1,8 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { Banknote, ChevronRightIcon } from "lucide-react";
-import { formatPayRunDate, formatPayslipMoney } from "~/components/pay-runs/pay-run-display";
-import { monthlyAllowanceFromCutoff } from "~/components/salary-rates/salary-rate-display";
-import { Button } from "~/components/ui/button";
+import { Banknote } from "lucide-react";
+import {
+  formatPayRunDate,
+  formatPayslipMoney,
+  monthlyAllowanceFromCutoff,
+} from "~/components/pay-runs/pay-run-display";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useEmployeeSalaryRates } from "~/hooks/use-salary-rates";
 import { HrisApiError } from "~/lib/hris-api-client";
@@ -119,23 +120,6 @@ export const EmployeePaySnapshot = ({
           ) : null}
         </dl>
       ) : null}
-
-      <div className="mt-5 border-t border-border/40 pt-4">
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-8 w-full gap-1 active:scale-[0.97] motion-reduce:active:scale-100"
-        >
-          <Link
-            to="/dashboard/salary-rates"
-            search={{ employeeId }}
-          >
-            Manage rates
-            <ChevronRightIcon className="size-3.5 opacity-60" />
-          </Link>
-        </Button>
-      </div>
     </section>
   );
 };

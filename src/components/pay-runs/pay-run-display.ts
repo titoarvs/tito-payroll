@@ -55,3 +55,12 @@ export const payRunStatusLabel = (status: PayRunStatus | string): string => {
   if (status === "released") return "Released";
   return String(status);
 };
+
+/** Two cutoffs per month — monthly total from per-cutoff allowance (2 dp). */
+export const monthlyAllowanceFromCutoff = (perCutoff: string): string => {
+  const cleaned = perCutoff.replace(/,/g, "").trim();
+  if (!cleaned || !/^\d+(\.\d{1,2})?$/.test(cleaned)) return "";
+  const amount = Number(cleaned);
+  if (!Number.isFinite(amount) || amount < 0) return "";
+  return (amount * 2).toFixed(2);
+};
