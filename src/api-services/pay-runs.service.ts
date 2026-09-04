@@ -68,6 +68,7 @@ export const contributionTablesService = {
 
 export const payslipsService = {
   listMine: () => hrisApi.get<ApiListResponse<Payslip[]>>(`${PAYSLIPS}/me`),
+  listAll: () => hrisApi.get<ApiListResponse<Payslip[]>>(PAYSLIPS),
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<Payslip>>(
       `${PAYSLIPS}/${encodeURIComponent(id)}`,

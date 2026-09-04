@@ -9,6 +9,7 @@ import type {
 } from "~/api-services/pay-runs.types";
 import {
   contributionKeys,
+  getAllReleasedPayslipsQuery,
   getContributionSchedulesQuery,
   getEmployeeContributionsQuery,
   getMyPayslipsQuery,
@@ -85,6 +86,10 @@ export const useReplaceBrackets = () => {
   });
 };
 
-export const useMyPayslips = () => useQuery(getMyPayslipsQuery());
+export const useMyPayslips = (enabled = true) =>
+  useQuery({ ...getMyPayslipsQuery(), enabled });
+
+export const useAllReleasedPayslips = (enabled = true) =>
+  useQuery(getAllReleasedPayslipsQuery(enabled));
 
 export const usePayslip = (id: string) => useQuery(getPayslipQuery(id));

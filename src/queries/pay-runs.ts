@@ -24,6 +24,8 @@ export const contributionKeys = {
 
 export const myPayslipsKeys = {
   all: ["my-payslips"] as const,
+  mine: () => [...myPayslipsKeys.all, "mine"] as const,
+  allReleased: () => [...myPayslipsKeys.all, "all-released"] as const,
   detail: (id: string) => [...myPayslipsKeys.all, "detail", id] as const,
 };
 
@@ -68,8 +70,15 @@ export const getEmployeeContributionsQuery = (search = "") =>
 
 export const getMyPayslipsQuery = () =>
   queryOptions({
-    queryKey: myPayslipsKeys.all,
+    queryKey: myPayslipsKeys.mine(),
     queryFn: () => payslipsService.listMine(),
+  });
+
+export const getAllReleasedPayslipsQuery = (enabled = true) =>
+  queryOptions({
+    queryKey: myPayslipsKeys.allReleased(),
+    queryFn: () => payslipsService.listAll(),
+    enabled,
   });
 
 export const getPayslipQuery = (id: string) =>
