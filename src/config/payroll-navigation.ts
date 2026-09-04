@@ -52,7 +52,7 @@ export const PAYROLL_NAV_ITEMS: PayrollNavItem[] = [
   },
   {
     to: "/dashboard/contribution-tables",
-    label: "Contribution tables",
+    label: "Contributions",
     icon: Table2,
     section: "organization",
     requiresPayrollOps: true,
@@ -69,7 +69,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/employees": "Employees",
   "/dashboard/pay-runs": "Pay runs",
-  "/dashboard/contribution-tables": "Contribution tables",
+  "/dashboard/contribution-tables": "Contributions",
   "/dashboard/my-payslips": "My payslips",
 };
 

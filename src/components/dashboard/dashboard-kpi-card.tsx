@@ -3,6 +3,24 @@ import type { LucideIcon } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 
+type KpiAccent = "green" | "blue" | "sky" | "slate";
+
+const ACCENT_ICON: Record<KpiAccent, string> = {
+  green:
+    "border-tito-green/25 bg-tito-green/15 text-tito-dark-green dark:border-tito-green/30 dark:bg-tito-green/10 dark:text-tito-green",
+  blue: "border-tito-blue/20 bg-tito-blue/10 text-tito-blue dark:border-white/15 dark:bg-white/10 dark:text-white",
+  sky: "border-tito-dull-blue/20 bg-tito-dull-blue/10 text-tito-dull-blue dark:border-tito-dull-blue/35 dark:bg-tito-dull-blue/20 dark:text-[#9eb6e0]",
+  slate:
+    "border-border bg-muted/60 text-muted-foreground dark:border-border dark:bg-muted/40",
+};
+
+const ACCENT_HOVER: Record<KpiAccent, string> = {
+  green: "hover:border-tito-green/35",
+  blue: "hover:border-tito-blue/30",
+  sky: "hover:border-tito-dull-blue/35",
+  slate: "hover:border-border",
+};
+
 interface DashboardKpiCardProps {
   label: string;
   value: string | number;
@@ -10,6 +28,7 @@ interface DashboardKpiCardProps {
   icon: LucideIcon;
   isLoading?: boolean;
   to?: string;
+  accent?: KpiAccent;
   className?: string;
 }
 
@@ -20,6 +39,7 @@ export const DashboardKpiCard = ({
   icon: Icon,
   isLoading = false,
   to,
+  accent = "green",
   className,
 }: DashboardKpiCardProps) => {
   const content = (
@@ -39,7 +59,10 @@ export const DashboardKpiCard = ({
           ) : null}
         </div>
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/50 text-tito-green-text dark:bg-muted dark:text-primary"
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
+            ACCENT_ICON[accent],
+          )}
           aria-hidden="true"
         >
           <Icon className="h-5 w-5" />
@@ -49,9 +72,12 @@ export const DashboardKpiCard = ({
   );
 
   const cardClassName = cn(
-    "tito-widget block border border-border/50 bg-card p-5 transition-[border-color,box-shadow,transform] duration-200",
+    "tito-widget block border border-border/60 bg-card p-5 transition-[border-color,box-shadow,transform] duration-200",
     to &&
-      "card-hover-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      cn(
+        "card-hover-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        ACCENT_HOVER[accent],
+      ),
     className,
   );
 

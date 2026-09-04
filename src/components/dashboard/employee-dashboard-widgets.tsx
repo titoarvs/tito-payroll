@@ -27,6 +27,7 @@ export const EmployeeDashboardWidgets = ({
           value={formatCount(counts?.totalEmployees)}
           hint="All statuses"
           icon={Users}
+          accent="blue"
           isLoading={isPending}
           to="/dashboard/employees"
         />
@@ -35,6 +36,7 @@ export const EmployeeDashboardWidgets = ({
           value={formatCount(counts?.activeEmployees)}
           hint="Active employment set"
           icon={UserPlus}
+          accent="green"
           isLoading={isPending}
           to="/dashboard/employees"
         />
@@ -47,6 +49,7 @@ export const EmployeeDashboardWidgets = ({
               : "Recent hires"
           }
           icon={Building2}
+          accent="sky"
           isLoading={isPending}
           to="/dashboard/employees"
         />
@@ -55,6 +58,7 @@ export const EmployeeDashboardWidgets = ({
           value={formatCount(counts?.inactiveEmployees)}
           hint="Resigned / terminated / inactive"
           icon={UserMinus}
+          accent="slate"
           isLoading={isPending}
           to="/dashboard/employees"
         />

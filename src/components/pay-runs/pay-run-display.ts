@@ -64,3 +64,46 @@ export const monthlyAllowanceFromCutoff = (perCutoff: string): string => {
   if (!Number.isFinite(amount) || amount < 0) return "";
   return (amount * 2).toFixed(2);
 };
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+const isoDate = (year: number, monthIndex: number, day: number): string =>
+  `${year}-${pad2(monthIndex + 1)}-${pad2(day)}`;
+
+/** Last calendar day of `year` / `monthIndex` (0-based). */
+const lastDayOfMonth = (year: number, monthIndex: number): number =>
+  new Date(year, monthIndex + 1, 0).getDate();
+
+/**
+ * Semi-monthly PH cutoffs for a given half in `year` / `monthIndex` (0-based):
+ * first = 1–15, second = 16–end.
+ */
+export const payPeriodForHalf = (
+  year: number,
+  monthIndex: number,
+  half: CutoffHalf,
+): { start: string; end: string } => {
+  if (half === "first") {
+    return {
+      start: isoDate(year, monthIndex, 1),
+      end: isoDate(year, monthIndex, 15),
+    };
+  }
+  const last = lastDayOfMonth(year, monthIndex);
+  return {
+    start: isoDate(year, monthIndex, 16),
+    end: isoDate(year, monthIndex, last),
+  };
+};
+
+/** Current cutoff half + period for `date` (defaults to today). */
+export const defaultPayPeriod = (
+  date: Date = new Date(),
+): { start: string; end: string; cutoffHalf: CutoffHalf } => {
+  const year = date.getFullYear();
+  const monthIndex = date.getMonth();
+  const day = date.getDate();
+  const cutoffHalf: CutoffHalf = day <= 15 ? "first" : "second";
+  const { start, end } = payPeriodForHalf(year, monthIndex, cutoffHalf);
+  return { start, end, cutoffHalf };
+};

@@ -10,15 +10,20 @@ import type {
 import {
   contributionKeys,
   getContributionSchedulesQuery,
+  getEmployeeContributionsQuery,
   getMyPayslipsQuery,
   getPayRunPayslipsQuery,
   getPayRunQuery,
   getPayRunsQuery,
+  getPayrollDashboardSummaryQuery,
   getPayslipQuery,
   payRunsKeys,
 } from "~/queries/pay-runs";
 
 export const usePayRuns = () => useQuery(getPayRunsQuery());
+
+export const usePayrollDashboardSummary = (from = "", to = "") =>
+  useQuery(getPayrollDashboardSummaryQuery(from, to));
 
 export const usePayRun = (id: string) => useQuery(getPayRunQuery(id));
 
@@ -60,6 +65,9 @@ export const useReleasePayRun = () => {
 
 export const useContributionSchedules = () =>
   useQuery(getContributionSchedulesQuery());
+
+export const useEmployeeContributions = (search = "") =>
+  useQuery(getEmployeeContributionsQuery(search));
 
 export const useReplaceBrackets = () => {
   const queryClient = useQueryClient();
