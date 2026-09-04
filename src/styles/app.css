@@ -831,4 +831,9 @@
     box-shadow: none !important;
     border-radius: 0 !important;
   }
+
+  #payslip-document header {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeftIcon, DownloadIcon, PrinterIcon } from "lucide-react";
+import { formatPayRunPeriod } from "~/components/pay-runs/pay-run-display";
 import { PayslipView } from "~/components/pay-runs/payslip-view";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -22,44 +23,49 @@ export const PayslipDetailPage = ({ payslipId }: PayslipDetailPageProps) => {
   const payslip = data?.data;
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex w-full min-w-0 flex-col gap-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <Link
             to="/dashboard/my-payslips"
-            className="mb-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="mb-1.5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeftIcon className="size-4 shrink-0" />
-            Back
+            Back to payslips
           </Link>
-          <h1 className="page-title text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-            Payslip details
+          <h1 className="page-title text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            Payslip
           </h1>
+          {payslip?.employeeName ? (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {payslip.employeeName}
+              {payslip.periodStart && payslip.periodEnd
+                ? ` · ${formatPayRunPeriod(payslip.periodStart, payslip.periodEnd)}`
+                : ""}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm"
+            className="h-9 gap-1.5"
             disabled={!payslip}
             onClick={() => window.print()}
           >
-            <PrinterIcon className="size-3.5 sm:size-4" />
-            <span className="sm:hidden">Print</span>
-            <span className="hidden sm:inline">Print payslip</span>
+            <PrinterIcon className="size-4" />
+            Print
           </Button>
           <Button
             type="button"
-            variant="outline"
             size="sm"
-            className="h-8 gap-1.5 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm"
+            className="h-9 gap-1.5"
             disabled={!payslip}
             onClick={() => window.print()}
           >
-            <DownloadIcon className="size-3.5 sm:size-4" />
-            <span className="sm:hidden">PDF</span>
-            <span className="hidden sm:inline">Download PDF</span>
+            <DownloadIcon className="size-4" />
+            Download PDF
           </Button>
         </div>
       </div>
