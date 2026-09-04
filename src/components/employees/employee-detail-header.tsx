@@ -3,6 +3,7 @@ import type {
   EmployeeDetail,
   EmployeeLinkedUser,
 } from "~/api-services/employees.types";
+import { EmployeeBannerParticles } from "~/components/employees/employee-banner-particles";
 import {
   employmentStatusBadge,
   formatEmployeeDate,
@@ -72,15 +73,34 @@ export const EmployeeDetailHeader = ({
   return (
     <section
       className={cn(
-        "tito-widget animate-employee-card overflow-hidden",
+        "tito-widget tito-brand-surface employee-detail-banner animate-employee-card overflow-hidden border-border/40",
         className,
       )}
       aria-label={`${name} profile`}
     >
-      <div className="flex flex-col gap-5 p-5 sm:gap-6 sm:p-6 lg:flex-row lg:items-center lg:gap-8">
-        <div className="flex min-w-0 flex-1 items-start gap-4 sm:items-center">
+      <div
+        className="tito-brand-surface__orb tito-brand-surface__orb--lime"
+        aria-hidden
+      />
+      <div
+        className="tito-brand-surface__orb tito-brand-surface__orb--sky"
+        aria-hidden
+      />
+      <div className="tito-brand-surface__sheen" aria-hidden />
+      <EmployeeBannerParticles />
+
+      <div
+        className={cn(
+          "employee-detail-banner__content grid gap-5 p-5 sm:gap-6 sm:p-6 xl:p-7",
+          "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-stretch lg:gap-8",
+          "xl:grid-cols-[minmax(280px,1.15fr)_minmax(360px,1.35fr)_minmax(220px,0.85fr)] xl:gap-10",
+          "2xl:grid-cols-[minmax(320px,1.2fr)_minmax(420px,1.4fr)_minmax(260px,0.9fr)] 2xl:gap-12",
+        )}
+      >
+        {/* Identity */}
+        <div className="flex min-w-0 items-start gap-4 sm:items-center xl:gap-5">
           <div
-            className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted text-base font-semibold text-foreground sm:size-16"
+            className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted text-base font-semibold text-foreground sm:size-16 xl:size-20 xl:text-lg 2xl:size-24 2xl:text-xl"
             aria-hidden={photoUrl ? undefined : true}
           >
             {photoUrl ? (
@@ -90,19 +110,24 @@ export const EmployeeDetailHeader = ({
             )}
           </div>
 
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="min-w-0 flex-1 space-y-2.5 xl:space-y-3">
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl xl:text-[1.75rem] xl:leading-tight 2xl:text-3xl">
                 {name}
               </h1>
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                {position}
-                {department !== emptyValue ? ` · ${department}` : null}
-              </p>
+              {position !== emptyValue || department !== emptyValue ? (
+                <p className="mt-1 truncate text-sm text-muted-foreground xl:text-base">
+                  {position !== emptyValue ? position : null}
+                  {position !== emptyValue && department !== emptyValue
+                    ? " · "
+                    : null}
+                  {department !== emptyValue ? department : null}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[11px] text-muted-foreground xl:px-2.5 xl:py-1 xl:text-xs">
                 {employee.employeeCode}
               </span>
               <Badge variant={isActive ? "success" : "muted"}>
@@ -122,44 +147,73 @@ export const EmployeeDetailHeader = ({
           </div>
         </div>
 
+        {/* Contact facts */}
         <div
           className={cn(
-            "flex min-w-0 flex-col gap-4 border-t border-border/40 pt-4",
-            "lg:max-w-xl lg:flex-1 lg:flex-row lg:items-center lg:gap-6 lg:border-t-0 lg:pt-0",
+            "min-w-0 border-t border-border/40 pt-4",
+            "lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8",
+            "xl:pl-10",
           )}
         >
-          <ul className="min-w-0 flex-1 space-y-2" aria-label="Contact">
-            <ContactRow icon={Mail} label="Email" value={email} />
-            <ContactRow icon={Phone} label="Phone" value={phone} />
-            <ContactRow icon={CalendarDays} label="Joined" value={joinDate} />
-            <ContactRow icon={UserRound} label="Civil status" value={civilStatus} />
-          </ul>
-
-          <div
+          <p className="mb-3 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground uppercase xl:mb-4">
+            Contact & tenure
+          </p>
+          <ul
             className={cn(
-              "shrink-0 border-t border-border/40 pt-4",
-              "lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6",
+              "grid gap-3",
+              "sm:grid-cols-2",
+              "xl:grid-cols-2 xl:gap-x-6 xl:gap-y-4",
+              "2xl:grid-cols-4 2xl:gap-5",
+            )}
+            aria-label="Contact"
+          >
+            <FactCell icon={Mail} label="Email" value={email} />
+            <FactCell icon={Phone} label="Phone" value={phone} />
+            <FactCell icon={CalendarDays} label="Joined" value={joinDate} />
+            <FactCell
+              icon={UserRound}
+              label="Civil status"
+              value={civilStatus}
+            />
+          </ul>
+        </div>
+
+        {/* Benefits */}
+        <div
+          className={cn(
+            "min-w-0 border-t border-border/40 pt-4",
+            "lg:col-span-2 lg:border-t lg:pt-4",
+            "xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-10",
+          )}
+        >
+          <p className="mb-3 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground uppercase xl:mb-4">
+            Benefits
+          </p>
+          <ul
+            className={cn(
+              "grid gap-2",
+              "grid-cols-2 sm:grid-cols-4",
+              "lg:grid-cols-4",
+              "xl:grid-cols-1 xl:gap-2.5",
+              "2xl:grid-cols-2",
             )}
           >
-            <p className="sr-only">Benefits</p>
-            <ul className="flex flex-wrap gap-1.5 lg:w-44 lg:flex-col">
-              {benefits.map((item) => (
-                <BenefitChip
-                  key={item.label}
-                  label={item.label}
-                  coverage={item.coverage}
-                  detail={item.detail}
-                />
-              ))}
-            </ul>
-          </div>
+            {benefits.map((item) => (
+              <BenefitChip
+                key={item.label}
+                label={item.label}
+                coverage={item.coverage}
+                detail={item.detail}
+              />
+            ))}
+          </ul>
         </div>
       </div>
     </section>
   );
 };
 
-const ContactRow = ({
+const FactCell = ({
   icon: Icon,
   label,
   value,
@@ -168,18 +222,17 @@ const ContactRow = ({
   label: string;
   value: string;
 }) => (
-  <li className="flex min-w-0 items-center gap-2.5 text-sm">
-    <Icon
-      className="size-3.5 shrink-0 text-muted-foreground"
-      aria-hidden
-    />
-    <span className="sr-only">{label}</span>
-    <span
-      className="min-w-0 truncate font-medium text-foreground"
+  <li className="fact-cell min-w-0 rounded-lg border border-border/40 px-3 py-2.5 xl:px-3.5 xl:py-3">
+    <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-[0.06em] text-muted-foreground uppercase">
+      <Icon className="size-3 shrink-0" aria-hidden />
+      {label}
+    </div>
+    <p
+      className="mt-1 truncate text-sm font-medium text-foreground xl:text-[0.95rem]"
       title={value}
     >
       {value}
-    </span>
+    </p>
   </li>
 );
 
@@ -205,7 +258,7 @@ const BenefitChip = ({
     <li
       title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs",
+        "inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs xl:px-3 xl:py-2 xl:text-sm",
         coverage === "yes" &&
           "border-emerald-500/25 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
         coverage === "no" &&
@@ -224,17 +277,12 @@ const BenefitChip = ({
         aria-hidden
       />
       <span className="font-medium">{label}</span>
-      {detail ? (
-        <span className="max-w-[6rem] truncate text-muted-foreground">
-          {detail}
-        </span>
-      ) : null}
-      <span className="sr-only">
+      <span className="truncate text-[11px] text-current/70 xl:text-xs">
         {coverage === "yes"
-          ? "covered"
+          ? detail || "Covered"
           : coverage === "no"
-            ? "not covered"
-            : "unknown"}
+            ? "Not covered"
+            : "Unknown"}
       </span>
     </li>
   );

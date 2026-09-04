@@ -318,17 +318,17 @@ export const PayrollWelcomeDashboard = ({
         className="grid gap-4 lg:grid-cols-12"
         aria-label="Payroll overview"
       >
-        <div className="payroll-cutoff-hero p-0 lg:col-span-5">
+        <div className="payroll-cutoff-hero tito-brand-surface p-0 lg:col-span-5">
           <div className="payroll-cutoff-hero__mesh" aria-hidden />
           <div
-            className="payroll-cutoff-hero__orb payroll-cutoff-hero__orb--lime"
+            className="tito-brand-surface__orb tito-brand-surface__orb--lime payroll-cutoff-hero__orb payroll-cutoff-hero__orb--lime"
             aria-hidden
           />
           <div
-            className="payroll-cutoff-hero__orb payroll-cutoff-hero__orb--sky"
+            className="tito-brand-surface__orb tito-brand-surface__orb--sky payroll-cutoff-hero__orb payroll-cutoff-hero__orb--sky"
             aria-hidden
           />
-          <div className="payroll-cutoff-hero__sheen" aria-hidden />
+          <div className="tito-brand-surface__sheen" aria-hidden />
           <div className="payroll-cutoff-hero__glass">
             <div className="payroll-cutoff-hero__icon">
               <CalendarDays className="size-5" aria-hidden />
