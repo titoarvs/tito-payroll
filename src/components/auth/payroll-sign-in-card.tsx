@@ -5,6 +5,7 @@ import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { appVersion } from "~/config/appVersion";
 import { cn } from "~/lib/utils";
 
 const GoogleMark = () => (
@@ -223,8 +224,11 @@ export const PayrollSignInCard = ({
         </div>
       </div>
 
-      <p className="px-8 pt-5 pb-8 text-center text-[0.6875rem] tracking-wide text-muted-foreground/70 sm:px-9">
-        Same account as T201 · Secured by Tito HRIS
+      <p
+        className="px-8 pt-5 pb-8 text-center text-[0.6875rem] tracking-wide text-muted-foreground/70 sm:px-9"
+        title={`Version ${appVersion}`}
+      >
+        v{appVersion}
       </p>
     </div>
   </div>

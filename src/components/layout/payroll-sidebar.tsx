@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { TitoLogo } from "~/components/branding/TitoLogo";
 import { PayrollNavLinks } from "~/components/layout/payroll-nav-links";
 import { Button } from "~/components/ui/button";
+import { appVersion } from "~/config/appVersion";
 import { PAYROLL_NAV_ITEMS } from "~/config/payroll-navigation";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { useSidebarCollapsed } from "~/hooks/use-sidebar-collapsed";
@@ -100,14 +101,16 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
           "shrink-0 border-t border-sidebar-border px-3 py-4",
           isCollapsed && "px-2",
         )}
+        title={`Version ${appVersion}`}
       >
-        {!isCollapsed ? (
-          <p className="px-1 text-[11px] text-muted-foreground">
-            © {new Date().getFullYear()} Tito
-          </p>
-        ) : (
-          <span className="sr-only">© Tito</span>
-        )}
+        <p
+          className={cn(
+            "text-[11px] font-medium text-muted-foreground",
+            isCollapsed ? "text-center" : "px-1 text-end",
+          )}
+        >
+          v{appVersion}
+        </p>
       </div>
     </aside>
   );
