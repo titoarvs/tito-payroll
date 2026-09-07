@@ -51,7 +51,7 @@ export const PayrollNavLinks = ({
                 className={cn(
                   "relative flex items-center overflow-hidden rounded-md py-2.5 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]",
                   active
-                    ? "bg-tito-blue text-tito-foreground shadow-sm dark:bg-primary dark:text-primary-foreground"
+                    ? "bg-tito-green text-tito-dark-green shadow-sm"
                     : "text-foreground/70 hover:bg-muted hover:text-foreground",
                   collapsed ? "justify-center gap-0 px-2" : "gap-3 px-3",
                 )}
@@ -60,7 +60,7 @@ export const PayrollNavLinks = ({
                   className={cn(
                     "h-[18px] w-[18px] shrink-0",
                     active
-                      ? "text-tito-foreground dark:text-primary-foreground"
+                      ? "text-tito-dark-green"
                       : "text-muted-foreground",
                   )}
                 />

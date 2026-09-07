@@ -5,8 +5,10 @@ import {
   monthlyAllowanceFromCutoff,
 } from "~/components/pay-runs/pay-run-display";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { useEmployeeSalaryRates } from "~/hooks/use-salary-rates";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canViewEmployeeSalaryRates } from "~/lib/payroll-access";
 import { cn } from "~/lib/utils";
 
 type EmployeePaySnapshotProps = {
@@ -18,9 +20,11 @@ export const EmployeePaySnapshot = ({
   employeeId,
   className,
 }: EmployeePaySnapshotProps) => {
+  const { data: user, isPending: isUserPending } = useCurrentUser();
+  const canView = canViewEmployeeSalaryRates(user);
   const { data, isPending, isError, error } = useEmployeeSalaryRates(
     employeeId,
-    { enabled: Boolean(employeeId) },
+    { enabled: Boolean(employeeId) && canView },
   );
 
   const forbidden =
@@ -31,7 +35,7 @@ export const EmployeePaySnapshot = ({
     error.status === 400 &&
     /linked account/i.test(error.message);
 
-  if (isError && forbidden) {
+  if (isUserPending || !canView || (isError && forbidden)) {
     return null;
   }
 

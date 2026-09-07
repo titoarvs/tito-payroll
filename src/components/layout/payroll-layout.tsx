@@ -25,12 +25,12 @@ const PayrollLayoutFrame = ({ children }: PayrollLayoutProps) => {
       <PayrollSidebar />
       <div
         className={cn(
-          "flex h-full flex-col overflow-hidden transition-[margin] duration-300 ease-in-out md:transition-[margin-left]",
+          "flex h-full flex-col overflow-hidden bg-white transition-[margin] duration-300 ease-in-out md:transition-[margin-left] dark:bg-card",
           isCollapsed ? "md:ml-16" : "md:ml-64",
         )}
       >
         <PayrollHeader />
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-5 md:px-8 md:py-8">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-white px-4 py-5 md:px-8 md:py-8 dark:bg-card">
           <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
         </main>
       </div>

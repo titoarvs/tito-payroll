@@ -1,10 +1,13 @@
 import { Link } from "@tanstack/react-router";
+import { parseISO } from "date-fns";
 import { useState, type ReactNode } from "react";
 import type { CutoffHalf, PayRun } from "~/api-services/pay-runs.types";
 import { PageHeader } from "~/components/layout/page-header";
 import {
   cutoffHalfLabel,
+  defaultPayPeriod,
   formatPayRunPeriod,
+  payPeriodForHalf,
 } from "~/components/pay-runs/pay-run-display";
 import { PeriodDateRangeField } from "~/components/pay-runs/period-date-range-field";
 import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
@@ -50,6 +53,17 @@ const PAY_RUN_COLUMN_DEFS: TableColumnDef<PayRunColumnId>[] = [
 
 const PAY_RUN_COLUMNS_STORAGE_KEY = "payroll.pay-runs.tableColumns.v1";
 
+const INITIAL_PERIOD = defaultPayPeriod();
+
+const monthAnchorFromPeriod = (start: string, end: string): Date => {
+  const preferred = start || end;
+  if (preferred) {
+    const parsed = parseISO(preferred);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date();
+};
+
 const renderPayRunColumnCell = (
   id: PayRunColumnId,
   run: PayRun,
@@ -71,9 +85,11 @@ const renderPayRunColumnCell = (
 export const PayRunsList = () => {
   const { data, isPending, isError, error } = usePayRuns();
   const create = useCreatePayRun();
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
-  const [cutoffHalf, setCutoffHalf] = useState<CutoffHalf>("first");
+  const [periodStart, setPeriodStart] = useState(INITIAL_PERIOD.start);
+  const [periodEnd, setPeriodEnd] = useState(INITIAL_PERIOD.end);
+  const [cutoffHalf, setCutoffHalf] = useState<CutoffHalf>(
+    INITIAL_PERIOD.cutoffHalf,
+  );
   const { columns, setColumns, visibleIds, labelById } = useTableColumns(
     PAY_RUN_COLUMNS_STORAGE_KEY,
     PAY_RUN_COLUMN_DEFS,
@@ -90,14 +106,32 @@ export const PayRunsList = () => {
   const canCreate = Boolean(periodStart && periodEnd && periodStart <= periodEnd);
   const colSpan = 2 + visibleIds.length;
 
+  const applyDefaultPeriod = () => {
+    const next = defaultPayPeriod();
+    setPeriodStart(next.start);
+    setPeriodEnd(next.end);
+    setCutoffHalf(next.cutoffHalf);
+  };
+
+  const handleCutoffHalfChange = (value: CutoffHalf) => {
+    setCutoffHalf(value);
+    const anchor = monthAnchorFromPeriod(periodStart, periodEnd);
+    const next = payPeriodForHalf(
+      anchor.getFullYear(),
+      anchor.getMonth(),
+      value,
+    );
+    setPeriodStart(next.start);
+    setPeriodEnd(next.end);
+  };
+
   const handleCreate = () => {
     if (!canCreate) return;
     create.mutate(
       { periodStart, periodEnd, cutoffHalf },
       {
         onSuccess: () => {
-          setPeriodStart("");
-          setPeriodEnd("");
+          applyDefaultPeriod();
         },
       },
     );
@@ -135,7 +169,9 @@ export const PayRunsList = () => {
               <Label htmlFor="cutoff-half">Cutoff half</Label>
               <Select
                 value={cutoffHalf}
-                onValueChange={(value) => setCutoffHalf(value as CutoffHalf)}
+                onValueChange={(value) =>
+                  handleCutoffHalfChange(value as CutoffHalf)
+                }
                 disabled={create.isPending}
               >
                 <SelectTrigger id="cutoff-half" className="w-full">

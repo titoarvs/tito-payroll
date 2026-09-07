@@ -21,6 +21,22 @@ export interface ContributionSchedule {
   brackets: ContributionBracket[];
 }
 
+export interface EmployeeContributionRow {
+  id: string;
+  employeeCode: string;
+  firstName: string;
+  lastName: string;
+  department: string | null;
+  employmentStatus: string;
+  monthlySalary: string | null;
+  sssCovered: boolean;
+  pagibigCovered: boolean;
+  philhealthCovered: boolean;
+  sss: string;
+  hdmf: string;
+  philhealth: string;
+}
+
 export interface PayRun {
   id: string;
   periodStart: string;
@@ -81,4 +97,31 @@ export interface ReplaceBracketsInput {
 export interface ApiListResponse<T> {
   data: T;
   message?: string;
+}
+
+export interface PayrollMoneyTotals {
+  payslipCount: number;
+  grossPay: string;
+  totalDeductions: string;
+  netPay: string;
+  sss: string;
+  hdmf: string;
+  philhealth: string;
+  contributionsTotal: string;
+  overtimePay?: string;
+  nightDiffPay?: string;
+  holidayPay?: string;
+  totalAdjustments?: string;
+}
+
+export interface PayrollLatestReleasedTotals extends PayrollMoneyTotals {
+  payRunId: string;
+  periodStart: string;
+  periodEnd: string;
+  cutoffHalf: CutoffHalf | string;
+}
+
+export interface PayrollDashboardSummary {
+  released: PayrollMoneyTotals;
+  latestReleased: PayrollLatestReleasedTotals | null;
 }

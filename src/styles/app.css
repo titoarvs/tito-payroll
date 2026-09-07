@@ -67,6 +67,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -120,6 +121,7 @@
   --accent: color-mix(in srgb, var(--tito-green) 22%, var(--tito-foreground));
   --accent-foreground: var(--tito-dark-green);
   --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
   --border: color-mix(in srgb, var(--tito-dull-blue) 22%, transparent);
   --input: color-mix(in srgb, var(--tito-dull-blue) 18%, #ffffff);
   --ring: #2e7d32;
@@ -168,6 +170,7 @@
   --accent: #1e1e21;
   --accent-foreground: #fafafa;
   --destructive: #ff6b6b;
+  --destructive-foreground: #1a0505;
   --border: #27272a;
   --input: #1a1a1d;
   --ring: #a8e049;
@@ -215,9 +218,11 @@
 
   .glass-nav {
     border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-    background: color-mix(in srgb, var(--background) 72%, transparent);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: #ffffff;
+  }
+
+  .dark .glass-nav {
+    background: var(--card);
   }
 
   .page-surface {
@@ -244,6 +249,318 @@
     box-shadow:
       0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent) inset,
       0 4px 16px rgb(0 0 0 / 30%);
+  }
+
+  /* Shared brand surface — used by cutoff hero + employee banner */
+  .tito-brand-surface {
+    --brand-surface-ink: var(--tito-blue);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        90% 120% at 100% 0%,
+        color-mix(in srgb, var(--tito-green) 8%, transparent) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        70% 100% at 0% 100%,
+        color-mix(in srgb, var(--tito-dull-blue) 6%, transparent) 0%,
+        transparent 50%
+      ),
+      linear-gradient(
+        145deg,
+        #ffffff 0%,
+        color-mix(in srgb, var(--tito-green) 4%, #ffffff) 45%,
+        color-mix(in srgb, var(--tito-dull-blue) 3%, #ffffff) 100%
+      );
+    box-shadow:
+      0 1px 0 color-mix(in srgb, white 25%, transparent) inset,
+      0 8px 20px color-mix(in srgb, var(--tito-blue) 4%, transparent);
+    color: var(--brand-surface-ink);
+  }
+
+  .tito-brand-surface::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 1;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--tito-dull-blue) 12%, transparent) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .tito-brand-surface__sheen {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      color-mix(in srgb, white 8%, transparent) 0%,
+      transparent 40%,
+      transparent 100%
+    );
+  }
+
+  .tito-brand-surface__orb {
+    position: absolute;
+    z-index: 0;
+    border-radius: 9999px;
+    pointer-events: none;
+    filter: blur(2px);
+  }
+
+  .tito-brand-surface__orb--lime {
+    top: -32%;
+    right: -10%;
+    width: 15rem;
+    height: 15rem;
+    background: radial-gradient(
+      circle at 40% 40%,
+      color-mix(in srgb, var(--tito-green) 22%, transparent) 0%,
+      transparent 70%
+    );
+    opacity: 0.35;
+  }
+
+  .tito-brand-surface__orb--sky {
+    bottom: -40%;
+    left: 6%;
+    width: 17rem;
+    height: 17rem;
+    background: radial-gradient(
+      circle at 50% 40%,
+      color-mix(in srgb, var(--tito-dull-blue) 16%, transparent) 0%,
+      transparent 72%
+    );
+    opacity: 0.3;
+  }
+
+  .dark .tito-brand-surface {
+    background:
+      radial-gradient(
+        90% 120% at 100% 0%,
+        color-mix(in srgb, var(--tito-green) 10%, transparent) 0%,
+        transparent 55%
+      ),
+      linear-gradient(
+        145deg,
+        var(--card) 0%,
+        color-mix(in srgb, var(--tito-green) 5%, var(--card)) 50%,
+        var(--card) 100%
+      );
+    box-shadow:
+      0 1px 0 color-mix(in srgb, white 8%, transparent) inset,
+      0 8px 20px rgb(0 0 0 / 28%);
+    color: var(--foreground);
+  }
+
+  /* Cutoff hero — shared brand surface */
+  .payroll-cutoff-hero {
+    --hero-ink: #012241;
+    display: flex;
+    min-height: 15rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--tito-dull-blue) 12%, transparent);
+  }
+
+  .payroll-cutoff-hero__mesh {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--tito-dull-blue) 6%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--tito-dull-blue) 6%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 28px 28px;
+    mask-image: radial-gradient(80% 70% at 70% 30%, black 20%, transparent 75%);
+    opacity: 0.2;
+  }
+
+  .payroll-cutoff-hero__orb {
+    will-change: transform, opacity;
+  }
+
+  .payroll-cutoff-hero__orb--lime {
+    animation: payroll-hero-drift 14s ease-in-out infinite alternate;
+  }
+
+  .payroll-cutoff-hero__orb--sky {
+    animation: payroll-hero-drift 18s ease-in-out infinite alternate-reverse;
+  }
+
+  .payroll-cutoff-hero__glass {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: transparent;
+    border-top: none;
+    animation: payroll-hero-materialize 0.55s var(--ease-out) both;
+  }
+
+  @media (min-width: 640px) {
+    .payroll-cutoff-hero__glass {
+      padding: 1.5rem;
+    }
+  }
+
+  .payroll-cutoff-hero__icon {
+    display: flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.85rem;
+    color: var(--tito-dark-green);
+    background: color-mix(in srgb, var(--tito-green) 70%, white);
+    border: 1px solid color-mix(in srgb, var(--tito-green) 35%, transparent);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--tito-blue) 8%, transparent);
+  }
+
+  .payroll-cutoff-hero__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--foreground);
+  }
+
+  .payroll-cutoff-hero__copy {
+    max-width: 22rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    color: var(--muted-foreground);
+  }
+
+  .payroll-cutoff-hero__cta {
+    margin-top: auto;
+    width: fit-content;
+  }
+
+  .payroll-cutoff-hero__cta :is(a, button) {
+    background: color-mix(in srgb, var(--tito-green) 78%, var(--tito-dark-green));
+    color: var(--hero-ink);
+    border-color: transparent;
+    box-shadow:
+      0 1px 0 color-mix(in srgb, white 35%, transparent) inset,
+      0 6px 16px color-mix(in srgb, var(--tito-blue) 12%, transparent);
+    transition:
+      transform 100ms ease-out,
+      background-color 160ms var(--ease-out),
+      box-shadow 160ms var(--ease-out);
+  }
+
+  .payroll-cutoff-hero__cta :is(a, button):hover {
+    background: var(--tito-green);
+  }
+
+  .payroll-cutoff-hero__cta :is(a, button):active {
+    transform: scale(0.97);
+  }
+
+  @keyframes payroll-hero-drift {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(-3%, 4%, 0) scale(1.06);
+    }
+  }
+
+  @keyframes payroll-hero-materialize {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .dark .payroll-cutoff-hero {
+    border-color: color-mix(in srgb, white 10%, transparent);
+  }
+
+  /* Employee detail banner — shared brand surface */
+  .employee-detail-banner {
+    border-radius: inherit;
+  }
+
+  .employee-detail-banner__particles {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .employee-detail-banner__particle {
+    position: absolute;
+    border-radius: 9999px;
+    opacity: 0.22;
+    will-change: transform, opacity;
+    animation-name: employee-banner-particle-drift;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
+
+  .employee-detail-banner__particle--lime {
+    background: color-mix(in srgb, var(--tito-green) 55%, transparent);
+    box-shadow: none;
+  }
+
+  .employee-detail-banner__particle--sky {
+    background: color-mix(in srgb, var(--tito-dull-blue) 40%, transparent);
+    box-shadow: none;
+  }
+
+  @keyframes employee-banner-particle-drift {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 0.14;
+    }
+    to {
+      transform: translate3d(0, -8px, 0) scale(1.2);
+      opacity: 0.32;
+    }
+  }
+
+  .employee-detail-banner__content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .employee-detail-banner .fact-cell {
+    background: color-mix(in srgb, white 72%, transparent);
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    border-color: color-mix(in srgb, var(--tito-dull-blue) 10%, transparent);
+    box-shadow: none;
+  }
+
+  .dark .employee-detail-banner .fact-cell {
+    background: color-mix(in srgb, var(--card) 70%, transparent);
   }
 
   .card-hover-lift {
@@ -288,7 +605,8 @@
   @media (hover: hover) and (pointer: fine) {
     .card-hover-lift:hover {
       @apply -translate-y-0.5 border-primary/30;
-      box-shadow: 0 8px 24px color-mix(in srgb, var(--tito-green) 12%, transparent);
+      box-shadow: 0 8px 24px
+        color-mix(in srgb, var(--tito-green) 12%, transparent);
     }
   }
 
@@ -496,9 +814,11 @@
 
 @media (prefers-reduced-transparency: reduce) {
   .glass-nav {
-    background: var(--background);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: #ffffff;
+  }
+
+  .dark .glass-nav {
+    background: var(--card);
   }
 
   .auth-card {
@@ -521,6 +841,29 @@
     background: var(--background);
     backdrop-filter: none;
   }
+
+  .tito-brand-surface {
+    background: color-mix(in srgb, var(--card) 96%, var(--tito-green));
+  }
+
+  .tito-brand-surface__orb,
+  .tito-brand-surface__sheen,
+  .payroll-cutoff-hero__mesh,
+  .employee-detail-banner__particles {
+    display: none;
+  }
+
+  .payroll-cutoff-hero__glass {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .employee-detail-banner .fact-cell {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -528,6 +871,33 @@
   .card-hover-lift:hover {
     transform: none;
     transition: border-color 0.15s ease;
+  }
+
+  .payroll-cutoff-hero__orb--lime,
+  .payroll-cutoff-hero__orb--sky {
+    animation: none;
+  }
+
+  .employee-detail-banner__particle {
+    animation: none;
+    opacity: 0.18;
+  }
+
+  .payroll-cutoff-hero__glass {
+    animation: payroll-hero-fade 0.2s ease both;
+  }
+
+  .payroll-cutoff-hero__cta :is(a, button):active {
+    transform: none;
+  }
+
+  @keyframes payroll-hero-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .animate-auth-enter,
@@ -579,5 +949,10 @@
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+  }
+
+  #payslip-document header {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

@@ -252,7 +252,6 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
                   handleRelease();
                 }}
                 disabled={release.isPending}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {release.isPending ? "Releasing…" : "Confirm release"}
               </AlertDialogAction>

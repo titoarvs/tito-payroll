@@ -191,7 +191,16 @@ export const EmployeeTable = ({
                 return (
                   <TableRow key={employee.id} className="hover:bg-muted/25">
                     <TableCell className="max-w-[16rem]">
-                      <div className="flex min-w-0 items-center gap-3">
+                      <Link
+                        to="/dashboard/employees/$id"
+                        params={{ id: employee.id }}
+                        className={cn(
+                          "flex min-w-0 items-center gap-3 rounded-md outline-none",
+                          "transition-colors hover:text-foreground",
+                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        )}
+                        aria-label={`View ${name}`}
+                      >
                         <div
                           className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted text-xs font-semibold text-foreground"
                           aria-hidden={photoUrl ? undefined : true}
@@ -206,10 +215,10 @@ export const EmployeeTable = ({
                             <span>{initialsFrom(name)}</span>
                           )}
                         </div>
-                        <span className="truncate font-medium text-foreground">
+                        <span className="truncate font-medium text-foreground underline-offset-4 hover:underline">
                           {name}
                         </span>
-                      </div>
+                      </Link>
                     </TableCell>
                     {visibleColumns.map((col) => (
                       <FragmentCell key={col.id}>
