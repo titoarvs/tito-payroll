@@ -103,14 +103,15 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
         )}
         title={`Version ${appVersion}`}
       >
-        <p
-          className={cn(
-            "text-[11px] font-medium text-muted-foreground",
-            isCollapsed ? "text-center" : "px-1 text-end",
-          )}
-        >
-          v{appVersion}
-        </p>
+        {!isCollapsed ? (
+          <p className="px-1 text-[11px] text-muted-foreground">
+            © {new Date().getFullYear()} Tito · v{appVersion}
+          </p>
+        ) : (
+          <p className="text-center text-[10px] font-medium text-muted-foreground">
+            <span className="sr-only">© Tito · </span>v{appVersion}
+          </p>
+        )}
       </div>
     </aside>
   );
