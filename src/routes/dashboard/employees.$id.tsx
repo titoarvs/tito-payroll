@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ChevronLeft } from "lucide-react";
 import { EmployeeDetailHeader } from "~/components/employees/employee-detail-header";
+import { EmployeeSalaryRatesTable } from "~/components/employees/employee-salary-rates-table";
+import { Skeleton } from "~/components/ui/skeleton";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { useEmployee } from "~/hooks/use-employees";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canViewEmployeeSalaryRates } from "~/lib/payroll-access";
+import { cn } from "~/lib/utils";
 
 export const Route = createFileRoute("/dashboard/employees/$id")({
   ssr: false,
@@ -10,7 +16,9 @@ export const Route = createFileRoute("/dashboard/employees/$id")({
 
 function EmployeeDetailPage() {
   const { id } = Route.useParams();
+  const { data: user } = useCurrentUser();
   const { data, isPending, isError, error } = useEmployee(id);
+  const showSalaryRates = canViewEmployeeSalaryRates(user);
 
   const errorMessage =
     error instanceof HrisApiError
@@ -22,21 +30,25 @@ function EmployeeDetailPage() {
   const linkedUser = data?.data.linkedUser ?? null;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <div>
+    <div className="flex w-full min-w-0 flex-col gap-6 md:gap-8">
+      <nav aria-label="Breadcrumb">
         <Link
           to="/dashboard/employees"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className={cn(
+            "inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors",
+            "hover:text-foreground",
+          )}
         >
-          <span aria-hidden="true">←</span>
-          Back to employees
+          <ChevronLeft className="size-4" aria-hidden />
+          Employees
         </Link>
-      </div>
+      </nav>
 
       {isPending ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          Loading employee…
-        </p>
+        <div role="status" aria-label="Loading employee" className="space-y-6">
+          <Skeleton className="h-36 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
       ) : null}
 
       {isError ? (
@@ -46,7 +58,15 @@ function EmployeeDetailPage() {
       ) : null}
 
       {!isPending && !isError && employee ? (
-        <EmployeeDetailHeader employee={employee} linkedUser={linkedUser} />
+        <>
+          <EmployeeDetailHeader
+            employee={employee}
+            linkedUser={linkedUser}
+          />
+          {showSalaryRates ? (
+            <EmployeeSalaryRatesTable employeeId={employee.id} />
+          ) : null}
+        </>
       ) : null}
     </div>
   );

@@ -1,13 +1,12 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { TitoLogo } from "~/components/branding/TitoLogo";
+import { PayrollNavLinks } from "~/components/layout/payroll-nav-links";
 import { Button } from "~/components/ui/button";
-import {
-  PAYROLL_NAV_ITEMS,
-  type PayrollNavItem,
-} from "~/config/payroll-navigation";
-import { useSidebarCollapsed } from "~/hooks/use-sidebar-collapsed";
+import { appVersion } from "~/config/appVersion";
+import { PAYROLL_NAV_ITEMS } from "~/config/payroll-navigation";
 import { useCurrentUser } from "~/hooks/use-current-user";
+import { useSidebarCollapsed } from "~/hooks/use-sidebar-collapsed";
 import type { HrisUser } from "~/lib/hris-auth";
 import { cn } from "~/lib/utils";
 
@@ -24,11 +23,6 @@ const hasPayrollOps = (user: HrisUser | undefined): boolean =>
     ["super_admin", "admin", "finance"].includes(role),
   );
 
-const isNavActive = (pathname: string, item: PayrollNavItem): boolean =>
-  item.exact
-    ? pathname === item.to
-    : pathname === item.to || pathname.startsWith(`${item.to}/`);
-
 interface PayrollSidebarProps {
   className?: string;
 }
@@ -41,6 +35,10 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
 
   const navItems = PAYROLL_NAV_ITEMS.filter(
     (item) => !item.requiresPayrollOps || isOps,
+  ).map((item) =>
+    isOps && item.to === "/dashboard/my-payslips"
+      ? { ...item, label: "Payslips" }
+      : item,
   );
 
   return (
@@ -53,85 +51,68 @@ export const PayrollSidebar = ({ className }: PayrollSidebarProps) => {
     >
       <div
         className={cn(
-          "flex h-14 shrink-0 items-center gap-2 overflow-hidden border-b border-sidebar-border px-3 transition-[padding] duration-300 ease-in-out",
+          "flex h-12 shrink-0 items-center gap-1.5 overflow-hidden px-3 transition-[padding] duration-300 ease-in-out",
           isCollapsed ? "justify-center px-2" : "justify-between",
         )}
       >
-        <div
-          className={cn(
-            "min-w-0 overflow-hidden transition-[opacity,width,margin] duration-300 ease-in-out",
-            isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100",
-          )}
-          aria-hidden={isCollapsed}
-        >
-          <TitoLogo size="sm" variant="sidebar" />
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "h-8 w-8 shrink-0 text-sidebar-foreground/70 transition-transform duration-300 ease-in-out hover:bg-sidebar-accent hover:text-sidebar-foreground",
-            isCollapsed ? "rotate-180" : "rotate-0",
-          )}
-          onClick={toggleCollapsed}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-expanded={!isCollapsed}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+        {isCollapsed ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 hover:bg-muted"
+            onClick={toggleCollapsed}
+            aria-label="Expand sidebar"
+            aria-expanded={false}
+          >
+            <TitoLogo size="sm" variant="sidebar" markOnly />
+          </Button>
+        ) : (
+          <>
+            <div className="min-w-0 overflow-hidden">
+              <TitoLogo size="sm" variant="sidebar" />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={toggleCollapsed}
+              aria-label="Collapse sidebar"
+              aria-expanded
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+          </>
+        )}
       </div>
 
       <nav
-        className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-2"
+        className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-2.5 pb-2"
         aria-label="Main"
       >
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isNavActive(pathname, item);
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-current={active ? "page" : undefined}
-              aria-label={isCollapsed ? item.label : undefined}
-              title={isCollapsed ? item.label : undefined}
-              className={cn(
-                "relative flex items-center overflow-hidden rounded-lg py-2 text-sm font-medium transition-[background-color,color,padding,gap] duration-300 ease-in-out",
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                isCollapsed ? "justify-center gap-0 px-2" : "gap-3 px-3",
-              )}
-            >
-              {active && !isCollapsed ? (
-                <span
-                  aria-hidden
-                  className="absolute top-1/2 left-0 h-4 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary transition-opacity duration-300 ease-in-out"
-                />
-              ) : null}
-              <Icon
-                className={cn(
-                  "h-[18px] w-[18px] shrink-0 transition-colors duration-150",
-                  active
-                    ? "text-sidebar-primary"
-                    : "text-sidebar-foreground/60",
-                )}
-              />
-              <span
-                className={cn(
-                  "truncate whitespace-nowrap transition-[opacity,width,margin] duration-300 ease-in-out",
-                  isCollapsed
-                    ? "ml-0 w-0 opacity-0"
-                    : "ml-0 w-auto opacity-100",
-                )}
-                aria-hidden={isCollapsed}
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+        <PayrollNavLinks
+          items={navItems}
+          pathname={pathname}
+          collapsed={isCollapsed}
+        />
       </nav>
+
+      <div
+        className={cn(
+          "shrink-0 border-t border-sidebar-border px-3 py-4",
+          isCollapsed && "px-2",
+        )}
+        title={`Version ${appVersion}`}
+      >
+        {!isCollapsed ? (
+          <p className="px-1 text-[11px] text-muted-foreground">
+            © {new Date().getFullYear()} Tito · v{appVersion}
+          </p>
+        ) : (
+          <p className="text-center text-[10px] font-medium text-muted-foreground">
+            <span className="sr-only">© Tito · </span>v{appVersion}
+          </p>
+        )}
+      </div>
     </aside>
   );
 };

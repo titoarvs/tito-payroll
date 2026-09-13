@@ -21,6 +21,22 @@ export interface ContributionSchedule {
   brackets: ContributionBracket[];
 }
 
+export interface EmployeeContributionRow {
+  id: string;
+  employeeCode: string;
+  firstName: string;
+  lastName: string;
+  department: string | null;
+  employmentStatus: string;
+  monthlySalary: string | null;
+  sssCovered: boolean;
+  pagibigCovered: boolean;
+  philhealthCovered: boolean;
+  sss: string;
+  hdmf: string;
+  philhealth: string;
+}
+
 export interface PayRun {
   id: string;
   periodStart: string;
@@ -38,12 +54,16 @@ export interface Payslip {
   id: string;
   payRunId: string;
   employeeId: string;
-  employeeName?: string;
-  employeeCode?: string;
+  /** Present on pay-run payslip list / get when HRIS joins employee201. */
+  employeeName?: string | null;
+  employeeCode?: string | null;
+  /** Enriched on `GET /payroll/payslips/:id` from employee201. */
+  department?: string | null;
   position?: string | null;
-  employmentStatus?: string;
+  employmentStatus?: string | null;
   sssNumber?: string | null;
   hdmfNumber?: string | null;
+  pagibigNumber?: string | null;
   philhealthNumber?: string | null;
   tinNumber?: string | null;
   monthlyRate?: string;
@@ -101,4 +121,31 @@ export interface ReplaceBracketsInput {
 export interface ApiListResponse<T> {
   data: T;
   message?: string;
+}
+
+export interface PayrollMoneyTotals {
+  payslipCount: number;
+  grossPay: string;
+  totalDeductions: string;
+  netPay: string;
+  sss: string;
+  hdmf: string;
+  philhealth: string;
+  contributionsTotal: string;
+  overtimePay?: string;
+  nightDiffPay?: string;
+  holidayPay?: string;
+  totalAdjustments?: string;
+}
+
+export interface PayrollLatestReleasedTotals extends PayrollMoneyTotals {
+  payRunId: string;
+  periodStart: string;
+  periodEnd: string;
+  cutoffHalf: CutoffHalf | string;
+}
+
+export interface PayrollDashboardSummary {
+  released: PayrollMoneyTotals;
+  latestReleased: PayrollLatestReleasedTotals | null;
 }

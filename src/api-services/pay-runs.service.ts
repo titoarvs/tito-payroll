@@ -3,7 +3,9 @@ import type {
   ApiListResponse,
   ContributionSchedule,
   CreatePayRunInput,
+  EmployeeContributionRow,
   PayRun,
+  PayrollDashboardSummary,
   Payslip,
   ReplaceBracketsInput,
   UpdatePayslipInput,
@@ -12,6 +14,7 @@ import type {
 const PAY_RUNS = "/payroll/pay-runs";
 const SCHEDULES = "/payroll/contribution-schedules";
 const PAYSLIPS = "/payroll/payslips";
+const DASHBOARD = "/payroll/dashboard";
 
 export const payRunsService = {
   list: () => hrisApi.get<ApiListResponse<PayRun[]>>(PAY_RUNS),
@@ -31,6 +34,15 @@ export const payRunsService = {
     hrisApi.get<ApiListResponse<Payslip[]>>(
       `${PAY_RUNS}/${encodeURIComponent(payRunId)}/payslips`,
     ),
+  dashboardSummary: (params?: { from?: string; to?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.from) search.set("from", params.from);
+    if (params?.to) search.set("to", params.to);
+    const query = search.toString();
+    return hrisApi.get<ApiListResponse<PayrollDashboardSummary>>(
+      `${DASHBOARD}/summary${query ? `?${query}` : ""}`,
+    );
+  },
 };
 
 export const contributionTablesService = {
@@ -40,6 +52,14 @@ export const contributionTablesService = {
     hrisApi.get<ApiListResponse<ContributionSchedule>>(
       `${SCHEDULES}/${encodeURIComponent(id)}`,
     ),
+  listEmployeeContributions: (search?: string) => {
+    const params = new URLSearchParams();
+    if (search?.trim()) params.set("search", search.trim());
+    const query = params.toString();
+    return hrisApi.get<ApiListResponse<EmployeeContributionRow[]>>(
+      `${SCHEDULES}/employee-contributions${query ? `?${query}` : ""}`,
+    );
+  },
   replaceBrackets: (id: string, input: ReplaceBracketsInput) =>
     hrisApi.put<ApiListResponse<ContributionSchedule>>(
       `${SCHEDULES}/${encodeURIComponent(id)}/brackets`,
@@ -49,6 +69,7 @@ export const contributionTablesService = {
 
 export const payslipsService = {
   listMine: () => hrisApi.get<ApiListResponse<Payslip[]>>(`${PAYSLIPS}/me`),
+  listAll: () => hrisApi.get<ApiListResponse<Payslip[]>>(PAYSLIPS),
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<Payslip>>(
       `${PAYSLIPS}/${encodeURIComponent(id)}`,

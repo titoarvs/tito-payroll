@@ -1,16 +1,12 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getCurrentHrisUser, type HrisUser } from "~/lib/hris-auth";
-
-const isSuperAdmin = (user: HrisUser): boolean => {
-  if (user.role === "super_admin") return true;
-  return user.roles?.includes("super_admin") === true;
-};
+import { getCurrentHrisUser } from "~/lib/hris-auth";
+import { hasPayrollOps } from "~/lib/payroll-access";
 
 export const Route = createFileRoute("/dashboard/employees")({
   ssr: false,
   beforeLoad: async () => {
     const user = await getCurrentHrisUser();
-    if (!isSuperAdmin(user)) {
+    if (!hasPayrollOps(user)) {
       throw redirect({ to: "/dashboard" });
     }
   },

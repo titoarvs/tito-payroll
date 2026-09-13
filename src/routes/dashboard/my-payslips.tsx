@@ -1,11 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { MyPayslipsPage } from "~/components/pay-runs/my-payslips-page";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/my-payslips")({
   ssr: false,
-  component: MyPayslipsRoute,
+  component: () => <Outlet />,
 });
-
-function MyPayslipsRoute() {
-  return <MyPayslipsPage />;
-}

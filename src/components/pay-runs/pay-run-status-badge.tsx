@@ -1,5 +1,6 @@
 import { Badge } from "~/components/ui/badge";
 import type { PayRunStatus } from "~/api-services/pay-runs.types";
+import { payRunStatusLabel } from "~/components/pay-runs/pay-run-display";
 
 const STATUS_VARIANT: Record<
   PayRunStatus,
@@ -11,7 +12,7 @@ const STATUS_VARIANT: Record<
 };
 
 export const PayRunStatusBadge = ({ status }: { status: PayRunStatus }) => (
-  <Badge variant={STATUS_VARIANT[status] ?? "muted"} className="capitalize">
-    {status}
+  <Badge variant={STATUS_VARIANT[status] ?? "muted"}>
+    {payRunStatusLabel(status)}
   </Badge>
 );

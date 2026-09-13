@@ -27,7 +27,17 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Steps:**
   1. Open `/dashboard/employees` on a viewport below `md`.
   2. Widen the viewport to `md` or above.
-- **Expected result:** Below `md`: cards show avatar (or initials), name, position, employee ID, department, status, hire date, and created date (at most 10 by default). At `md+`: a table in a card lists Employee, Employee ID, Department, Position, Status, Hire date, Created, and Open. No page title bar, Get in touch / bookmark / share buttons.
+- **Expected result:** Below `md`: cards show avatar (or initials), name, position, employee ID, department, status, hire date, and created date (at most 10 by default). At `md+`: a bordered table in a card lists Employee, Employee ID, Department, Position, Status, Hire date, Created, and Open. **Columns** control is visible on desktop.
+
+### TC-01b: Columns show/hide and reorder
+
+- **Priority:** Medium
+- **Preconditions:** Desktop employees roster with rows.
+- **Steps:**
+  1. Click **Columns**.
+  2. Hide Department; drag Status above Position.
+  3. Refresh the page.
+- **Expected result:** Department column gone; Status appears before Position; preference persists after refresh. Employee and Actions remain.
 
 ### TC-02: Non-super-admin redirected from list
 
@@ -121,16 +131,34 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Preconditions:** Signed in as `super_admin`; at least one employee on the list.
 - **Steps:**
   1. Open `/dashboard/employees` below `md` and click an employee card.
-  2. Widen to `md+` and click **Open** on a table row.
-- **Expected result:** Navigates to `/dashboard/employees/<id>`. Detail header shows cover, avatar (or initials), name, `#code • position`, Active/Inactive pill, and four cards (Department, Employment Type, Email, Phone Number). “Back to employees” link is visible.
+  2. Widen to `md+` and click **Open** / **View** on a table row.
+- **Expected result:** Navigates to `/dashboard/employees/<id>`. Three-card layout: profile (avatar, name, code chip, Active/Inactive, employment type, join date), personal info + benefits, and pay snapshot (or empty/unavailable). “Back to employees” link is visible.
 
-### TC-12: Detail header field mapping
+### TC-12: Detail field mapping + pay snapshot
 
 - **Priority:** High
-- **Preconditions:** Known employee with department, employment status, email, phone.
+- **Preconditions:** Known employee with department, employment status, email, phone; preferably a salary rate on file.
 - **Steps:**
   1. Open that employee’s detail page.
-- **Expected result:** Department shown as a blue-dot pill (or `—` if missing). Employment Type shows title-cased `employmentStatus`. Email and phone match HRIS (or `—`). No salary anywhere on the page. No three-dot menu / action menu.
+- **Expected result:** Profile shows name, position, department, code, status pill. Personal card shows email/phone/civil status and benefits coverage. Pay snapshot shows monthly/hourly/allowance when rates exist (ops with `payroll.salary_rates.view`); “Manage rates” goes to Salary rates. Below the cards, a **Salary rate history** table lists From / To / Monthly / Hourly / Status (or empty state). No salary amounts on the list route. No three-dot menu.
+
+### TC-12b: Pay snapshot permission / unlinked
+
+- **Priority:** Medium
+- **Preconditions:** Ops without salary-rates view, or employee without linked `userId`.
+- **Steps:**
+  1. Open detail for that employee / role.
+- **Expected result:** Without permission, pay card and rate history table are hidden. Unlinked account shows a clear message on both; profile/personal cards still render.
+
+### TC-12c: Salary rate history table
+
+- **Priority:** High
+- **Preconditions:** Employee with one or more Clock salary rates; ops with `payroll.salary_rates.view`.
+- **Steps:**
+  1. Open `/dashboard/employees/<id>`.
+  2. Scroll below the three cards.
+  3. Click **Manage rates** in the history card header.
+- **Expected result:** Table shows rate rows newest-first with money as formatted currency and Active/Inactive. CTA opens `/dashboard/salary-rates?employeeId=<id>`.
 
 ### TC-13: Detail 404
 
@@ -156,21 +184,21 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
   1. Click “Back to employees”.
 - **Expected result:** Returns to `/dashboard/employees`.
 
-### TC-16: Employee sees own profile on dashboard
+### TC-16: Employee sees payslip welcome widgets on dashboard
 
 - **Priority:** High
-- **Preconditions:** Signed in as non-`super_admin` with a linked `employee201.employee` row (e.g. Ada Lovelace seed).
+- **Preconditions:** Signed in as non-ops employee.
 - **Steps:**
   1. Open `/dashboard` (or land there after sign-in).
-- **Expected result:** `EmployeeDetailHeader` shows own name, `#employeeCode • position`, Active/Inactive, and four info cards (Department, Employment Type, Email, Phone). No “Back to employees”. No Employees sidenav. No salary. Avatar from account photo if present, else initials.
+- **Expected result:** `EmployeeWelcomeDashboard` shows welcome header, payslip KPI widgets, and latest-payslip widget. No profile/personal `EmployeeDetailHeader`. No pay snapshot. No “Back to employees”. No Employees sidenav. No salary amounts.
 
-### TC-17: Employee self-profile — no linked record
+### TC-17: Employee dashboard without linked employee record
 
-- **Priority:** High
-- **Preconditions:** Signed in as non-`super_admin` with no `employee.userId` link **and** login email does not match any `employee.email` (legacy account created before stub-on-signup).
+- **Priority:** Medium
+- **Preconditions:** Signed in as non-ops with no `employee.userId` link **and** login email does not match any `employee.email` (legacy account).
 - **Steps:**
   1. Open `/dashboard`.
-- **Expected result:** Message “No employee record linked to your account.” No header card. Still no Employees sidenav/roster.
+- **Expected result:** Payslip welcome widgets still render (empty/zero payslips). No “No employee record linked” banner. Still no Employees sidenav/roster.
 
 ### TC-17b: Fresh Google / register creates employee201 stub
 
@@ -180,7 +208,7 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
   1. Sign in to payroll with Google (or complete register).
   2. As that user, open `/dashboard`.
   3. As a `super_admin`, open `/dashboard/employees` and search the new user’s email/name.
-- **Expected result:** Self-profile header appears (not the “No employee record” message). New stub is `probationary`, position may be `—`. In HRIS DB, `employee.id` and `employee.userId` both equal the new `auth.users.id`. Super-admin roster includes the stub.
+- **Expected result:** Welcome payslip widgets appear (not a missing-employee error). New stub is `probationary`. In HRIS DB, `employee.id` and `employee.userId` both equal the new `auth.users.id`. Super-admin roster includes the stub.
 
 ### TC-18: Super-admin dashboard has no self-profile header
 
@@ -188,16 +216,16 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 - **Preconditions:** Signed in as `super_admin`.
 - **Steps:**
   1. Open `/dashboard`.
-- **Expected result:** Empty home (no self `EmployeeDetailHeader`). Employees available via sidenav.
+- **Expected result:** Ops welcome dashboard with employee widgets + payroll KPIs (no self `EmployeeDetailHeader`). Employees available via sidenav.
 
 ### TC-19: Email match auto-links unlinked employee row
 
 - **Priority:** High
-- **Preconditions:** Auth user email equals an `employee201.employee.email` whose `userId` is null. Signed in as that non-`super_admin` user.
+- **Preconditions:** Auth user email equals an `employee201.employee.email` whose `userId` is null. Signed in as that non-ops user.
 - **Steps:**
-  1. Open `/dashboard`.
-  2. Optionally re-open `/dashboard` or call `GET /api/employee201/employees/me` again.
-- **Expected result:** Profile header shows that employee’s details. Row’s `userId` is now the signed-in user. Second load still works via `userId`.
+  1. Call `GET /api/employee201/employees/me` (or open an HRIS client that uses `/me`).
+  2. Optionally call `/me` again.
+- **Expected result:** Response returns that employee’s details. Row’s `userId` is now the signed-in user. Second load still works via `userId`. Dashboard home does not show the profile header.
 
 ### TC-20: Email match owned by another user
 
@@ -219,7 +247,8 @@ Regular employees see only their own profile header on `/dashboard` (no roster).
 ## Out of Scope
 
 - Division/department/status filters on the list.
-- Tabs, edit, documents, evaluations, salary reveal.
+- Tabs, edit, documents, evaluations, leave/performance charts.
+- Audited salary reveal POST on the detail page (pay snapshot uses salary-rates instead).
 - Avatar upload.
 - Auto-creating `employee201.employee` rows on first login.
 - Manager/admin roster access (still `super_admin` only).

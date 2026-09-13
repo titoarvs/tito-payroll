@@ -4,8 +4,8 @@
 
 Cutoff create → compute → review → approve & release. Contribution table edits. Paper My payslips + notifications.
 
-- Routes: `/dashboard/pay-runs`, `/dashboard/pay-runs/$id`, `/dashboard/contribution-tables`, `/dashboard/my-payslips`, `/dashboard/my-payslips/$id`
-- Hooks: `usePayRuns`, `useComputePayRun`, `useReleasePayRun`, `useUpdatePayslip`, `useContributionSchedules`, `useMyPayslips`, `useMyPayslip`
+- Routes: `/dashboard/pay-runs`, `/dashboard/pay-runs/$id`, `/dashboard/contribution-tables`, `/dashboard/my-payslips`, `/dashboard/my-payslips/$payslipId`
+- Hooks: `usePayRuns`, `useComputePayRun`, `useReleasePayRun`, `useUpdatePayslip`, `useContributionSchedules`, `useMyPayslips`, `usePayslip`
 
 ## Prerequisites
 
@@ -70,17 +70,64 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** Compute
 - **Expected result:** OT hours/pay use approved 2h at 125%; ND at 10%; holiday uses instance premium (else 100%); pending OT ignored; net = gross + adjustments − deductions
 
+### TC-08b: Payslip grid shows employee name + code
+
+- **Priority:** High
+- **Preconditions:** Computed pay run with at least one payslip for a known employee201 row.
+- **Steps:**
+  1. Open `/dashboard/pay-runs/$id`.
+- **Expected result:** Employee column shows display name (not only UUID). Secondary line shows `#employeeCode` when present, otherwise the employee id. API `GET .../payslips` includes `employeeName` and `employeeCode`.
+
+### TC-08c: Payslip grid pagination
+
+- **Priority:** Medium
+- **Preconditions:** Computed pay run with more than 10 payslips (or change rows per page to a size smaller than the list).
+- **Steps:**
+  1. Open `/dashboard/pay-runs/$id`.
+  2. Confirm footer shows `1–N of T payslips`, rows-per-page selector, Previous/Next.
+  3. Change rows per page; go to next page.
+- **Expected result:** Table shows only the current page of rows; page resets to 1 when page size changes; Previous disabled on page 1; Next disabled on last page.
+
 ### TC-09: Compute notifies payroll ops
 
 - **Priority:** High
 - **Steps:** Compute as finance
 - **Expected result:** Users with `payroll.pay_runs.view` get `pay-run-computed` notification; payroll bell links to pay-run detail; regular employees do not see this type
 
+### TC-09b: View payslip details page
+
+- **Priority:** High
+- **Preconditions:** At least one released payslip for the signed-in employee
+- **Steps:**
+  1. Open `/dashboard/my-payslips`
+  2. Click a period link or **View**
+- **Expected result:** Dedicated payslip details page matching the document layout: period/payment date, company block, employee info (name, ID, department, job title, status, TIN), statutory IDs, rate details, earnings/deductions tables, and net pay summary. Back returns to the list. Print / Download PDF open the browser print dialog.
+- **Auth:** Opening another employee’s payslip id → 403/Forbidden message
+
+### TC-09c: Contribution tables show seeded brackets
+
+- **Priority:** High
+- **Preconditions:** `npm run seed:contribution-schedules` run in `tito-hris-api`; ops user
+- **Steps:**
+  1. Open `/dashboard/contribution-tables`
+  2. Open the Schedule select
+- **Expected result:** SSS, HDMF, and PhilHealth schedules listed with bracket counts; selecting one shows Min / Max / Employee share / Employer share rows with money values (not blank page).
+
 ### TC-10: Edit adjustment then approve & release
 
 - **Priority:** High
 - **Steps:** Compute → select payslip → change other adjustment → Save → Approve & release
 - **Expected result:** Totals recalculate; button label is Approve & release; slips appear under each employee login immediately; each linked employee gets `payslip-released`
+
+### TC-10b: Remove contribution bracket
+
+- **Priority:** Medium
+- **Preconditions:** Schedule with 2+ brackets
+- **Steps:**
+  1. Open Contribution tables; select a fund
+  2. Click **Remove** on one bracket row
+  3. Click **Save brackets**
+- **Expected result:** Row disappears from the draft immediately; after save and refresh, that bracket is gone from the schedule.
 
 ### TC-11: Release freezes recompute and edits
 
@@ -94,6 +141,15 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** As employee open list → open slip → Print / Save as PDF
 - **Expected result:** Only released own slips listed; paper layout (letterhead, rates, gross, deductions, adjustments, red net, prepared by); print stylesheet hides chrome
 
+### TC-12b: Create pay run with period date range
+
+- **Priority:** High
+- **Steps:**
+  1. Open `/dashboard/pay-runs`.
+  2. Click Period to open the dual-month calendar. Pick a start day, then an end day.
+  3. Confirm cutoff half, click Create.
+- **Expected result:** Draft pay run appears with the selected period. Completing the range commits and closes the picker.
+
 ### TC-13: IDOR — another employee's payslip id
 
 - **Priority:** High
@@ -103,6 +159,7 @@ Cutoff create → compute → review → approve & release. Contribution table e
 ### TC-14: Contribution bracket edit affects next compute
 
 - **Priority:** Medium
+- **Preconditions:** Seeded contribution schedules
 - **Steps:** Change employee share on HDMF → recompute draft/computed 1st cutoff
 - **Expected result:** New `hdmf` amount on payslips
 
