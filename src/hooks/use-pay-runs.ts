@@ -3,10 +3,12 @@ import {
   contributionTablesService,
   payRunsService,
   payslipsService,
+  taxTablesService,
 } from "~/api-services/pay-runs.service";
 import type {
   CreatePayRunInput,
   ReplaceBracketsInput,
+  ReplaceTaxBracketsInput,
   UpdatePayslipInput,
 } from "~/api-services/pay-runs.types";
 import {
@@ -20,8 +22,10 @@ import {
   getPayRunsQuery,
   getPayrollDashboardSummaryQuery,
   getPayslipQuery,
+  getTaxSchedulesQuery,
   myPayslipsKeys,
   payRunsKeys,
+  taxKeys,
 } from "~/queries/pay-runs";
 
 export const usePayRuns = () => useQuery(getPayRunsQuery());
@@ -86,6 +90,24 @@ export const useReplaceBrackets = () => {
     }) => contributionTablesService.replaceBrackets(id, input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: contributionKeys.all });
+    },
+  });
+};
+
+export const useTaxSchedules = () => useQuery(getTaxSchedulesQuery());
+
+export const useReplaceTaxBrackets = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: ReplaceTaxBracketsInput;
+    }) => taxTablesService.replaceBrackets(id, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taxKeys.all });
     },
   });
 };

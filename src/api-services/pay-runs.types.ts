@@ -37,6 +37,24 @@ export interface EmployeeContributionRow {
   philhealth: string;
 }
 
+export interface TaxBracket {
+  id: string;
+  scheduleId: string;
+  minCompensation: string;
+  maxCompensation: string | null;
+  baseTax: string;
+  rateOnExcess: string;
+}
+
+export interface TaxSchedule {
+  id: string;
+  name: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  isActive: boolean;
+  brackets: TaxBracket[];
+}
+
 export interface PayRun {
   id: string;
   periodStart: string;
@@ -75,6 +93,7 @@ export interface Payslip {
   sss: string;
   hdmf: string;
   philhealth: string;
+  withholdingTax?: string;
   totalDeductions: string;
   overtimeHours?: string;
   overtimePay?: string;
@@ -82,6 +101,9 @@ export interface Payslip {
   nightDiffPay?: string;
   holidayHours?: string;
   holidayPay?: string;
+  paidLeaveDays?: string;
+  unpaidLeaveDays?: string;
+  leavePay?: string;
   otherAdjustment?: string;
   thirteenthMonthPay?: string;
   totalAdjustments?: string;
@@ -115,6 +137,15 @@ export interface ReplaceBracketsInput {
     maxCompensation?: string | null;
     employeeShare: string;
     employerShare?: string;
+  }>;
+}
+
+export interface ReplaceTaxBracketsInput {
+  brackets: Array<{
+    minCompensation: string;
+    maxCompensation?: string | null;
+    baseTax: string;
+    rateOnExcess: string;
   }>;
 }
 

@@ -3,6 +3,7 @@ import {
   contributionTablesService,
   payRunsService,
   payslipsService,
+  taxTablesService,
 } from "~/api-services/pay-runs.service";
 
 export const payRunsKeys = {
@@ -20,6 +21,12 @@ export const contributionKeys = {
   detail: (id: string) => [...contributionKeys.all, "detail", id] as const,
   employees: (search = "") =>
     [...contributionKeys.all, "employees", search] as const,
+};
+
+export const taxKeys = {
+  all: ["tax-schedules"] as const,
+  list: () => [...taxKeys.all, "list"] as const,
+  detail: (id: string) => [...taxKeys.all, "detail", id] as const,
 };
 
 export const myPayslipsKeys = {
@@ -66,6 +73,12 @@ export const getEmployeeContributionsQuery = (search = "") =>
   queryOptions({
     queryKey: contributionKeys.employees(search),
     queryFn: () => contributionTablesService.listEmployeeContributions(search),
+  });
+
+export const getTaxSchedulesQuery = () =>
+  queryOptions({
+    queryKey: taxKeys.list(),
+    queryFn: () => taxTablesService.list(),
   });
 
 export const getMyPayslipsQuery = () =>

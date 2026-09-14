@@ -69,10 +69,12 @@ type PayslipColumnId =
   | "ot"
   | "nd"
   | "holiday"
+  | "leave"
   | "gross"
   | "sss"
   | "hdmf"
   | "philhealth"
+  | "tax"
   | "adjustments"
   | "net";
 
@@ -84,15 +86,17 @@ const PAYSLIP_COLUMN_DEFS: TableColumnDef<PayslipColumnId>[] = [
   { id: "ot", label: "OT" },
   { id: "nd", label: "ND" },
   { id: "holiday", label: "Holiday" },
+  { id: "leave", label: "Leave pay" },
   { id: "gross", label: "Gross" },
   { id: "sss", label: "SSS" },
   { id: "hdmf", label: "HDMF" },
   { id: "philhealth", label: "PhilHealth" },
+  { id: "tax", label: "WHT" },
   { id: "adjustments", label: "Adjustments" },
   { id: "net", label: "Net" },
 ];
 
-const PAYSLIP_COLUMNS_STORAGE_KEY = "payroll.pay-run-payslips.tableColumns.v1";
+const PAYSLIP_COLUMNS_STORAGE_KEY = "payroll.pay-run-payslips.tableColumns.v2";
 
 const renderPayslipColumnCell = (
   id: PayslipColumnId,
@@ -141,6 +145,12 @@ const renderPayslipColumnCell = (
           {row.holidayPay ?? "0.00"}
         </TableCell>
       );
+    case "leave":
+      return (
+        <TableCell key={id} className="tabular-nums">
+          {row.leavePay ?? "0.00"}
+        </TableCell>
+      );
     case "gross":
       return (
         <TableCell key={id} className="tabular-nums">
@@ -163,6 +173,12 @@ const renderPayslipColumnCell = (
       return (
         <TableCell key={id} className="tabular-nums">
           {row.philhealth}
+        </TableCell>
+      );
+    case "tax":
+      return (
+        <TableCell key={id} className="tabular-nums">
+          {row.withholdingTax ?? "0.00"}
         </TableCell>
       );
     case "adjustments":

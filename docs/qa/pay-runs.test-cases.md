@@ -163,6 +163,32 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** Change employee share on HDMF → recompute draft/computed 1st cutoff
 - **Expected result:** New `hdmf` amount on payslips
 
+### TC-17: Leave pay on cutoff (paid / unpaid / consultant)
+
+- **Priority:** High
+- **Preconditions:** Approved paid leave overlapping period; separate case with `UNPAID` / LWOP; consultant with paid leave type
+- **Steps:** Compute pay run
+- **Expected result:** Paid leave → `leavePay` = hourly × paid days × 8 and adjustment line `leave`; unpaid days → `unpaidLeaveDays` set, leave pay `0`, Clock hours unchanged; consultant → `leavePay` `0.00`
+
+### TC-18: Withholding tax from tax tables
+
+- **Priority:** High
+- **Preconditions:** Seeded tax schedule; employee covered, not consultant
+- **Steps:** Compute
+- **Expected result:** `withholdingTax` ≈ half of monthly TRAIN bracket tax; appears on paper slip; consultants / uncovered → `0.00`
+
+### TC-19: Tax tables RBAC
+
+- **Priority:** High
+- **Steps:** User without `payroll.tax_tables.view` / `manage` hits tax-schedules endpoints; ops user opens `/dashboard/tax-tables` and saves brackets
+- **Expected result:** 403 without permission; finance/admin/super_admin can view/edit
+
+### TC-20: Other adjustment PATCH still works
+
+- **Priority:** High
+- **Steps:** Computed run → edit Other adjustment → Save
+- **Expected result:** Net recalculates; `other` adjustment line upserted; leave/tax unchanged
+
 ### TC-15: Auth — employee cannot create pay run
 
 - **Priority:** High
@@ -180,14 +206,17 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - periodStart after periodEnd → 400
 - Money fields remain strings
 - Open Clock timers excluded from hours
-- Unlinked employees skip `payslip-released` notification
+- Unlinked Clock `userId` → zero Clock hours; leave still applies via `employee.id`
 - Identity snapshot on payslip does not change when 201 profile is edited after compute
 
 ## Out of Scope
 
-- BIR / tax values
+- Identity contract / BUG-TC-01
+- Renaming `pay_run` HTTP path to Batch
+- ND-PR-13 (subtract Clock hours for LWOP)
+- Full BIR productization beyond versioned table + half-monthly apply
 - 13th-month engine (always `0.00`)
-- Email / SMTP
-- Clock WebSocket
+- Email / SMTP delivery
+- Clock WebSocket sync
 - Granting people_culture payroll ops
 - Stored PDF blobs / R2

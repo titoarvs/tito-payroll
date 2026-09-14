@@ -1,17 +1,21 @@
 # Pay runs (cutoff compute)
 
-Basic pay / gross / statutory deductions for a cutoff. Hours from Tito Clock (including approved OT, ND, and holiday work on compute). BIR withholding is out of scope this pass.
+**Batch** in product language is the `pay_run` table / HTTP `/api/payroll/pay-runs` (not renamed).
+
+Basic pay / gross / statutory deductions / leave pay / withholding for a cutoff. Hours from Tito Clock (approved OT, ND, holiday). Approved T201 leave overlapping the period feeds leave pay. BIR withholding uses versioned tax tables (half of monthly tax each cutoff).
 
 ## Formula
 
 - **Basic pay** = hourly rate × Clock hours (completed entries in the period)
 - **Gross** = basic + employee **allowance (per cutoff)**
-- **Adjustments** = overtime pay + night differential + holiday pay + other adjustment + 13th month (13th month is always `0.00` this pass)
-- **1st cutoff**: HDMF + PhilHealth (if covered)
-- **2nd cutoff**: SSS (if covered)
+- **Adjustments** = overtime + night differential + holiday + **leave pay** + other adjustment + 13th month (13th month is always `0.00` this pass)
+  - Leave pay = hourly × paid leave days in cutoff × 8 (consultants: `0`)
+  - Unpaid / LWOP days add `0` leave pay (Clock hours are **not** reduced for LWOP — ND-PR-13 open)
+- **Deductions** = SSS / HDMF / PhilHealth (cutoff split) + **withholding tax** (when covered, non-consultant)
+  - Withholding = half of monthly TRAIN bracket tax for this cutoff
 - **HMO**: never deducted
-- **Consultants**: hours × rate only (no statutory); same My payslips access as employees
-- **Net** = gross + adjustments − SSS − HDMF − PhilHealth
+- **Consultants**: hours × rate only (no statutory / leave pay / tax)
+- **Net** = gross + adjustments − SSS − HDMF − PhilHealth − withholding
 
 ### Premium multipliers (named constants in API `compute-pay`)
 
@@ -21,63 +25,47 @@ Basic pay / gross / statutory deductions for a cutoff. Hours from Tito Clock (in
 | Night differential | **10%** of hourly × ND hours |
 | Holiday work | Holiday instance `premiumPercent` when present; otherwise **100%** of hourly × hours |
 
+## Core entities
+
+| Concept | Storage |
+| --- | --- |
+| Batch | `payroll.pay_run` |
+| Payslip | `payroll.payslip` (+ denormalized OT/ND/holiday/leave/tax columns) |
+| Adjustment | `payroll.payslip_adjustment` lines (`overtime` / `night_diff` / `holiday` / `leave` / `other` / `thirteenth_month`); compute/PATCH dual-write lines + columns |
+| TaxTable | `payroll.tax_schedule` + `payroll.tax_bracket` (versioned) |
+| Contributions | `payroll.contribution_schedule` + brackets |
+
 ## Lifecycle
 
 `draft` → `computed` (Compute) → `released` (Approve & release)
 
-1. **Compute** replaces payslips for all active employees, snapshots identity (name, code, position, statutory IDs), pulls approved Clock OT/ND/holiday hours, and notifies payroll ops (`pay-run-computed`). Pending/rejected claims are ignored.
-2. While **computed**, ops may `PATCH` payslip adjustment lines; totals recalculate server-side.
-3. **Approve & release** sets `releasedBy` / `releasedAt`, stamps `preparedByName`, and notifies each linked employee (`payslip-released`). Slips appear under My payslips immediately — no email/file send.
+1. **Compute** replaces payslips for all active employees, snapshots identity, pulls Clock OT/ND/holiday, loads approved leave by `employee.id`, applies tax brackets, inserts adjustment rows, and notifies payroll ops.
+2. While **computed**, ops may `PATCH` the **other** adjustment; leave + withholding stay compute-owned; totals recalculate server-side.
+3. **Approve & release** stamps preparer and notifies each linked employee. Slips appear under My payslips immediately.
 
 ## Routes
 
 | Route | Who |
 | --- | --- |
-| `/dashboard/pay-runs` | finance / admin / super_admin — create via custom period date-range (calendar start/end) |
-| `/dashboard/pay-runs/$id` | same — compute / edit adjustments / approve & release / paper preview / payslip grid (client pagination) |
-| `/dashboard/contribution-tables` | same — edit SSS/HDMF/PhilHealth brackets |
+| `/dashboard/pay-runs` | finance / admin / super_admin — create via period date-range |
+| `/dashboard/pay-runs/$id` | same — compute / other adjustment / release / paper preview |
+| `/dashboard/contribution-tables` | same — SSS/HDMF/PhilHealth brackets |
+| `/dashboard/tax-tables` | same — TRAIN withholding brackets |
 | `/dashboard/my-payslips` | any signed-in employee/consultant with released slips |
-| `/dashboard/my-payslips/$payslipId` | payslip details + print / save as PDF (`GET /api/payroll/payslips/:id`) |
-
-## Layers
-
-| Layer | Path |
-| --- | --- |
-| Service | `src/api-services/pay-runs.service.ts` |
-| Types | `src/api-services/pay-runs.types.ts` |
-| Queries | `src/queries/pay-runs.ts` |
-| Hooks | `src/hooks/use-pay-runs.ts` |
-| UI | `src/components/pay-runs/` — list/detail/my-payslips tables support **Columns** (show/hide + drag reorder; prefs in `localStorage`) |
-| Notifications | `src/api-services/notifications.service.ts`, header bell |
-
-## HRIS endpoints
-
-- `GET/POST /api/payroll/pay-runs`
-- `POST /api/payroll/pay-runs/:id/compute`
-- `POST /api/payroll/pay-runs/:id/release`
-- `GET /api/payroll/pay-runs/:id/payslips` — each row includes `employeeId` plus joined `employeeName` / `employeeCode` from employee201 (null if the employee row is missing).
-- `PATCH /api/payroll/payslips/:id` (computed runs only; `payroll.pay_runs.release`)
-- `GET /api/payroll/payslips/:id` — own released, or all if `payroll.payslips.view`; employee display fields when joined, plus department, position, employmentStatus, SSS/HDMF/PhilHealth/TIN numbers from employee201.
-- `GET /api/payroll/payslips/me`
-- `GET/PUT /api/payroll/contribution-schedules…`
-- Notifications reuse `GET /api/employee201/notifications` (+ unread / mark-read)
-
-Permissions: `payroll.*` for finance/admin/SA. Employees/consultants: `payroll.payslips.view_own` only. Guessable sibling payslip ids return **403**.
+| `/dashboard/my-payslips/$payslipId` | payslip details + print / save as PDF |
 
 ## Setup
 
-1. Apply the new payroll payslip/pay-run migration on the target env (after schema push/generate for OT/ND/holiday/snapshot/`releasedBy` columns)
-2. `npm run seed:rbac` in `tito-hris-api`
-3. `npm run seed:contribution-schedules` — loads starter SSS / HDMF / PhilHealth brackets (required for Contribution tables UI and compute lookups)
-4. Set employee hourly rate + optional allowance via **Salary rates** (`/dashboard/salary-rates`) — or T201 employment Job section
-5. Optional for T201 bell deep-links: `VITE_PAYROLL_APP_URL` pointing at the payroll app origin
+1. Generate/apply payroll migrations in `tito-hris-api-v2` (`npm run db:generate` / `db:migrate`) — **not** run by agents
+2. `npm run seed:rbac` (includes `payroll.tax_tables.view` / `manage`)
+3. `npm run seed:contribution-schedules` and `npm run seed:tax-schedules`
+4. Employee hourly rate + coverage flags in T201 / salary rates
 
 ## Out of scope
 
-- BIR withholding values
+- Identity contract / BUG-TC-01
+- Renaming `pay_run` → Batch in HTTP
+- ND-PR-13 (subtract Clock hours for LWOP)
+- Full BIR productization beyond versioned table + half-monthly apply
 - 13th-month engine (column present, always zero)
 - Email / SMTP delivery
-- Clock WebSocket sync (compute is the sync)
-- Granting `people_culture` payroll ops
-- Stored PDF blobs / R2
-- Configurable cutoff split (A-PR-01)

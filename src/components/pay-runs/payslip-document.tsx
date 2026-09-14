@@ -199,7 +199,7 @@ export const PayslipDocument = ({ payslip, className }: PayslipDocumentProps) =>
             </tr>
             <tr>
               <LabelCell>Tax Withheld</LabelCell>
-              <MoneyCell value={null} />
+              <MoneyCell value={payslip.withholdingTax} />
               <td />
               <td />
             </tr>
@@ -230,6 +230,19 @@ export const PayslipDocument = ({ payslip, className }: PayslipDocumentProps) =>
               <MoneyCell value={payslip.nightDiffPay} />
               <td />
               <HoursCell value={payslip.nightDiffHours} />
+            </tr>
+            <tr>
+              <LabelCell>Leave pay</LabelCell>
+              <MoneyCell value={payslip.leavePay} />
+              <td />
+              <td className="px-2 py-0.5 text-right tabular-nums text-xs">
+                {payslip.paidLeaveDays ?? "0.00"}d
+                {payslip.unpaidLeaveDays &&
+                payslip.unpaidLeaveDays !== "0.00" &&
+                payslip.unpaidLeaveDays !== "0"
+                  ? ` / ${payslip.unpaidLeaveDays}d LWOP`
+                  : ""}
+              </td>
             </tr>
             <tr>
               <LabelCell>Adjustments</LabelCell>
