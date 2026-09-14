@@ -25,19 +25,7 @@ import {
 import { PAYROLL_NAV_ITEMS } from "~/config/payroll-navigation";
 import { useCurrentUser, useLogout } from "~/hooks/use-current-user";
 import type { HrisUser } from "~/lib/hris-auth";
-
-const userRoles = (user: HrisUser | undefined): string[] => {
-  if (!user) return [];
-  const roles = new Set<string>();
-  if (user.role) roles.add(user.role);
-  for (const role of user.roles ?? []) roles.add(role);
-  return [...roles];
-};
-
-const hasPayrollOps = (user: HrisUser | undefined): boolean =>
-  userRoles(user).some((role) =>
-    ["super_admin", "admin", "finance"].includes(role),
-  );
+import { hasPayrollOps } from "~/lib/payroll-access";
 
 const displayName = (user: HrisUser): string => {
   const fromParts = [user.firstName, user.lastName]

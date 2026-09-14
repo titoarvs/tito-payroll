@@ -47,12 +47,22 @@ Basic pay / gross / statutory deductions / leave pay / withholding for a cutoff.
 
 | Route | Who |
 | --- | --- |
-| `/dashboard/pay-runs` | finance / admin / super_admin — create via period date-range |
-| `/dashboard/pay-runs/$id` | same — compute / other adjustment / release / paper preview |
-| `/dashboard/contribution-tables` | same — SSS/HDMF/PhilHealth brackets |
-| `/dashboard/tax-tables` | same — TRAIN withholding brackets |
+| `/dashboard/pay-runs` | finance / admin — create; **super_admin** view-only (no create) |
+| `/dashboard/pay-runs/$id` | finance / admin — compute / other adjustment / release; **super_admin** view-only |
+| `/dashboard/contribution-tables` | finance / **super_admin** edit brackets; **admin** (HR) read-only |
+| `/dashboard/tax-tables` | finance / **super_admin** edit brackets; **admin** (HR) read-only |
 | `/dashboard/my-payslips` | any signed-in employee/consultant with released slips |
 | `/dashboard/my-payslips/$payslipId` | payslip details + print / save as PDF |
+
+### RBAC segregation of duties
+
+| Role | Contribution / tax tables | Pay runs (create / compute / release / other adj.) |
+| --- | --- | --- |
+| `super_admin` | manage | view only |
+| `admin` (HR) | view only | process |
+| `finance` | manage | process |
+
+UI helpers: `canManageStatutoryTables` / `canProcessPayRuns` in `src/lib/payroll-access.ts`. API enforces via `@Permissions` after `npm run seed:rbac`.
 
 ## Setup
 

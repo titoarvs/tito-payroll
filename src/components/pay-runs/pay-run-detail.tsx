@@ -54,7 +54,9 @@ import {
   useReleasePayRun,
   useUpdatePayslip,
 } from "~/hooks/use-pay-runs";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canProcessPayRuns } from "~/lib/payroll-access";
 import { cn } from "~/lib/utils";
 
 interface PayRunDetailProps {
@@ -197,6 +199,8 @@ const renderPayslipColumnCell = (
 };
 
 export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
+  const { data: user } = useCurrentUser();
+  const mayProcess = canProcessPayRuns(user);
   const { data, isPending, isError, error } = usePayRun(payRunId);
   const payslipsQuery = usePayRunPayslips(payRunId);
   const compute = useComputePayRun();
@@ -264,9 +268,11 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
     );
   }
 
-  const canCompute = payRun.status === "draft" || payRun.status === "computed";
-  const canRelease = payRun.status === "computed";
-  const canEdit = payRun.status === "computed";
+  const canCompute =
+    mayProcess &&
+    (payRun.status === "draft" || payRun.status === "computed");
+  const canRelease = mayProcess && payRun.status === "computed";
+  const canEdit = mayProcess && payRun.status === "computed";
   const periodLabel = formatPayRunPeriod(payRun.periodStart, payRun.periodEnd);
   const halfLabelShort = cutoffHalfLabel(payRun.cutoffHalf);
   const halfLabelFull = cutoffHalfLabel(payRun.cutoffHalf, { withFunds: true });

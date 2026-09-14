@@ -41,8 +41,10 @@ import {
   useTableColumns,
   type TableColumnDef,
 } from "~/components/ui/table-column-visibility";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { useCreatePayRun, usePayRuns } from "~/hooks/use-pay-runs";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canProcessPayRuns } from "~/lib/payroll-access";
 
 type PayRunColumnId = "half" | "status";
 
@@ -83,6 +85,8 @@ const renderPayRunColumnCell = (
 };
 
 export const PayRunsList = () => {
+  const { data: user } = useCurrentUser();
+  const mayProcess = canProcessPayRuns(user);
   const { data, isPending, isError, error } = usePayRuns();
   const create = useCreatePayRun();
   const [periodStart, setPeriodStart] = useState(INITIAL_PERIOD.start);
@@ -141,9 +145,14 @@ export const PayRunsList = () => {
     <div className="flex w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Pay runs"
-        description="Create a cutoff, compute from Tito Clock hours, then release."
+        description={
+          mayProcess
+            ? "Create a cutoff, compute from Tito Clock hours, then release."
+            : "View cutoffs and payslips. Processing is limited to HR and finance."
+        }
       />
 
+      {mayProcess ? (
       <Card aria-label="Create pay run">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Create pay run</CardTitle>
@@ -199,6 +208,7 @@ export const PayRunsList = () => {
           ) : null}
         </CardContent>
       </Card>
+      ) : null}
 
       {isPending ? (
         <Card>

@@ -180,8 +180,24 @@ Cutoff create → compute → review → approve & release. Contribution table e
 ### TC-19: Tax tables RBAC
 
 - **Priority:** High
-- **Steps:** User without `payroll.tax_tables.view` / `manage` hits tax-schedules endpoints; ops user opens `/dashboard/tax-tables` and saves brackets
-- **Expected result:** 403 without permission; finance/admin/super_admin can view/edit
+- **Steps:** User without `payroll.tax_tables.view` / `manage` hits tax-schedules endpoints; ops open `/dashboard/tax-tables`
+- **Expected result:** 403 without permission; **finance** and **super_admin** can view/edit brackets; **admin** (HR) can view only (Save / Add hidden; PUT brackets → 403)
+
+### TC-19b: Super Admin cannot process pay runs
+
+- **Priority:** High
+- **Preconditions:** `super_admin` JWT
+- **Steps:**
+  1. Open `/dashboard/pay-runs` and a draft/computed `$id`
+  2. Attempt `POST .../compute`, `POST .../release`, `PATCH .../payslips/:id`
+- **Expected result:** Create / Compute / Approve & release / Save adjustment controls hidden; API returns 403
+
+### TC-19c: HR cannot edit contribution tables
+
+- **Priority:** High
+- **Preconditions:** `admin` JWT
+- **Steps:** Open `/dashboard/contribution-tables` → Brackets → attempt Save / PUT brackets
+- **Expected result:** Inputs read-only; Add/Save/Remove hidden; API 403 on manage endpoints; compute/release still available on pay runs
 
 ### TC-20: Other adjustment PATCH still works
 

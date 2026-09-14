@@ -31,7 +31,9 @@ import {
   useReplaceTaxBrackets,
   useTaxSchedules,
 } from "~/hooks/use-pay-runs";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canManageStatutoryTables } from "~/lib/payroll-access";
 import { cn } from "~/lib/utils";
 
 interface BracketDraft {
@@ -49,6 +51,8 @@ const EMPTY_BRACKET: BracketDraft = {
 };
 
 export const TaxTablesPage = () => {
+  const { data: user } = useCurrentUser();
+  const mayManage = canManageStatutoryTables(user);
   const { data, isPending, isError, error } = useTaxSchedules();
   const replace = useReplaceTaxBrackets();
   const schedules = data?.data ?? [];
@@ -163,12 +167,16 @@ export const TaxTablesPage = () => {
           <CardHeader className="pb-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-base">Edit brackets</CardTitle>
+                <CardTitle className="text-base">
+                  {mayManage ? "Edit brackets" : "Brackets"}
+                </CardTitle>
                 <CardDescription>
-                  Select a schedule, edit rows, then save. Blank max means
-                  open-ended.
+                  {mayManage
+                    ? "Select a schedule, edit rows, then save. Blank max means open-ended."
+                    : "View BIR / TRAIN brackets. Only Super Admin and finance can edit."}
                 </CardDescription>
               </div>
+              {mayManage ? (
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -187,6 +195,7 @@ export const TaxTablesPage = () => {
                   {replace.isPending ? "Saving…" : "Save brackets"}
                 </Button>
               </div>
+              ) : null}
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
@@ -245,7 +254,9 @@ export const TaxTablesPage = () => {
 
             {drafts.length === 0 ? (
               <p className="text-sm text-muted-foreground" role="status">
-                This schedule has no brackets. Use Add bracket to create one.
+                {mayManage
+                  ? "This schedule has no brackets. Use Add bracket to create one."
+                  : "This schedule has no brackets."}
               </p>
             ) : (
               <div className="-mx-6 overflow-x-auto border-y border-border/40 sm:mx-0 sm:rounded-lg sm:border">
@@ -257,7 +268,9 @@ export const TaxTablesPage = () => {
                       <TableHead>Max</TableHead>
                       <TableHead>Base tax</TableHead>
                       <TableHead>Rate on excess %</TableHead>
-                      <TableHead className="w-20 text-right">Remove</TableHead>
+                      {mayManage ? (
+                        <TableHead className="w-20 text-right">Remove</TableHead>
+                      ) : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -269,7 +282,9 @@ export const TaxTablesPage = () => {
                         <TableCell>
                           <Input
                             value={draft.minCompensation}
+                            readOnly={!mayManage}
                             onChange={(e) => {
+                              if (!mayManage) return;
                               const next = [...drafts];
                               next[index] = {
                                 ...draft,
@@ -284,7 +299,9 @@ export const TaxTablesPage = () => {
                         <TableCell>
                           <Input
                             value={draft.maxCompensation}
+                            readOnly={!mayManage}
                             onChange={(e) => {
+                              if (!mayManage) return;
                               const next = [...drafts];
                               next[index] = {
                                 ...draft,
@@ -300,7 +317,9 @@ export const TaxTablesPage = () => {
                         <TableCell>
                           <Input
                             value={draft.baseTax}
+                            readOnly={!mayManage}
                             onChange={(e) => {
+                              if (!mayManage) return;
                               const next = [...drafts];
                               next[index] = {
                                 ...draft,
@@ -315,7 +334,9 @@ export const TaxTablesPage = () => {
                         <TableCell>
                           <Input
                             value={draft.rateOnExcess}
+                            readOnly={!mayManage}
                             onChange={(e) => {
+                              if (!mayManage) return;
                               const next = [...drafts];
                               next[index] = {
                                 ...draft,
@@ -327,6 +348,7 @@ export const TaxTablesPage = () => {
                             className="h-9 min-w-[6.5rem]"
                           />
                         </TableCell>
+                        {mayManage ? (
                         <TableCell className="text-right">
                           <Button
                             type="button"
@@ -343,6 +365,7 @@ export const TaxTablesPage = () => {
                             <Trash2Icon className="size-3.5" />
                           </Button>
                         </TableCell>
+                        ) : null}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -366,7 +389,13 @@ export const TaxTablesPage = () => {
         </Card>
       ) : null}
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog
+        open={mayManage && addOpen}
+        onOpenChange={(open) => {
+          if (!mayManage) return;
+          setAddOpen(open);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add tax bracket</DialogTitle>

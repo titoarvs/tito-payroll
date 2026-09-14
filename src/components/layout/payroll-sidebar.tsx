@@ -7,21 +7,8 @@ import { appVersion } from "~/config/appVersion";
 import { PAYROLL_NAV_ITEMS } from "~/config/payroll-navigation";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { useSidebarCollapsed } from "~/hooks/use-sidebar-collapsed";
-import type { HrisUser } from "~/lib/hris-auth";
+import { hasPayrollOps } from "~/lib/payroll-access";
 import { cn } from "~/lib/utils";
-
-const userRoles = (user: HrisUser | undefined): string[] => {
-  if (!user) return [];
-  const roles = new Set<string>();
-  if (user.role) roles.add(user.role);
-  for (const role of user.roles ?? []) roles.add(role);
-  return [...roles];
-};
-
-const hasPayrollOps = (user: HrisUser | undefined): boolean =>
-  userRoles(user).some((role) =>
-    ["super_admin", "admin", "finance"].includes(role),
-  );
 
 interface PayrollSidebarProps {
   className?: string;
