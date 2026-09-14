@@ -33,7 +33,8 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: process.cwd(),
     server: {
-      port: 3000,
+      port: 3002,
+      strictPort: true,
     },
     define: {
       __APP_VERSION__: JSON.stringify(packageJson.version),

@@ -938,21 +938,31 @@
   }
 
   #payslip-document,
-  #payslip-document * {
+  #payslip-document *,
+  .payslip-document,
+  .payslip-document * {
     visibility: visible !important;
   }
 
-  #payslip-document {
+  #payslip-document,
+  .payslip-document {
     position: absolute;
     inset: 0;
     width: 100%;
+    margin: 0;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    background: white !important;
+    color: black !important;
   }
 
   #payslip-document header {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .print\:hidden {
+    display: none !important;
   }
 }

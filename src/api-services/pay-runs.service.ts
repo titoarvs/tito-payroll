@@ -8,10 +8,14 @@ import type {
   PayrollDashboardSummary,
   Payslip,
   ReplaceBracketsInput,
+  ReplaceTaxBracketsInput,
+  TaxSchedule,
+  UpdatePayslipInput,
 } from "./pay-runs.types";
 
 const PAY_RUNS = "/payroll/pay-runs";
 const SCHEDULES = "/payroll/contribution-schedules";
+const TAX_SCHEDULES = "/payroll/tax-schedules";
 const PAYSLIPS = "/payroll/payslips";
 const DASHBOARD = "/payroll/dashboard";
 
@@ -66,11 +70,29 @@ export const contributionTablesService = {
     ),
 };
 
+export const taxTablesService = {
+  list: () => hrisApi.get<ApiListResponse<TaxSchedule[]>>(TAX_SCHEDULES),
+  getById: (id: string) =>
+    hrisApi.get<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/${encodeURIComponent(id)}`,
+    ),
+  replaceBrackets: (id: string, input: ReplaceTaxBracketsInput) =>
+    hrisApi.put<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/${encodeURIComponent(id)}/brackets`,
+      input,
+    ),
+};
+
 export const payslipsService = {
   listMine: () => hrisApi.get<ApiListResponse<Payslip[]>>(`${PAYSLIPS}/me`),
   listAll: () => hrisApi.get<ApiListResponse<Payslip[]>>(PAYSLIPS),
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<Payslip>>(
       `${PAYSLIPS}/${encodeURIComponent(id)}`,
+    ),
+  update: (id: string, input: UpdatePayslipInput) =>
+    hrisApi.patch<ApiListResponse<Payslip>>(
+      `${PAYSLIPS}/${encodeURIComponent(id)}`,
+      input,
     ),
 };

@@ -19,6 +19,7 @@ import { Route as DashboardContributionTablesRouteImport } from './routes/dashbo
 import { Route as DashboardEmployeesRouteImport } from './routes/dashboard/employees'
 import { Route as DashboardMyPayslipsRouteImport } from './routes/dashboard/my-payslips'
 import { Route as DashboardPayRunsRouteImport } from './routes/dashboard/pay-runs'
+import { Route as DashboardTaxTablesRouteImport } from './routes/dashboard/tax-tables'
 import { Route as DashboardEmployeesIndexRouteImport } from './routes/dashboard/employees.index'
 import { Route as DashboardEmployeesIdRouteImport } from './routes/dashboard/employees.$id'
 import { Route as DashboardMyPayslipsIndexRouteImport } from './routes/dashboard/my-payslips.index'
@@ -77,6 +78,11 @@ const DashboardPayRunsRoute = DashboardPayRunsRouteImport.update({
   path: '/pay-runs',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardTaxTablesRoute = DashboardTaxTablesRouteImport.update({
+  id: '/tax-tables',
+  path: '/tax-tables',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardEmployeesIndexRoute = DashboardEmployeesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
   '/dashboard/my-payslips': typeof DashboardMyPayslipsRouteWithChildren
   '/dashboard/pay-runs': typeof DashboardPayRunsRouteWithChildren
+  '/dashboard/tax-tables': typeof DashboardTaxTablesRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
   '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
+  '/dashboard/tax-tables': typeof DashboardTaxTablesRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
   '/dashboard/my-payslips': typeof DashboardMyPayslipsRouteWithChildren
   '/dashboard/pay-runs': typeof DashboardPayRunsRouteWithChildren
+  '/dashboard/tax-tables': typeof DashboardTaxTablesRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/dashboard/employees'
     | '/dashboard/my-payslips'
     | '/dashboard/pay-runs'
+    | '/dashboard/tax-tables'
     | '/dashboard/'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/auth/success'
     | '/auth/verify-mfa'
     | '/dashboard/contribution-tables'
+    | '/dashboard/tax-tables'
     | '/dashboard'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/dashboard/employees'
     | '/dashboard/my-payslips'
     | '/dashboard/pay-runs'
+    | '/dashboard/tax-tables'
     | '/dashboard/'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
@@ -292,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/pay-runs'
       fullPath: '/dashboard/pay-runs'
       preLoaderRoute: typeof DashboardPayRunsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/tax-tables': {
+      id: '/dashboard/tax-tables'
+      path: '/tax-tables'
+      fullPath: '/dashboard/tax-tables'
+      preLoaderRoute: typeof DashboardTaxTablesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/employees/': {
@@ -383,6 +402,7 @@ interface DashboardRouteChildren {
   DashboardEmployeesRoute: typeof DashboardEmployeesRouteWithChildren
   DashboardMyPayslipsRoute: typeof DashboardMyPayslipsRouteWithChildren
   DashboardPayRunsRoute: typeof DashboardPayRunsRouteWithChildren
+  DashboardTaxTablesRoute: typeof DashboardTaxTablesRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -391,6 +411,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardEmployeesRoute: DashboardEmployeesRouteWithChildren,
   DashboardMyPayslipsRoute: DashboardMyPayslipsRouteWithChildren,
   DashboardPayRunsRoute: DashboardPayRunsRouteWithChildren,
+  DashboardTaxTablesRoute: DashboardTaxTablesRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 

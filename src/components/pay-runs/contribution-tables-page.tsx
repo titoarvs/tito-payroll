@@ -33,7 +33,9 @@ import {
   useContributionSchedules,
   useReplaceBrackets,
 } from "~/hooks/use-pay-runs";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canManageStatutoryTables } from "~/lib/payroll-access";
 import { cn } from "~/lib/utils";
 
 interface BracketDraft {
@@ -67,6 +69,8 @@ const EMPTY_BRACKET: BracketDraft = {
 };
 
 export const ContributionTablesPage = () => {
+  const { data: user } = useCurrentUser();
+  const mayManage = canManageStatutoryTables(user);
   const { data, isPending, isError, error } = useContributionSchedules();
   const replace = useReplaceBrackets();
   const schedules = data?.data ?? [];
@@ -223,12 +227,16 @@ export const ContributionTablesPage = () => {
               <CardHeader className="pb-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <CardTitle className="text-base">Edit brackets</CardTitle>
+                    <CardTitle className="text-base">
+                      {mayManage ? "Edit brackets" : "Brackets"}
+                    </CardTitle>
                     <CardDescription>
-                      Switch fund tab, edit rows, then save. Add new brackets
-                      from the dialog.
+                      {mayManage
+                        ? "Switch fund tab, edit rows, then save. Add new brackets from the dialog."
+                        : "View SSS / HDMF / PhilHealth brackets. Only Super Admin and finance can edit."}
                     </CardDescription>
                   </div>
+                  {mayManage ? (
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
@@ -247,6 +255,7 @@ export const ContributionTablesPage = () => {
                       {replace.isPending ? "Saving…" : "Save brackets"}
                     </Button>
                   </div>
+                  ) : null}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4 pt-0">
@@ -309,8 +318,9 @@ export const ContributionTablesPage = () => {
 
                 {drafts.length === 0 ? (
                   <p className="text-sm text-muted-foreground" role="status">
-                    This schedule has no brackets. Use Add bracket to create
-                    one.
+                    {mayManage
+                      ? "This schedule has no brackets. Use Add bracket to create one."
+                      : "This schedule has no brackets."}
                   </p>
                 ) : (
                   <div className="-mx-6 overflow-x-auto border-y border-border/40 sm:mx-0 sm:rounded-lg sm:border">
@@ -322,9 +332,11 @@ export const ContributionTablesPage = () => {
                           <TableHead>Max</TableHead>
                           <TableHead>Employee share</TableHead>
                           <TableHead>Employer share</TableHead>
-                          <TableHead className="w-20 text-right">
-                            Remove
-                          </TableHead>
+                          {mayManage ? (
+                            <TableHead className="w-20 text-right">
+                              Remove
+                            </TableHead>
+                          ) : null}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -336,7 +348,9 @@ export const ContributionTablesPage = () => {
                             <TableCell>
                               <Input
                                 value={draft.minCompensation}
+                                readOnly={!mayManage}
                                 onChange={(e) => {
+                                  if (!mayManage) return;
                                   const next = [...drafts];
                                   next[index] = {
                                     ...draft,
@@ -351,7 +365,9 @@ export const ContributionTablesPage = () => {
                             <TableCell>
                               <Input
                                 value={draft.maxCompensation}
+                                readOnly={!mayManage}
                                 onChange={(e) => {
+                                  if (!mayManage) return;
                                   const next = [...drafts];
                                   next[index] = {
                                     ...draft,
@@ -367,7 +383,9 @@ export const ContributionTablesPage = () => {
                             <TableCell>
                               <Input
                                 value={draft.employeeShare}
+                                readOnly={!mayManage}
                                 onChange={(e) => {
+                                  if (!mayManage) return;
                                   const next = [...drafts];
                                   next[index] = {
                                     ...draft,
@@ -382,7 +400,9 @@ export const ContributionTablesPage = () => {
                             <TableCell>
                               <Input
                                 value={draft.employerShare}
+                                readOnly={!mayManage}
                                 onChange={(e) => {
+                                  if (!mayManage) return;
                                   const next = [...drafts];
                                   next[index] = {
                                     ...draft,
@@ -394,6 +414,7 @@ export const ContributionTablesPage = () => {
                                 className="h-9 min-w-[6.5rem]"
                               />
                             </TableCell>
+                            {mayManage ? (
                             <TableCell className="text-right">
                               <Button
                                 type="button"
@@ -410,6 +431,7 @@ export const ContributionTablesPage = () => {
                                 <Trash2Icon className="size-3.5" />
                               </Button>
                             </TableCell>
+                            ) : null}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -433,7 +455,13 @@ export const ContributionTablesPage = () => {
             </Card>
           ) : null}
 
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <Dialog
+            open={mayManage && addOpen}
+            onOpenChange={(open) => {
+              if (!mayManage) return;
+              setAddOpen(open);
+            }}
+          >
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>

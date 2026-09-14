@@ -51,6 +51,7 @@ import {
   type DashboardDateRange,
 } from "~/lib/dashboard-date-range";
 import type { HrisUser } from "~/lib/hris-auth";
+import { canProcessPayRuns } from "~/lib/payroll-access";
 import { cn } from "~/lib/utils";
 
 interface PayrollWelcomeDashboardProps {
@@ -134,6 +135,7 @@ export const PayrollWelcomeDashboard = ({
   showEmployeeMetrics,
 }: PayrollWelcomeDashboardProps) => {
   const { data: user } = useCurrentUser();
+  const mayProcess = canProcessPayRuns(user);
   const [dateRange, setDateRange] = useState<DashboardDateRange>(
     defaultDashboardDateRange,
   );
@@ -335,11 +337,12 @@ export const PayrollWelcomeDashboard = ({
             </div>
             <div className="space-y-1.5">
               <h2 className="payroll-cutoff-hero__title">
-                Run the next cutoff
+                {mayProcess ? "Run the next cutoff" : "Payroll overview"}
               </h2>
               <p className="payroll-cutoff-hero__copy">
-                Create a period, compute Clock hours, then release payslips to
-                employees.
+                {mayProcess
+                  ? "Create a period, compute Clock hours, then release payslips to employees."
+                  : "Review cutoffs and configure contribution or tax tables. Processing is limited to HR and finance."}
               </p>
             </div>
             <div className="payroll-cutoff-hero__cta">
@@ -767,12 +770,14 @@ export const PayrollWelcomeDashboard = ({
                 );
               })}
             </div>
-            <Button asChild size="sm">
-              <Link to="/dashboard/pay-runs">
-                <Plus className="size-3.5" />
-                Add pay run
-              </Link>
-            </Button>
+            {mayProcess ? (
+              <Button asChild size="sm">
+                <Link to="/dashboard/pay-runs">
+                  <Plus className="size-3.5" />
+                  Add pay run
+                </Link>
+              </Button>
+            ) : null}
           </div>
         </div>
 

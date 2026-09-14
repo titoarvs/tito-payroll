@@ -2,10 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   contributionTablesService,
   payRunsService,
+  payslipsService,
+  taxTablesService,
 } from "~/api-services/pay-runs.service";
 import type {
   CreatePayRunInput,
   ReplaceBracketsInput,
+  ReplaceTaxBracketsInput,
+  UpdatePayslipInput,
 } from "~/api-services/pay-runs.types";
 import {
   contributionKeys,
@@ -18,7 +22,10 @@ import {
   getPayRunsQuery,
   getPayrollDashboardSummaryQuery,
   getPayslipQuery,
+  getTaxSchedulesQuery,
+  myPayslipsKeys,
   payRunsKeys,
+  taxKeys,
 } from "~/queries/pay-runs";
 
 export const usePayRuns = () => useQuery(getPayRunsQuery());
@@ -60,6 +67,7 @@ export const useReleasePayRun = () => {
     onSuccess: async (_data, id) => {
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.detail(id) });
+      await queryClient.invalidateQueries({ queryKey: myPayslipsKeys.all });
     },
   });
 };
@@ -86,6 +94,24 @@ export const useReplaceBrackets = () => {
   });
 };
 
+export const useTaxSchedules = () => useQuery(getTaxSchedulesQuery());
+
+export const useReplaceTaxBrackets = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: ReplaceTaxBracketsInput;
+    }) => taxTablesService.replaceBrackets(id, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taxKeys.all });
+    },
+  });
+};
+
 export const useMyPayslips = (enabled = true) =>
   useQuery({ ...getMyPayslipsQuery(), enabled });
 
@@ -93,3 +119,26 @@ export const useAllReleasedPayslips = (enabled = true) =>
   useQuery(getAllReleasedPayslipsQuery(enabled));
 
 export const usePayslip = (id: string) => useQuery(getPayslipQuery(id));
+
+export const useMyPayslip = (id: string) => useQuery(getPayslipQuery(id));
+
+export const useUpdatePayslip = (payRunId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdatePayslipInput;
+    }) => payslipsService.update(id, input),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: payRunsKeys.payslips(payRunId),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: myPayslipsKeys.detail(variables.id),
+      });
+    },
+  });
+};

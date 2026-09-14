@@ -37,6 +37,24 @@ export interface EmployeeContributionRow {
   philhealth: string;
 }
 
+export interface TaxBracket {
+  id: string;
+  scheduleId: string;
+  minCompensation: string;
+  maxCompensation: string | null;
+  baseTax: string;
+  rateOnExcess: string;
+}
+
+export interface TaxSchedule {
+  id: string;
+  name: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  isActive: boolean;
+  brackets: TaxBracket[];
+}
+
 export interface PayRun {
   id: string;
   periodStart: string;
@@ -44,6 +62,8 @@ export interface PayRun {
   cutoffHalf: CutoffHalf;
   status: PayRunStatus;
   createdBy: string | null;
+  releasedBy?: string | null;
+  releasedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,9 +80,11 @@ export interface Payslip {
   position?: string | null;
   employmentStatus?: string | null;
   sssNumber?: string | null;
-  philhealthNumber?: string | null;
+  hdmfNumber?: string | null;
   pagibigNumber?: string | null;
+  philhealthNumber?: string | null;
   tinNumber?: string | null;
+  monthlyRate?: string;
   hoursWorked: string;
   hourlyRate: string;
   basicPay: string;
@@ -71,12 +93,28 @@ export interface Payslip {
   sss: string;
   hdmf: string;
   philhealth: string;
+  withholdingTax?: string;
   totalDeductions: string;
+  overtimeHours?: string;
+  overtimePay?: string;
+  nightDiffHours?: string;
+  nightDiffPay?: string;
+  holidayHours?: string;
+  holidayPay?: string;
+  paidLeaveDays?: string;
+  unpaidLeaveDays?: string;
+  leavePay?: string;
+  otherAdjustment?: string;
+  thirteenthMonthPay?: string;
+  totalAdjustments?: string;
   netPay: string;
+  preparedByName?: string | null;
   periodStart?: string;
   periodEnd?: string;
   cutoffHalf?: CutoffHalf;
   status?: PayRunStatus;
+  releasedBy?: string | null;
+  releasedAt?: string | null;
 }
 
 export interface CreatePayRunInput {
@@ -85,12 +123,29 @@ export interface CreatePayRunInput {
   cutoffHalf: CutoffHalf;
 }
 
+export interface UpdatePayslipInput {
+  overtimePay?: string;
+  nightDiffPay?: string;
+  holidayPay?: string;
+  otherAdjustment?: string;
+  thirteenthMonthPay?: string;
+}
+
 export interface ReplaceBracketsInput {
   brackets: Array<{
     minCompensation: string;
     maxCompensation?: string | null;
     employeeShare: string;
     employerShare?: string;
+  }>;
+}
+
+export interface ReplaceTaxBracketsInput {
+  brackets: Array<{
+    minCompensation: string;
+    maxCompensation?: string | null;
+    baseTax: string;
+    rateOnExcess: string;
   }>;
 }
 
