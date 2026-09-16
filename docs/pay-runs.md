@@ -2,19 +2,22 @@
 
 **Batch** in product language is the `pay_run` table / HTTP `/api/payroll/pay-runs` (not renamed).
 
-Basic pay / gross / statutory deductions / leave pay / withholding for a cutoff. Hours from Tito Clock (approved OT, ND, holiday). Approved T201 leave overlapping the period feeds leave pay. BIR withholding uses versioned tax tables (half of monthly tax each cutoff).
+Basic pay / gross / statutory deductions / withholding for a cutoff. Hours from Tito Clock (plus restored paid-leave gap). Approved OT, ND, holiday claims are adjustments. BIR withholding uses versioned tax tables on (Gross − contributions).
 
 ## Formula
 
-- **Basic pay** = hourly rate × Clock hours (completed entries in the period)
-- **Gross** = basic + employee **allowance (per cutoff)**
-- **Adjustments** = overtime + night differential + holiday + **leave pay** + other adjustment + 13th month (13th month is always `0.00` this pass)
-  - Leave pay = hourly × paid leave days in cutoff × 8 (consultants: `0`)
-  - Unpaid / LWOP days add `0` leave pay (Clock hours are **not** reduced for LWOP — ND-PR-13 open)
+- **Basic pay** = hourly rate × (Clock hours + restored paid-leave hours)
+  - Restored hours = per paid-leave weekday, `max(0, expected − Clock hours that day)` (full day 8h / AM–PM 4h)
+  - Unpaid / LWOP does **not** reduce Clock hours (ND-PR-13 open); consultants restore `0`
+- **Gross** = basic + employee **allowance (per cutoff)** (consultants: Gross = Basic only)
+- **Adjustments** = overtime + night differential + holiday + other adjustment + 13th month
+  - Paid leave is **not** an additive line (`leavePay` stays `0.00`; amount is already in Basic)
+  - 13th month = `1/12` of year-to-date Basic when the batch has `includeThirteenthMonth`; otherwise `0.00`
 - **Deductions** = SSS / HDMF / PhilHealth (cutoff split) + **withholding tax** (when covered, non-consultant)
-  - Withholding = half of monthly TRAIN bracket tax for this cutoff
+  - Taxable cutoff = `max(0, Gross − SSS − HDMF − PhilHealth)`
+  - Withholding = half of monthly TRAIN tax on `(taxable cutoff × 2)`
 - **HMO**: never deducted
-- **Consultants**: hours × rate only (no statutory / leave pay / tax)
+- **Consultants**: Net = Hours × Rate only — no allowance, statutory, leave restore, tax, OT/ND/holiday premiums, other adjustment, or 13th month
 - **Net** = gross + adjustments − SSS − HDMF − PhilHealth − withholding
 
 ### Premium multipliers (named constants in API `compute-pay`)
@@ -29,7 +32,7 @@ Basic pay / gross / statutory deductions / leave pay / withholding for a cutoff.
 
 | Concept | Storage |
 | --- | --- |
-| Batch | `payroll.pay_run` |
+| Batch | `payroll.pay_run` (`includeThirteenthMonth` flag) |
 | Payslip | `payroll.payslip` (+ denormalized OT/ND/holiday/leave/tax columns) |
 | Adjustment | `payroll.payslip_adjustment` lines (`overtime` / `night_diff` / `holiday` / `leave` / `other` / `thirteenth_month`); compute/PATCH dual-write lines + columns |
 | TaxTable | `payroll.tax_schedule` + `payroll.tax_bracket` (versioned) |
@@ -39,8 +42,8 @@ Basic pay / gross / statutory deductions / leave pay / withholding for a cutoff.
 
 `draft` → `computed` (Compute) → `released` (Approve & release)
 
-1. **Compute** replaces payslips for all active employees, snapshots identity, pulls Clock OT/ND/holiday, loads approved leave by `employee.id`, applies tax brackets, inserts adjustment rows, and notifies payroll ops.
-2. While **computed**, ops may `PATCH` the **other** adjustment; leave + withholding stay compute-owned; totals recalculate server-side.
+1. **Compute** replaces payslips for all active employees, snapshots identity, pulls Clock OT/ND/holiday (skipped for consultants), restores paid-leave hours into Basic (non-consultants), loads approved leave by `employee.id`, applies tax from Gross − contributions, fills 13th month when the batch is flagged, inserts adjustment rows, and notifies payroll ops.
+2. While **computed**, ops may `PATCH` the **other** adjustment with a **required reason** (non-consultants only); leave restore + withholding stay compute-owned; totals recalculate server-side; change is audit-logged under module `payroll`.
 3. **Approve & release** stamps preparer and notifies each linked employee. Slips appear under My payslips immediately.
 
 ## Routes
@@ -77,5 +80,6 @@ UI helpers: `canManageStatutoryTables` / `canProcessPayRuns` in `src/lib/payroll
 - Renaming `pay_run` → Batch in HTTP
 - ND-PR-13 (subtract Clock hours for LWOP)
 - Full BIR productization beyond versioned table + half-monthly apply
-- 13th-month engine (column present, always zero)
+- Automatic December 13th-month payout (HR flags the batch instead)
+- Subtracting 13th month already paid earlier in the same year
 - Email / SMTP delivery

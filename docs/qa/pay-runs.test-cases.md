@@ -50,12 +50,12 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** 1st cutoff compute
 - **Expected result:** `hdmf` = `0.00`
 
-### TC-06: Consultant — no statutory; same self-access
+### TC-06: Consultant — hours × rate only; same self-access
 
 - **Priority:** High
-- **Preconditions:** `employmentStatus=consultant`; linked user
+- **Preconditions:** `employmentStatus=consultant`; linked user; employee may have allowance and approved OT/ND/holiday claims
 - **Steps:** Compute → Approve & release → open My payslips as consultant
-- **Expected result:** Gross = basic + allowance; all statutory `0.00`; paper slip visible; other employees' ids return 403
+- **Expected result:** Gross = Basic = Hours × Rate (allowance ignored); all statutory `0.00`; OT/ND/holiday/other/13th `0.00`; paper slip visible; other employees' ids return 403; other-adjustment editor hidden; PATCH adjustment → 400
 
 ### TC-07: Unlinked Clock user → zero hours
 
@@ -116,8 +116,19 @@ Cutoff create → compute → review → approve & release. Contribution table e
 ### TC-10: Edit adjustment then approve & release
 
 - **Priority:** High
-- **Steps:** Compute → select payslip → change other adjustment → Save → Approve & release
-- **Expected result:** Totals recalculate; button label is Approve & release; slips appear under each employee login immediately; each linked employee gets `payslip-released`
+- **Steps:**
+  1. Compute → select non-consultant payslip
+  2. Change other adjustment without a reason → Save
+  3. Enter a reason → Save
+  4. Approve & release
+- **Expected result:** Step 2 → 400 (reason required). Step 3 → totals recalculate; `other` adjustment note stores the reason; T201 Audit Trail module **Payroll** shows `otherAdjustment` update with `{amount} | {reason}`. After release, slips appear under each employee login; each linked employee gets `payslip-released`.
+
+### TC-10c: 13th month when batch is flagged
+
+- **Priority:** High
+- **Preconditions:** At least one released payslip earlier in the same calendar year with known Basic; create a new draft with **Include 13th month pay** checked
+- **Steps:** Compute
+- **Expected result:** Each non-consultant slip has `thirteenthMonthPay` = 1/12 of (prior released Basic YTD + this cutoff Basic). Unflagged batch → all `0.00`. Consultant on a flagged batch → `0.00`.
 
 ### TC-10b: Remove contribution bracket
 
@@ -163,19 +174,19 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** Change employee share on HDMF → recompute draft/computed 1st cutoff
 - **Expected result:** New `hdmf` amount on payslips
 
-### TC-17: Leave pay on cutoff (paid / unpaid / consultant)
+### TC-17: Paid leave restores Basic (no additive leave pay)
 
 - **Priority:** High
-- **Preconditions:** Approved paid leave overlapping period; separate case with `UNPAID` / LWOP; consultant with paid leave type
+- **Preconditions:** Approved paid leave overlapping period with little/no Clock that day; separate case with `UNPAID` / LWOP; consultant with paid leave type
 - **Steps:** Compute pay run
-- **Expected result:** Paid leave → `leavePay` = hourly × paid days × 8 and adjustment line `leave`; unpaid days → `unpaidLeaveDays` set, leave pay `0`, Clock hours unchanged; consultant → `leavePay` `0.00`
+- **Expected result:** Paid leave → `hoursWorked` includes restored gap (`max(0, expected − clocked)`); `basicPay` / `grossPay` include those hours at hourly; `leavePay` = `0.00` (no additive adjustment); unpaid days → `unpaidLeaveDays` set, restore `0`, Clock hours unchanged; consultant → no restore, `leavePay` `0.00`
 
-### TC-18: Withholding tax from tax tables
+### TC-18: Withholding tax from Gross − contributions
 
 - **Priority:** High
-- **Preconditions:** Seeded tax schedule; employee covered, not consultant
+- **Preconditions:** Seeded tax schedule; employee covered, not consultant; Gross large enough that `(gross − contributions) × 2` hits a taxable TRAIN bracket
 - **Steps:** Compute
-- **Expected result:** `withholdingTax` ≈ half of monthly TRAIN bracket tax; appears on paper slip; consultants / uncovered → `0.00`
+- **Expected result:** `withholdingTax` = half of monthly TRAIN on `(gross − SSS − HDMF − PhilHealth) × 2`; appears on paper slip; consultants / uncovered → `0.00`
 
 ### TC-19: Tax tables RBAC
 
@@ -222,7 +233,7 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - periodStart after periodEnd → 400
 - Money fields remain strings
 - Open Clock timers excluded from hours
-- Unlinked Clock `userId` → zero Clock hours; leave still applies via `employee.id`
+- Unlinked Clock `userId` → zero Clock hours; paid leave still restores via `employee.id`
 - Identity snapshot on payslip does not change when 201 profile is edited after compute
 
 ## Out of Scope
@@ -231,7 +242,8 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - Renaming `pay_run` HTTP path to Batch
 - ND-PR-13 (subtract Clock hours for LWOP)
 - Full BIR productization beyond versioned table + half-monthly apply
-- 13th-month engine (always `0.00`)
+- Automatic December 13th-month payout (HR flags the batch)
+- Subtracting 13th month already paid earlier in the same year
 - Email / SMTP delivery
 - Clock WebSocket sync
 - Granting people_culture payroll ops

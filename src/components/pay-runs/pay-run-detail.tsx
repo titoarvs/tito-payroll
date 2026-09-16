@@ -88,7 +88,7 @@ const PAYSLIP_COLUMN_DEFS: TableColumnDef<PayslipColumnId>[] = [
   { id: "ot", label: "OT" },
   { id: "nd", label: "ND" },
   { id: "holiday", label: "Holiday" },
-  { id: "leave", label: "Leave pay" },
+  { id: "leave", label: "Leave days" },
   { id: "gross", label: "Gross" },
   { id: "sss", label: "SSS" },
   { id: "hdmf", label: "HDMF" },
@@ -150,7 +150,12 @@ const renderPayslipColumnCell = (
     case "leave":
       return (
         <TableCell key={id} className="tabular-nums">
-          {row.leavePay ?? "0.00"}
+          {row.paidLeaveDays ?? "0.00"}d
+          {row.unpaidLeaveDays &&
+          row.unpaidLeaveDays !== "0.00" &&
+          row.unpaidLeaveDays !== "0"
+            ? ` / ${row.unpaidLeaveDays}d`
+            : ""}
         </TableCell>
       );
     case "gross":
@@ -209,6 +214,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [otherAdjustment, setOtherAdjustment] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<EmployeePageSize>(
     DEFAULT_EMPLOYEE_PAGE_SIZE,
@@ -280,6 +286,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const handleSelect = (row: Payslip) => {
     setSelectedId(row.id);
     setOtherAdjustment(row.otherAdjustment ?? "0.00");
+    setAdjustmentReason(row.otherAdjustmentReason ?? "");
   };
 
   const handleRelease = () => {
@@ -292,7 +299,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
     if (!selected) return;
     updatePayslip.mutate({
       id: selected.id,
-      input: { otherAdjustment },
+      input: { otherAdjustment, reason: adjustmentReason.trim() },
     });
   };
 
@@ -396,6 +403,9 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
         <p className="text-xs text-muted-foreground sm:text-sm">
           <span className="sm:hidden">{halfLabelShort}</span>
           <span className="hidden sm:inline">{halfLabelFull}</span>
+          {payRun.includeThirteenthMonth ? (
+            <span> · 13th month included</span>
+          ) : null}
           {canCompute ? (
             <span className="hidden sm:inline">
               {" "}
@@ -494,7 +504,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
 
       {previewPayslip ? (
         <div className="flex flex-col gap-4">
-          {canEdit ? (
+          {canEdit && selected?.employmentStatus !== "consultant" ? (
             <Card>
               <CardContent className="flex flex-wrap items-end gap-3 pt-6">
                 <div className="space-y-2">
@@ -506,16 +516,29 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
                     onChange={(event) => setOtherAdjustment(event.target.value)}
                   />
                 </div>
+                <div className="min-w-[12rem] flex-1 space-y-2">
+                  <Label htmlFor="adjustment-reason">Reason</Label>
+                  <Input
+                    id="adjustment-reason"
+                    value={adjustmentReason}
+                    onChange={(event) =>
+                      setAdjustmentReason(event.target.value)
+                    }
+                    placeholder="Required — why this adjustment"
+                  />
+                </div>
                 <Button
                   type="button"
                   onClick={handleSaveAdjustment}
-                  disabled={updatePayslip.isPending}
+                  disabled={
+                    updatePayslip.isPending || !adjustmentReason.trim()
+                  }
                 >
                   {updatePayslip.isPending ? "Saving…" : "Save adjustment"}
                 </Button>
-                <p className="text-xs text-muted-foreground">
-                  Edits recalculate net on the server. Available while the run is
-                  computed (not yet released).
+                <p className="w-full text-xs text-muted-foreground">
+                  Reason is required and audit-logged. Edits recalculate net on
+                  the server while the run is computed (not yet released).
                 </p>
               </CardContent>
             </Card>

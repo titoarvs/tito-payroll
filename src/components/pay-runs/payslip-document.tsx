@@ -232,7 +232,7 @@ export const PayslipDocument = ({ payslip, className }: PayslipDocumentProps) =>
               <HoursCell value={payslip.nightDiffHours} />
             </tr>
             <tr>
-              <LabelCell>Leave pay</LabelCell>
+              <LabelCell>Leave (in Basic)</LabelCell>
               <MoneyCell value={payslip.leavePay} />
               <td />
               <td className="px-2 py-0.5 text-right tabular-nums text-xs">
