@@ -57,11 +57,43 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** Compute → Approve & release → open My payslips as consultant
 - **Expected result:** Gross = Basic = Hours × Rate (allowance ignored); all statutory `0.00`; OT/ND/holiday/other/13th `0.00`; paper slip visible; other employees' ids return 403; other-adjustment editor hidden; PATCH adjustment → 400
 
-### TC-07: Unlinked Clock user → zero hours
+### TC-07: Unlinked Clock user blocks regular compute
 
-- **Priority:** Medium
-- **Preconditions:** Employee `userId` null
-- **Expected result:** `hoursWorked` = `0.00`; basic = `0.00`
+- **Priority:** High
+- **Preconditions:** At least one active employee with `userId` null (or no hourly rate)
+- **Steps:** Open draft regular pay run → note readiness banner → Compute
+- **Expected result:** Compute returns 409 with `issues` listing the employee; no payslips written; ops receive `pay-run-missing-data` once; payroll bell links to pay-run detail. Correction compute still succeeds with empty readiness.
+
+### TC-07b: Ready employees allow compute
+
+- **Priority:** High
+- **Preconditions:** All active employees have `userId` and positive hourly rate
+- **Steps:** Compute
+- **Expected result:** Compute succeeds; readiness issues empty
+
+### TC-07c: Approval reminders escalate on periodEnd
+
+- **Priority:** High
+- **Preconditions:** Computed (unreleased) pay run with known `periodEnd`
+- **Steps:**
+  1. `POST /api/payroll/scan-alerts` with `today` = periodEnd − 7 days
+  2. Same with periodEnd − 2 days
+  3. Same with periodEnd (or later)
+  4. Repeat step 3
+  5. Release the run; scan again
+- **Expected result:** Steps 1–3 create `pay-run-approval-reminder-7`, `-2`, and `pay-run-approval-overdue` for payroll ops (once each) under `data.approval`. Step 4 creates no duplicates. Step 5 creates nothing new for that run. Regular employees do not see these types. Pay-runs list shows “Release due in N days” / “Approval overdue” on computed rows.
+
+### TC-07d: Unfiled holiday work reminds employee before cutoff closes
+
+- **Priority:** High
+- **Preconditions:** Current cutoff still open; confirmed active T201 `holiday_instance` in the cutoff; non-consultant employee with linked Clock `userId` has a completed time entry on that holiday date; no approved `holiday_hours` for that user+date; no released regular pay run for the cutoff
+- **Steps:**
+  1. As finance/admin, `POST /api/payroll/scan-alerts` with `today` inside the cutoff
+  2. Repeat the same scan
+  3. Sign in as the employee; open tito-payroll notification bell (and T201 bell if `VITE_PAYROLL_APP_URL` is set)
+  4. Scan again with `today` after cutoff `periodEnd`
+  5. Repeat with a consultant who also logged holiday work without a claim
+- **Expected result:** Step 1 creates one `holiday-work-unfiled-reminder` for the employee (`data.holidayWork.created` ≥ 1). Step 2 creates no duplicate for the same user × holiday date. Step 3 shows the reminder (title “File holiday work before cutoff”); payroll bell links to `/dashboard`; approval/staff types stay hidden from the employee. Step 4 creates no new holiday reminders. Step 5 does not notify the consultant.
 
 ### TC-08: Compute pulls approved OT / ND / holiday only
 
@@ -146,6 +178,29 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** After release, Compute again and PATCH payslip
 - **Expected result:** Conflict/forbidden errors
 
+### TC-11b: Correction batch from released regular run
+
+- **Priority:** High
+- **Preconditions:** Released regular pay run with at least one non-consultant payslip; HR or finance JWT
+- **Steps:**
+  1. Open the released source → **Create correction** → select one or more non-consultant employees → Create
+  2. Note source `releasedBy` / `releasedAt`
+  3. On the new draft: Compute → set other adjustment + reason → Save → Approve & release
+  4. Re-open the source run and PATCH a source payslip
+- **Expected result:**
+  - New run has `kind=correction`, same period/cutoff, `correctsPayRunId` = source
+  - Compute yields net `0.00` until other adjustment; list shows **Correction** badge; detail links to source
+  - After release, employee sees an extra slip under My payslips
+  - Source `releasedBy` / `releasedAt` / amounts unchanged; PATCH on source still 409
+
+### TC-11c: Correction rejects consultants and Super Admin create
+
+- **Priority:** High
+- **Steps:**
+  1. As HR, try creating a correction that includes a consultant (or an employee not on the source)
+  2. As `super_admin`, `POST /api/payroll/pay-runs/:id/corrections`
+- **Expected result:** Step 1 → 400. Step 2 → 403; Create correction control hidden for Super Admin
+
 ### TC-12: My payslips — paper layout + print
 
 - **Priority:** High
@@ -225,7 +280,7 @@ Cutoff create → compute → review → approve & release. Contribution table e
 ### TC-16: T201 bell does not 404 on payroll types
 
 - **Priority:** Medium
-- **Steps:** With `pay-run-computed` / `payslip-released` in T201 notifications list (and optional `VITE_PAYROLL_APP_URL`)
+- **Steps:** With `pay-run-computed` / `payslip-released` / `pay-run-missing-data` / `pay-run-approval-reminder-7` / `-2` / `pay-run-approval-overdue` / `holiday-work-unfiled-reminder` in T201 notifications list (and optional `VITE_PAYROLL_APP_URL`)
 - **Expected result:** Message shows; with base URL, opens payroll; without base URL, no in-app T201 route (no 404)
 
 ## Edge Cases & Error States
@@ -233,8 +288,11 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - periodStart after periodEnd → 400
 - Money fields remain strings
 - Open Clock timers excluded from hours
-- Unlinked Clock `userId` → zero Clock hours; paid leave still restores via `employee.id`
+- Missing hourly rate or unlinked Clock `userId` → readiness issue; regular Compute → 409 (not silent zero payslips)
+- Correction readiness always empty; correction compute not blocked by missing rates/links
 - Identity snapshot on payslip does not change when 201 profile is edited after compute
+- Approval reminder stages dedupe per type + pay run; draft/released skipped
+- Unfiled holiday reminders dedupe per user + cutoff start + holiday date; skip after periodEnd / released regular run / consultants
 
 ## Out of Scope
 
@@ -244,7 +302,9 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - Full BIR productization beyond versioned table + half-monthly apply
 - Automatic December 13th-month payout (HR flags the batch)
 - Subtracting 13th month already paid earlier in the same year
-- Email / SMTP delivery
+- Email / SMTP delivery of payroll alerts
 - Clock WebSocket sync
 - Granting people_culture payroll ops
 - Stored PDF blobs / R2
+- Expected-release-date column (due date = cutoff periodEnd)
+- Changing Clock auto-approve holiday hours / building a Clock holiday-claim submit UI

@@ -1,5 +1,6 @@
 export type CutoffHalf = "first" | "second";
 export type PayRunStatus = "draft" | "computed" | "released";
+export type PayRunKind = "regular" | "correction";
 export type ContributionKind = "sss" | "hdmf" | "philhealth";
 
 export interface ContributionBracket {
@@ -61,6 +62,8 @@ export interface PayRun {
   periodEnd: string;
   cutoffHalf: CutoffHalf;
   status: PayRunStatus;
+  kind?: PayRunKind;
+  correctsPayRunId?: string | null;
   includeThirteenthMonth?: boolean;
   createdBy: string | null;
   releasedBy?: string | null;
@@ -126,6 +129,10 @@ export interface CreatePayRunInput {
   includeThirteenthMonth?: boolean;
 }
 
+export interface CreateCorrectionPayRunInput {
+  employeeIds: string[];
+}
+
 export interface UpdatePayslipInput {
   overtimePay?: string;
   nightDiffPay?: string;
@@ -183,4 +190,19 @@ export interface PayrollLatestReleasedTotals extends PayrollMoneyTotals {
 export interface PayrollDashboardSummary {
   released: PayrollMoneyTotals;
   latestReleased: PayrollLatestReleasedTotals | null;
+}
+
+export type MissingPayrollDataReason =
+  | "missing_hourly_rate"
+  | "missing_clock_link";
+
+export interface MissingPayrollDataIssue {
+  employeeId: string;
+  employeeName: string;
+  employeeCode: string | null;
+  reasons: MissingPayrollDataReason[];
+}
+
+export interface PayRunReadiness {
+  issues: MissingPayrollDataIssue[];
 }

@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import type { CutoffHalf, PayRun } from "~/api-services/pay-runs.types";
 import { PageHeader } from "~/components/layout/page-header";
 import {
+  approvalDueLabel,
   cutoffHalfLabel,
   defaultPayPeriod,
   formatPayRunPeriod,
@@ -11,6 +12,7 @@ import {
 } from "~/components/pay-runs/pay-run-display";
 import { PeriodDateRangeField } from "~/components/pay-runs/period-date-range-field";
 import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -78,7 +80,22 @@ const renderPayRunColumnCell = (
     case "status":
       return (
         <TableCell key={id}>
-          <PayRunStatusBadge status={run.status} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <PayRunStatusBadge status={run.status} />
+            {(() => {
+              const due = approvalDueLabel(run.status, run.periodEnd);
+              if (!due) return null;
+              return (
+                <Badge
+                  variant={
+                    due === "Approval overdue" ? "destructive" : "secondary"
+                  }
+                >
+                  {due}
+                </Badge>
+              );
+            })()}
+          </div>
         </TableCell>
       );
   }
@@ -293,7 +310,14 @@ export const PayRunsList = () => {
                   runs.map((run) => (
                     <TableRow key={run.id}>
                       <TableCell>
-                        {formatPayRunPeriod(run.periodStart, run.periodEnd)}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>
+                            {formatPayRunPeriod(run.periodStart, run.periodEnd)}
+                          </span>
+                          {(run.kind ?? "regular") === "correction" ? (
+                            <Badge variant="secondary">Correction</Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                       {visibleIds.map((id) => renderPayRunColumnCell(id, run))}
                       <TableCell className="text-right">

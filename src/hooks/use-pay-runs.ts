@@ -6,6 +6,7 @@ import {
   taxTablesService,
 } from "~/api-services/pay-runs.service";
 import type {
+  CreateCorrectionPayRunInput,
   CreatePayRunInput,
   ReplaceBracketsInput,
   ReplaceTaxBracketsInput,
@@ -19,6 +20,7 @@ import {
   getMyPayslipsQuery,
   getPayRunPayslipsQuery,
   getPayRunQuery,
+  getPayRunReadinessQuery,
   getPayRunsQuery,
   getPayrollDashboardSummaryQuery,
   getPayslipQuery,
@@ -38,10 +40,29 @@ export const usePayRun = (id: string) => useQuery(getPayRunQuery(id));
 export const usePayRunPayslips = (payRunId: string) =>
   useQuery(getPayRunPayslipsQuery(payRunId));
 
+export const usePayRunReadiness = (payRunId: string, enabled = true) =>
+  useQuery(getPayRunReadinessQuery(payRunId, enabled));
+
 export const useCreatePayRun = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreatePayRunInput) => payRunsService.create(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
+    },
+  });
+};
+
+export const useCreateCorrectionPayRun = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sourceId,
+      input,
+    }: {
+      sourceId: string;
+      input: CreateCorrectionPayRunInput;
+    }) => payRunsService.createCorrection(sourceId, input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
     },
@@ -56,6 +77,9 @@ export const useComputePayRun = () => {
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.detail(id) });
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.payslips(id) });
+      await queryClient.invalidateQueries({
+        queryKey: payRunsKeys.readiness(id),
+      });
     },
   });
 };

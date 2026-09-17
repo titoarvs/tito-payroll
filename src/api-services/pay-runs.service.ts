@@ -2,6 +2,7 @@ import { hrisApi } from "~/lib/hris-api-client";
 import type {
   ApiListResponse,
   ContributionSchedule,
+  CreateCorrectionPayRunInput,
   CreatePayRunInput,
   EmployeeContributionRow,
   PayRun,
@@ -11,6 +12,7 @@ import type {
   ReplaceTaxBracketsInput,
   TaxSchedule,
   UpdatePayslipInput,
+  PayRunReadiness,
 } from "./pay-runs.types";
 
 const PAY_RUNS = "/payroll/pay-runs";
@@ -23,8 +25,17 @@ export const payRunsService = {
   list: () => hrisApi.get<ApiListResponse<PayRun[]>>(PAY_RUNS),
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<PayRun>>(`${PAY_RUNS}/${encodeURIComponent(id)}`),
+  getReadiness: (id: string) =>
+    hrisApi.get<ApiListResponse<PayRunReadiness>>(
+      `${PAY_RUNS}/${encodeURIComponent(id)}/readiness`,
+    ),
   create: (input: CreatePayRunInput) =>
     hrisApi.post<ApiListResponse<PayRun>>(PAY_RUNS, input),
+  createCorrection: (sourceId: string, input: CreateCorrectionPayRunInput) =>
+    hrisApi.post<ApiListResponse<PayRun>>(
+      `${PAY_RUNS}/${encodeURIComponent(sourceId)}/corrections`,
+      input,
+    ),
   compute: (id: string) =>
     hrisApi.post<ApiListResponse<{ payRun: PayRun; payslipCount: number }>>(
       `${PAY_RUNS}/${encodeURIComponent(id)}/compute`,
