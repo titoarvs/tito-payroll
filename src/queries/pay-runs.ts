@@ -11,6 +11,7 @@ export const payRunsKeys = {
   list: () => [...payRunsKeys.all, "list"] as const,
   detail: (id: string) => [...payRunsKeys.all, "detail", id] as const,
   payslips: (id: string) => [...payRunsKeys.all, "payslips", id] as const,
+  readiness: (id: string) => [...payRunsKeys.all, "readiness", id] as const,
   dashboardSummary: (from = "", to = "") =>
     [...payRunsKeys.all, "dashboard-summary", from, to] as const,
 };
@@ -61,6 +62,13 @@ export const getPayRunPayslipsQuery = (payRunId: string) =>
     queryKey: payRunsKeys.payslips(payRunId),
     queryFn: () => payRunsService.listPayslips(payRunId),
     enabled: Boolean(payRunId),
+  });
+
+export const getPayRunReadinessQuery = (payRunId: string, enabled = true) =>
+  queryOptions({
+    queryKey: payRunsKeys.readiness(payRunId),
+    queryFn: () => payRunsService.getReadiness(payRunId),
+    enabled: Boolean(payRunId) && enabled,
   });
 
 export const getContributionSchedulesQuery = () =>

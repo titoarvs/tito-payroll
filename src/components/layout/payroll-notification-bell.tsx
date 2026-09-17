@@ -21,8 +21,17 @@ const resolveNotificationTo = (
   link: string | null,
 ): string | null => {
   if (link) return link;
-  if (type === "pay-run-computed") return "/dashboard/pay-runs";
+  if (
+    type === "pay-run-computed" ||
+    type === "pay-run-missing-data" ||
+    type === "pay-run-approval-reminder-7" ||
+    type === "pay-run-approval-reminder-2" ||
+    type === "pay-run-approval-overdue"
+  ) {
+    return "/dashboard/pay-runs";
+  }
   if (type === "payslip-released") return "/dashboard/my-payslips";
+  if (type === "holiday-work-unfiled-reminder") return "/dashboard";
   return null;
 };
 
