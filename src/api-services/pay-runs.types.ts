@@ -20,6 +20,8 @@ export interface ContributionSchedule {
   effectiveTo: string | null;
   isActive: boolean;
   brackets: ContributionBracket[];
+  /** Present when Save brackets forked a new version (FR-PR-12). */
+  forkedFromId?: string;
 }
 
 export interface EmployeeContributionRow {
@@ -54,6 +56,8 @@ export interface TaxSchedule {
   effectiveTo: string | null;
   isActive: boolean;
   brackets: TaxBracket[];
+  /** Present when Save brackets forked a new version (FR-PR-12). */
+  forkedFromId?: string;
 }
 
 export interface PayRun {
@@ -65,6 +69,11 @@ export interface PayRun {
   kind?: PayRunKind;
   correctsPayRunId?: string | null;
   includeThirteenthMonth?: boolean;
+  /** Schedule versions pinned at compute (FR-PR-12). */
+  taxScheduleId?: string | null;
+  sssScheduleId?: string | null;
+  hdmfScheduleId?: string | null;
+  philhealthScheduleId?: string | null;
   createdBy: string | null;
   releasedBy?: string | null;
   releasedAt?: string | null;

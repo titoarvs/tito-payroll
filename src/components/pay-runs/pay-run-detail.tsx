@@ -509,6 +509,21 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
           {payRun.includeThirteenthMonth ? (
             <span> · 13th month included</span>
           ) : null}
+          {payRun.taxScheduleId ||
+          payRun.sssScheduleId ||
+          payRun.hdmfScheduleId ||
+          payRun.philhealthScheduleId ? (
+            <span className="hidden sm:inline">
+              {" "}
+              · Tables pinned
+              {payRun.sssScheduleId ? ` · SSS ${payRun.sssScheduleId.slice(0, 8)}…` : ""}
+              {payRun.hdmfScheduleId ? ` · HDMF ${payRun.hdmfScheduleId.slice(0, 8)}…` : ""}
+              {payRun.philhealthScheduleId
+                ? ` · PH ${payRun.philhealthScheduleId.slice(0, 8)}…`
+                : ""}
+              {payRun.taxScheduleId ? ` · Tax ${payRun.taxScheduleId.slice(0, 8)}…` : ""}
+            </span>
+          ) : null}
           {canCompute && !isCorrection ? (
             <span className="hidden sm:inline">
               {" "}
