@@ -153,7 +153,27 @@ Cutoff create → compute → review → approve & release. Contribution table e
   2. Change other adjustment without a reason → Save
   3. Enter a reason → Save
   4. Approve & release
-- **Expected result:** Step 2 → 400 (reason required). Step 3 → totals recalculate; `other` adjustment note stores the reason; T201 Audit Trail module **Payroll** shows `otherAdjustment` update with `{amount} | {reason}`. After release, slips appear under each employee login; each linked employee gets `payslip-released`.
+- **Expected result:** Step 2 → 400 (reason required). Step 3 → totals recalculate; `other` adjustment note stores the reason; T201 Audit Trail module **Payroll** shows `otherAdjustment` update with `{amount} | {reason}` (action + audit in one DB commit). After release, slips appear under each employee login; each linked employee gets `payslip-released`. Direct SQL `UPDATE`/`DELETE` on `employee201.audit_log` fails (`immutable`).
+
+### TC-10d: Payslip view is access-logged; gov IDs round-trip
+
+- **Priority:** High
+- **Preconditions:** Computed or released payslip with SSS/TIN on the employee
+- **Steps:**
+  1. `GET /api/payroll/payslips/:id` as ops (and as the employee for a released slip)
+  2. Open T201 Audit Trail filtered to module Payroll / action view
+  3. Inspect DB `payroll.payslip.sss_number` / `employee201.employee.sss_number`
+- **Expected result:** API JSON shows plaintext statutory numbers for authorized callers. Audit shows a `view` row with **null** old/new values (no numbers logged). DB columns store AES-GCM ciphertext (`iv:authTag:payload` hex) after write/encrypt-on-next-update; legacy plaintext still decrypts as plaintext until rewritten.
+
+### TC-10e: Compute pins table versions; bracket save forks
+
+- **Priority:** High
+- **Preconditions:** Active SSS (and optionally tax) schedule; draft pay run ready to compute
+- **Steps:**
+  1. Compute the pay run → note `sssScheduleId` / `taxScheduleId` on `GET /api/payroll/pay-runs/:id` (and truncated ids on pay-run detail)
+  2. Edit brackets on that SSS schedule → Save
+  3. Re-open the released/computed payslip amounts; list contribution schedules
+- **Expected result:** Step 2 creates a **new** schedule id (`forkedFromId` set); old schedule is inactive / closed. Payslip money fields unchanged. New computes use the forked active schedule.
 
 ### TC-10c: 13th month when batch is flagged
 
@@ -293,10 +313,14 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - Identity snapshot on payslip does not change when 201 profile is edited after compute
 - Approval reminder stages dedupe per type + pay run; draft/released skipped
 - Unfiled holiday reminders dedupe per user + cutoff start + holiday date; skip after periodEnd / released regular run / consultants
+- `audit_log` is append-only (trigger blocks UPDATE/DELETE)
+- Bracket save on a pinned schedule forks a new version; unreferenced schedules still replace in place
+- Payslip / salary-rates / unmasked employee detail GETs write `view` audits without storing statutory numbers
 
 ## Out of Scope
 
 - Identity contract / BUG-TC-01
+- Encrypting salary / pay money amounts at rest
 - Renaming `pay_run` HTTP path to Batch
 - ND-PR-13 (subtract Clock hours for LWOP)
 - Full BIR productization beyond versioned table + half-monthly apply
@@ -308,3 +332,4 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - Stored PDF blobs / R2
 - Expected-release-date column (due date = cutoff periodEnd)
 - Changing Clock auto-approve holiday hours / building a Clock holiday-claim submit UI
+- Dedicated payroll “access log” UI page (use T201 Audit Trail)
