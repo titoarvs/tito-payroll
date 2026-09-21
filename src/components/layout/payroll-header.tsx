@@ -1,9 +1,10 @@
 import { useRouterState } from "@tanstack/react-router";
-import { Bell, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { TitoLogo } from "~/components/branding/TitoLogo";
 import { PayrollNavLinks } from "~/components/layout/payroll-nav-links";
 import { ModeToggle } from "~/components/mode-toggle";
+import { PayrollNotificationBell } from "~/components/layout/payroll-notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -24,19 +25,7 @@ import {
 import { PAYROLL_NAV_ITEMS } from "~/config/payroll-navigation";
 import { useCurrentUser, useLogout } from "~/hooks/use-current-user";
 import type { HrisUser } from "~/lib/hris-auth";
-
-const userRoles = (user: HrisUser | undefined): string[] => {
-  if (!user) return [];
-  const roles = new Set<string>();
-  if (user.role) roles.add(user.role);
-  for (const role of user.roles ?? []) roles.add(role);
-  return [...roles];
-};
-
-const hasPayrollOps = (user: HrisUser | undefined): boolean =>
-  userRoles(user).some((role) =>
-    ["super_admin", "admin", "finance"].includes(role),
-  );
+import { hasPayrollOps } from "~/lib/payroll-access";
 
 const displayName = (user: HrisUser): string => {
   const fromParts = [user.firstName, user.lastName]
@@ -140,15 +129,7 @@ export const PayrollHeader = () => {
 
         <div className="flex shrink-0 items-center gap-1.5">
           <ModeToggle />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-md text-muted-foreground"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5" />
-          </Button>
+          <PayrollNotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

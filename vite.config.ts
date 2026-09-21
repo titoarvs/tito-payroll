@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import packageJson from "./package.json";
 
 const DEFAULT_HRIS_API_BASE_URL = "http://localhost:8000/api";
 
@@ -32,7 +33,11 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: process.cwd(),
     server: {
-      port: 3000,
+      port: 3002,
+      strictPort: true,
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(packageJson.version),
     },
     plugins: [
       tsConfigPaths(),

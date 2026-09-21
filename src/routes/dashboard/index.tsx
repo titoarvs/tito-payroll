@@ -4,30 +4,20 @@ import { PayrollWelcomeDashboard } from "~/components/dashboard/payroll-welcome-
 import { Skeleton } from "~/components/ui/skeleton";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import type { HrisUser } from "~/lib/hris-auth";
+import { hasPayrollOps, userRoles } from "~/lib/payroll-access";
 
 export const Route = createFileRoute("/dashboard/")({
   ssr: false,
   component: DashboardHomePage,
 });
 
-const isSuperAdmin = (user: HrisUser | undefined): boolean => {
-  if (!user) return false;
-  if (user.role === "super_admin") return true;
-  return user.roles?.includes("super_admin") === true;
-};
-
-const isPayrollOps = (user: HrisUser | undefined): boolean => {
-  if (!user) return false;
-  const roles = new Set<string>();
-  if (user.role) roles.add(user.role);
-  for (const role of user.roles ?? []) roles.add(role);
-  return ["super_admin", "admin", "finance"].some((r) => roles.has(r));
-};
+const isSuperAdmin = (user: HrisUser | undefined): boolean =>
+  userRoles(user).includes("super_admin");
 
 function DashboardHomePage() {
   const { data: user, isPending: isUserPending } = useCurrentUser();
   const isAdmin = isSuperAdmin(user);
-  const isOps = isPayrollOps(user);
+  const isOps = hasPayrollOps(user);
 
   if (isUserPending) {
     return (

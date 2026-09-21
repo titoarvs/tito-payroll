@@ -107,3 +107,46 @@ export const defaultPayPeriod = (
   const { start, end } = payPeriodForHalf(year, monthIndex, cutoffHalf);
   return { start, end, cutoffHalf };
 };
+
+const parseIsoLocal = (iso: string): Date => {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+};
+
+/** Calendar days from `fromIso` to `toIso` (local dates). */
+export const calendarDaysBetween = (fromIso: string, toIso: string): number => {
+  const from = parseIsoLocal(fromIso);
+  const to = parseIsoLocal(toIso);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.floor((to.getTime() - from.getTime()) / msPerDay);
+};
+
+export const todayIsoLocal = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Label for computed batches approaching / past cutoff periodEnd.
+ * Returns null when not computed or more than 7 days out.
+ */
+export const approvalDueLabel = (
+  status: string,
+  periodEnd: string,
+  todayIso: string = todayIsoLocal(),
+): string | null => {
+  if (status !== "computed") return null;
+  const days = calendarDaysBetween(todayIso, periodEnd);
+  if (days <= 0) return "Approval overdue";
+  if (days <= 2) return `Release due in ${days} day${days === 1 ? "" : "s"}`;
+  if (days <= 7) return `Release due in ${days} days`;
+  return null;
+};
+
+export const missingPayrollReasonLabel = (reason: string): string => {
+  if (reason === "missing_hourly_rate") return "No hourly rate";
+  if (reason === "missing_clock_link") return "No Tito Clock link";
+  return reason;
+};

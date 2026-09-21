@@ -17,8 +17,8 @@ Payroll has no local identity store. Sign-in uses `tito-hris-api` users in the
 
 Same path as T201. GIS ID-token popup is not used.
 
-1. Sign-in sends the browser to `GET /api/auth/google?returnTo={origin}`.
-2. Nest starts Google OAuth and stashes `returnTo` in OAuth `state` (allowlisted).
+1. Sign-in sends the browser to `GET /api/auth/google?returnTo={origin}&client=payroll`.
+2. Nest starts Google OAuth and stashes `returnTo` + `client` in OAuth `state` (allowlisted).
 3. Google callback redirects to:
    - `{origin}/auth/success?accessToken&refreshToken`, or
    - `{origin}/auth/verify-mfa?mfaToken=...` when MFA is required, or
@@ -26,8 +26,8 @@ Same path as T201. GIS ID-token popup is not used.
 4. `/auth/success` stores the token pair, loads `GET /users/me`, then navigates to `/dashboard`.
 
 `returnTo` must match `PAYROLL_FRONTEND_URL` (default `http://localhost:3002`),
-`FRONTEND_URL`, `T201_FRONTEND_URL`, or `CORS_ORIGINS`. Anything else falls back
-to `FRONTEND_URL` (usually T201).
+`FRONTEND_URL`, `T201_FRONTEND_URL`, or `CORS_ORIGINS`. Unknown origins with
+`client=payroll` fall back to `PAYROLL_FRONTEND_URL`, not T201.
 
 Google Cloud: Authorized **redirect URI** is the API callback
 (`http://localhost:8000/api/auth/google/callback`), not the payroll origin.

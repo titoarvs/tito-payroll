@@ -2,16 +2,22 @@ import { hrisApi } from "~/lib/hris-api-client";
 import type {
   ApiListResponse,
   ContributionSchedule,
+  CreateCorrectionPayRunInput,
   CreatePayRunInput,
   EmployeeContributionRow,
   PayRun,
   PayrollDashboardSummary,
   Payslip,
   ReplaceBracketsInput,
+  ReplaceTaxBracketsInput,
+  TaxSchedule,
+  UpdatePayslipInput,
+  PayRunReadiness,
 } from "./pay-runs.types";
 
 const PAY_RUNS = "/payroll/pay-runs";
 const SCHEDULES = "/payroll/contribution-schedules";
+const TAX_SCHEDULES = "/payroll/tax-schedules";
 const PAYSLIPS = "/payroll/payslips";
 const DASHBOARD = "/payroll/dashboard";
 
@@ -19,8 +25,17 @@ export const payRunsService = {
   list: () => hrisApi.get<ApiListResponse<PayRun[]>>(PAY_RUNS),
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<PayRun>>(`${PAY_RUNS}/${encodeURIComponent(id)}`),
+  getReadiness: (id: string) =>
+    hrisApi.get<ApiListResponse<PayRunReadiness>>(
+      `${PAY_RUNS}/${encodeURIComponent(id)}/readiness`,
+    ),
   create: (input: CreatePayRunInput) =>
     hrisApi.post<ApiListResponse<PayRun>>(PAY_RUNS, input),
+  createCorrection: (sourceId: string, input: CreateCorrectionPayRunInput) =>
+    hrisApi.post<ApiListResponse<PayRun>>(
+      `${PAY_RUNS}/${encodeURIComponent(sourceId)}/corrections`,
+      input,
+    ),
   compute: (id: string) =>
     hrisApi.post<ApiListResponse<{ payRun: PayRun; payslipCount: number }>>(
       `${PAY_RUNS}/${encodeURIComponent(id)}/compute`,
@@ -66,11 +81,29 @@ export const contributionTablesService = {
     ),
 };
 
+export const taxTablesService = {
+  list: () => hrisApi.get<ApiListResponse<TaxSchedule[]>>(TAX_SCHEDULES),
+  getById: (id: string) =>
+    hrisApi.get<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/${encodeURIComponent(id)}`,
+    ),
+  replaceBrackets: (id: string, input: ReplaceTaxBracketsInput) =>
+    hrisApi.put<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/${encodeURIComponent(id)}/brackets`,
+      input,
+    ),
+};
+
 export const payslipsService = {
   listMine: () => hrisApi.get<ApiListResponse<Payslip[]>>(`${PAYSLIPS}/me`),
   listAll: () => hrisApi.get<ApiListResponse<Payslip[]>>(PAYSLIPS),
   getById: (id: string) =>
     hrisApi.get<ApiListResponse<Payslip>>(
       `${PAYSLIPS}/${encodeURIComponent(id)}`,
+    ),
+  update: (id: string, input: UpdatePayslipInput) =>
+    hrisApi.patch<ApiListResponse<Payslip>>(
+      `${PAYSLIPS}/${encodeURIComponent(id)}`,
+      input,
     ),
 };

@@ -34,7 +34,7 @@ Typed HRIS clients for compensation reveal, leave, and holidays used by future p
 
 - **Priority:** High
 - **Preconditions:** Employee employmentStatus is `consultant`
-- **Expected result:** `withHmo` false; statutory coverage flags false; payroll should route to Hours × Rate with no deductions
+- **Expected result:** `withHmo` false; statutory coverage flags false; payroll routes to Hours × Rate only (no allowance, deductions, OT/ND/holiday, other, or 13th)
 
 ### TC-04: Leave list exposes pay treatment fields
 

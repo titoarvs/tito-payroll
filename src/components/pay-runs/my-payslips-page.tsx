@@ -179,8 +179,8 @@ export const MyPayslipsPage = () => {
         title={isOps ? "Payslips" : "My payslips"}
         description={
           isOps
-            ? "All released employee payslips. Open a row to view details."
-            : "Released cutoffs only. Open a row to view payslip details."
+            ? "All released employee payslips. Open a row to view or print the paper payslip."
+            : "Released cutoffs only. Open a row to view or print the paper payslip."
         }
       />
 

@@ -1,10 +1,16 @@
 import type { HrisUser } from "~/lib/hris-auth";
 
 /**
- * Maps to API `payroll.salary_rates.view` / `payroll.salary_rates.manage`
- * (seeded on super_admin, admin, and finance via PermissionGroups.PAYROLL).
+ * Ops who can open payroll nav (employees, pay runs, contribution/tax tables).
+ * Process vs table-manage are further split below (SoD).
  */
 const PAYROLL_OPS_ROLES = ["super_admin", "admin", "finance"] as const;
+
+/** HR (`admin`) + finance: create / compute / release / edit adjustments. */
+const PAY_RUN_PROCESS_ROLES = ["admin", "finance"] as const;
+
+/** Super Admin + finance: edit SSS/HDMF/PhilHealth and tax brackets. */
+const STATUTORY_TABLE_MANAGE_ROLES = ["super_admin", "finance"] as const;
 
 export const userRoles = (user: HrisUser | undefined | null): string[] => {
   if (!user) return [];
@@ -14,10 +20,24 @@ export const userRoles = (user: HrisUser | undefined | null): string[] => {
   return [...roles];
 };
 
+const hasAnyRole = (
+  user: HrisUser | undefined | null,
+  allowed: readonly string[],
+): boolean =>
+  userRoles(user).some((role) => allowed.includes(role));
+
 export const hasPayrollOps = (user: HrisUser | undefined | null): boolean =>
-  userRoles(user).some((role) =>
-    (PAYROLL_OPS_ROLES as readonly string[]).includes(role),
-  );
+  hasAnyRole(user, PAYROLL_OPS_ROLES);
+
+/** Create pay run, compute, edit other adjustment, approve & release. */
+export const canProcessPayRuns = (
+  user: HrisUser | undefined | null,
+): boolean => hasAnyRole(user, PAY_RUN_PROCESS_ROLES);
+
+/** Edit contribution / tax table brackets. */
+export const canManageStatutoryTables = (
+  user: HrisUser | undefined | null,
+): boolean => hasAnyRole(user, STATUTORY_TABLE_MANAGE_ROLES);
 
 /** Who may see the Salary and rates section / call salary-rates list. */
 export const canViewEmployeeSalaryRates = (

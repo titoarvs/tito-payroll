@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import type { CutoffHalf, PayRun } from "~/api-services/pay-runs.types";
 import { PageHeader } from "~/components/layout/page-header";
 import {
+  approvalDueLabel,
   cutoffHalfLabel,
   defaultPayPeriod,
   formatPayRunPeriod,
@@ -11,6 +12,7 @@ import {
 } from "~/components/pay-runs/pay-run-display";
 import { PeriodDateRangeField } from "~/components/pay-runs/period-date-range-field";
 import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -41,8 +43,10 @@ import {
   useTableColumns,
   type TableColumnDef,
 } from "~/components/ui/table-column-visibility";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { useCreatePayRun, usePayRuns } from "~/hooks/use-pay-runs";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { canProcessPayRuns } from "~/lib/payroll-access";
 
 type PayRunColumnId = "half" | "status";
 
@@ -76,13 +80,30 @@ const renderPayRunColumnCell = (
     case "status":
       return (
         <TableCell key={id}>
-          <PayRunStatusBadge status={run.status} />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <PayRunStatusBadge status={run.status} />
+            {(() => {
+              const due = approvalDueLabel(run.status, run.periodEnd);
+              if (!due) return null;
+              return (
+                <Badge
+                  variant={
+                    due === "Approval overdue" ? "destructive" : "secondary"
+                  }
+                >
+                  {due}
+                </Badge>
+              );
+            })()}
+          </div>
         </TableCell>
       );
   }
 };
 
 export const PayRunsList = () => {
+  const { data: user } = useCurrentUser();
+  const mayProcess = canProcessPayRuns(user);
   const { data, isPending, isError, error } = usePayRuns();
   const create = useCreatePayRun();
   const [periodStart, setPeriodStart] = useState(INITIAL_PERIOD.start);
@@ -90,6 +111,7 @@ export const PayRunsList = () => {
   const [cutoffHalf, setCutoffHalf] = useState<CutoffHalf>(
     INITIAL_PERIOD.cutoffHalf,
   );
+  const [includeThirteenthMonth, setIncludeThirteenthMonth] = useState(false);
   const { columns, setColumns, visibleIds, labelById } = useTableColumns(
     PAY_RUN_COLUMNS_STORAGE_KEY,
     PAY_RUN_COLUMN_DEFS,
@@ -111,6 +133,7 @@ export const PayRunsList = () => {
     setPeriodStart(next.start);
     setPeriodEnd(next.end);
     setCutoffHalf(next.cutoffHalf);
+    setIncludeThirteenthMonth(false);
   };
 
   const handleCutoffHalfChange = (value: CutoffHalf) => {
@@ -128,7 +151,7 @@ export const PayRunsList = () => {
   const handleCreate = () => {
     if (!canCreate) return;
     create.mutate(
-      { periodStart, periodEnd, cutoffHalf },
+      { periodStart, periodEnd, cutoffHalf, includeThirteenthMonth },
       {
         onSuccess: () => {
           applyDefaultPeriod();
@@ -141,9 +164,14 @@ export const PayRunsList = () => {
     <div className="flex w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Pay runs"
-        description="Create a cutoff, compute from Tito Clock hours, then release."
+        description={
+          mayProcess
+            ? "Create a cutoff, compute from Tito Clock hours, then release."
+            : "View cutoffs and payslips. Processing is limited to HR and finance."
+        }
       />
 
+      {mayProcess ? (
       <Card aria-label="Create pay run">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Create pay run</CardTitle>
@@ -192,6 +220,28 @@ export const PayRunsList = () => {
               {create.isPending ? "Creating…" : "Create"}
             </Button>
           </div>
+          <label
+            htmlFor="include-thirteenth-month"
+            className="mt-3 flex cursor-pointer items-start gap-2 text-sm"
+          >
+            <input
+              id="include-thirteenth-month"
+              type="checkbox"
+              className="mt-1 size-4 shrink-0 rounded border border-input"
+              checked={includeThirteenthMonth}
+              onChange={(event) =>
+                setIncludeThirteenthMonth(event.target.checked)
+              }
+              disabled={create.isPending}
+            />
+            <span>
+              <span className="font-medium">Include 13th month pay</span>
+              <span className="block text-xs text-muted-foreground">
+                Compute fills each slip with 1/12 of year-to-date Basic Pay
+                (consultants stay 0). Flag once per year to avoid double payout.
+              </span>
+            </span>
+          </label>
           {createError ? (
             <p className="mt-3 text-sm text-destructive" role="alert">
               {createError}
@@ -199,6 +249,7 @@ export const PayRunsList = () => {
           ) : null}
         </CardContent>
       </Card>
+      ) : null}
 
       {isPending ? (
         <Card>
@@ -259,7 +310,14 @@ export const PayRunsList = () => {
                   runs.map((run) => (
                     <TableRow key={run.id}>
                       <TableCell>
-                        {formatPayRunPeriod(run.periodStart, run.periodEnd)}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>
+                            {formatPayRunPeriod(run.periodStart, run.periodEnd)}
+                          </span>
+                          {(run.kind ?? "regular") === "correction" ? (
+                            <Badge variant="secondary">Correction</Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                       {visibleIds.map((id) => renderPayRunColumnCell(id, run))}
                       <TableCell className="text-right">

@@ -14,7 +14,8 @@ const HOLIDAYS_PATH = "/employee201/holidays";
 
 /**
  * Payroll source-data clients (FR-PR inputs). Money stays string.
- * Consultant branch: employmentStatus === "consultant" → Hours × Rate, no deductions.
+ * Consultant branch: employmentStatus === "consultant" → Hours × Rate only
+ * (no allowance, deductions, OT/ND/holiday, other, or 13th).
  */
 export const payrollSourceService = {
   revealCompensation: (employeeId: string, reason: string) =>

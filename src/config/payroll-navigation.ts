@@ -3,6 +3,7 @@ import {
   CalendarDays,
   FileText,
   LayoutDashboard,
+  Percent,
   Table2,
   Users,
 } from "lucide-react";
@@ -58,6 +59,13 @@ export const PAYROLL_NAV_ITEMS: PayrollNavItem[] = [
     requiresPayrollOps: true,
   },
   {
+    to: "/dashboard/tax-tables",
+    label: "Tax tables",
+    icon: Percent,
+    section: "organization",
+    requiresPayrollOps: true,
+  },
+  {
     to: "/dashboard/my-payslips",
     label: "My payslips",
     icon: FileText,
@@ -70,6 +78,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/dashboard/employees": "Employees",
   "/dashboard/pay-runs": "Pay runs",
   "/dashboard/contribution-tables": "Contributions",
+  "/dashboard/tax-tables": "Tax tables",
   "/dashboard/my-payslips": "My payslips",
 };
 

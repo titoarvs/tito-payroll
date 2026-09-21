@@ -1,5 +1,6 @@
 export type CutoffHalf = "first" | "second";
 export type PayRunStatus = "draft" | "computed" | "released";
+export type PayRunKind = "regular" | "correction";
 export type ContributionKind = "sss" | "hdmf" | "philhealth";
 
 export interface ContributionBracket {
@@ -19,6 +20,8 @@ export interface ContributionSchedule {
   effectiveTo: string | null;
   isActive: boolean;
   brackets: ContributionBracket[];
+  /** Present when Save brackets forked a new version (FR-PR-12). */
+  forkedFromId?: string;
 }
 
 export interface EmployeeContributionRow {
@@ -37,13 +40,43 @@ export interface EmployeeContributionRow {
   philhealth: string;
 }
 
+export interface TaxBracket {
+  id: string;
+  scheduleId: string;
+  minCompensation: string;
+  maxCompensation: string | null;
+  baseTax: string;
+  rateOnExcess: string;
+}
+
+export interface TaxSchedule {
+  id: string;
+  name: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  isActive: boolean;
+  brackets: TaxBracket[];
+  /** Present when Save brackets forked a new version (FR-PR-12). */
+  forkedFromId?: string;
+}
+
 export interface PayRun {
   id: string;
   periodStart: string;
   periodEnd: string;
   cutoffHalf: CutoffHalf;
   status: PayRunStatus;
+  kind?: PayRunKind;
+  correctsPayRunId?: string | null;
+  includeThirteenthMonth?: boolean;
+  /** Schedule versions pinned at compute (FR-PR-12). */
+  taxScheduleId?: string | null;
+  sssScheduleId?: string | null;
+  hdmfScheduleId?: string | null;
+  philhealthScheduleId?: string | null;
   createdBy: string | null;
+  releasedBy?: string | null;
+  releasedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,9 +93,11 @@ export interface Payslip {
   position?: string | null;
   employmentStatus?: string | null;
   sssNumber?: string | null;
-  philhealthNumber?: string | null;
+  hdmfNumber?: string | null;
   pagibigNumber?: string | null;
+  philhealthNumber?: string | null;
   tinNumber?: string | null;
+  monthlyRate?: string;
   hoursWorked: string;
   hourlyRate: string;
   basicPay: string;
@@ -71,18 +106,49 @@ export interface Payslip {
   sss: string;
   hdmf: string;
   philhealth: string;
+  withholdingTax?: string;
   totalDeductions: string;
+  overtimeHours?: string;
+  overtimePay?: string;
+  nightDiffHours?: string;
+  nightDiffPay?: string;
+  holidayHours?: string;
+  holidayPay?: string;
+  paidLeaveDays?: string;
+  unpaidLeaveDays?: string;
+  leavePay?: string;
+  otherAdjustment?: string;
+  otherAdjustmentReason?: string | null;
+  thirteenthMonthPay?: string;
+  totalAdjustments?: string;
   netPay: string;
+  preparedByName?: string | null;
   periodStart?: string;
   periodEnd?: string;
   cutoffHalf?: CutoffHalf;
   status?: PayRunStatus;
+  releasedBy?: string | null;
+  releasedAt?: string | null;
 }
 
 export interface CreatePayRunInput {
   periodStart: string;
   periodEnd: string;
   cutoffHalf: CutoffHalf;
+  includeThirteenthMonth?: boolean;
+}
+
+export interface CreateCorrectionPayRunInput {
+  employeeIds: string[];
+}
+
+export interface UpdatePayslipInput {
+  overtimePay?: string;
+  nightDiffPay?: string;
+  holidayPay?: string;
+  otherAdjustment?: string;
+  reason?: string;
+  thirteenthMonthPay?: string;
 }
 
 export interface ReplaceBracketsInput {
@@ -91,6 +157,15 @@ export interface ReplaceBracketsInput {
     maxCompensation?: string | null;
     employeeShare: string;
     employerShare?: string;
+  }>;
+}
+
+export interface ReplaceTaxBracketsInput {
+  brackets: Array<{
+    minCompensation: string;
+    maxCompensation?: string | null;
+    baseTax: string;
+    rateOnExcess: string;
   }>;
 }
 
@@ -124,4 +199,19 @@ export interface PayrollLatestReleasedTotals extends PayrollMoneyTotals {
 export interface PayrollDashboardSummary {
   released: PayrollMoneyTotals;
   latestReleased: PayrollLatestReleasedTotals | null;
+}
+
+export type MissingPayrollDataReason =
+  | "missing_hourly_rate"
+  | "missing_clock_link";
+
+export interface MissingPayrollDataIssue {
+  employeeId: string;
+  employeeName: string;
+  employeeCode: string | null;
+  reasons: MissingPayrollDataReason[];
+}
+
+export interface PayRunReadiness {
+  issues: MissingPayrollDataIssue[];
 }

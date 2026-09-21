@@ -3,6 +3,7 @@ import {
   contributionTablesService,
   payRunsService,
   payslipsService,
+  taxTablesService,
 } from "~/api-services/pay-runs.service";
 
 export const payRunsKeys = {
@@ -10,6 +11,7 @@ export const payRunsKeys = {
   list: () => [...payRunsKeys.all, "list"] as const,
   detail: (id: string) => [...payRunsKeys.all, "detail", id] as const,
   payslips: (id: string) => [...payRunsKeys.all, "payslips", id] as const,
+  readiness: (id: string) => [...payRunsKeys.all, "readiness", id] as const,
   dashboardSummary: (from = "", to = "") =>
     [...payRunsKeys.all, "dashboard-summary", from, to] as const,
 };
@@ -20,6 +22,12 @@ export const contributionKeys = {
   detail: (id: string) => [...contributionKeys.all, "detail", id] as const,
   employees: (search = "") =>
     [...contributionKeys.all, "employees", search] as const,
+};
+
+export const taxKeys = {
+  all: ["tax-schedules"] as const,
+  list: () => [...taxKeys.all, "list"] as const,
+  detail: (id: string) => [...taxKeys.all, "detail", id] as const,
 };
 
 export const myPayslipsKeys = {
@@ -56,6 +64,13 @@ export const getPayRunPayslipsQuery = (payRunId: string) =>
     enabled: Boolean(payRunId),
   });
 
+export const getPayRunReadinessQuery = (payRunId: string, enabled = true) =>
+  queryOptions({
+    queryKey: payRunsKeys.readiness(payRunId),
+    queryFn: () => payRunsService.getReadiness(payRunId),
+    enabled: Boolean(payRunId) && enabled,
+  });
+
 export const getContributionSchedulesQuery = () =>
   queryOptions({
     queryKey: contributionKeys.list(),
@@ -66,6 +81,12 @@ export const getEmployeeContributionsQuery = (search = "") =>
   queryOptions({
     queryKey: contributionKeys.employees(search),
     queryFn: () => contributionTablesService.listEmployeeContributions(search),
+  });
+
+export const getTaxSchedulesQuery = () =>
+  queryOptions({
+    queryKey: taxKeys.list(),
+    queryFn: () => taxTablesService.list(),
   });
 
 export const getMyPayslipsQuery = () =>
@@ -87,3 +108,5 @@ export const getPayslipQuery = (id: string) =>
     queryFn: () => payslipsService.getById(id),
     enabled: Boolean(id),
   });
+
+export const getMyPayslipQuery = getPayslipQuery;
