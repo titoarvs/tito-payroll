@@ -22,22 +22,22 @@ Basic pay / gross / statutory deductions / withholding for a cutoff. Hours from 
 
 ### Premium multipliers (named constants in API `compute-pay`)
 
-| Component | Rate |
-| --- | --- |
-| Regular OT | **125%** of hourly × OT hours |
-| Night differential | **10%** of hourly × ND hours |
-| Holiday work | Holiday instance `premiumPercent` when present; otherwise **100%** of hourly × hours |
+| Component          | Rate                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| Regular OT         | **125%** of hourly × OT hours                                                        |
+| Night differential | **10%** of hourly × ND hours                                                         |
+| Holiday work       | Holiday instance `premiumPercent` when present; otherwise **100%** of hourly × hours |
 
 ## Core entities
 
-| Concept | Storage |
-| --- | --- |
-| Batch | `payroll.pay_run` (`kind` regular/correction, `correctsPayRunId`, `includeThirteenthMonth`, pinned `taxScheduleId` / `sssScheduleId` / `hdmfScheduleId` / `philhealthScheduleId`) |
-| Payslip | `payroll.payslip` (+ denormalized OT/ND/holiday/leave/tax columns; SSS/HDMF/PhilHealth/TIN encrypted at rest) |
-| Adjustment | `payroll.payslip_adjustment` lines (`overtime` / `night_diff` / `holiday` / `leave` / `other` / `thirteenth_month`); compute/PATCH dual-write lines + columns |
-| TaxTable | `payroll.tax_schedule` + `payroll.tax_bracket` (versioned; fork on edit if pinned) |
-| Contributions | `payroll.contribution_schedule` + brackets (fork on edit if pinned) |
-| Audit | `employee201.audit_log` (append-only + DB trigger; create/compute/release/PATCH + payslip/salary-rate views) |
+| Concept       | Storage                                                                                                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Batch         | `payroll.pay_run` (`kind` regular/correction, `correctsPayRunId`, `includeThirteenthMonth`, pinned `taxScheduleId` / `sssScheduleId` / `hdmfScheduleId` / `philhealthScheduleId`) |
+| Payslip       | `payroll.payslip` (+ denormalized OT/ND/holiday/leave/tax columns; SSS/HDMF/PhilHealth/TIN encrypted at rest)                                                                     |
+| Adjustment    | `payroll.payslip_adjustment` lines (`overtime` / `night_diff` / `holiday` / `leave` / `other` / `thirteenth_month`); compute/PATCH dual-write lines + columns                     |
+| TaxTable      | `payroll.tax_schedule` + `payroll.tax_bracket` (versioned; fork on edit if pinned)                                                                                                |
+| Contributions | `payroll.contribution_schedule` + brackets (fork on edit if pinned)                                                                                                               |
+| Audit         | `employee201.audit_log` (append-only + DB trigger; create/compute/release/PATCH + payslip/salary-rate views)                                                                      |
 
 ## Lifecycle
 
@@ -66,28 +66,28 @@ UI: list shows a **Correction** badge; detail links back to the source run.
 
 ## Routes
 
-| Route | Who |
-| --- | --- |
-| `/dashboard/pay-runs` | finance / admin — create; **super_admin** view-only (no create) |
-| `/dashboard/pay-runs/$id` | finance / admin — compute / other adjustment / release / create correction from released regular; **super_admin** view-only |
-| `/dashboard/contribution-tables` | finance / **super_admin** edit brackets; **admin** (HR) read-only |
-| `/dashboard/tax-tables` | finance / **super_admin** edit brackets; **admin** (HR) read-only |
-| `/dashboard/my-payslips` | any signed-in employee/consultant with released slips |
-| `/dashboard/my-payslips/$payslipId` | payslip details + print / save as PDF |
+| Route                               | Who                                                                                                                         |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/dashboard/pay-runs`               | finance / admin — create; **super_admin** view-only (no create)                                                             |
+| `/dashboard/pay-runs/$id`           | finance / admin — compute / other adjustment / release / create correction from released regular; **super_admin** view-only |
+| `/dashboard/contribution-tables`    | finance / **super_admin** edit brackets; **admin** (HR) read-only                                                           |
+| `/dashboard/tax-tables`             | finance / **super_admin** edit brackets; **admin** (HR) read-only                                                           |
+| `/dashboard/my-payslips`            | any signed-in employee/consultant with released slips                                                                       |
+| `/dashboard/my-payslips/$payslipId` | payslip details + print / save as PDF                                                                                       |
 
 ### RBAC segregation of duties
 
-| Role | Contribution / tax tables | Pay runs (create / compute / release / other adj.) |
-| --- | --- | --- |
-| `super_admin` | manage | view only |
-| `admin` (HR) | view only | process |
-| `finance` | manage | process |
+| Role          | Contribution / tax tables | Pay runs (create / compute / release / other adj.) |
+| ------------- | ------------------------- | -------------------------------------------------- |
+| `super_admin` | manage                    | view only                                          |
+| `admin` (HR)  | view only                 | process                                            |
+| `finance`     | manage                    | process                                            |
 
 UI helpers: `canManageStatutoryTables` / `canProcessPayRuns` in `src/lib/payroll-access.ts`. API enforces via `@Permissions` after `npm run seed:rbac`.
 
 ## Setup
 
-1. Apply migration `0031_payroll_audit_pii_versions.sql` in `tito-hris-api-v2` (`npm run db:migrate`) — pay_run schedule pins + `audit_log` immutability trigger — **not** run by agents
+1. Apply payroll migrations in `tito-hris-api` (`npm run db:migrate`) — `0031_payroll_audit_pii_versions.sql` (schedule pins + audit immutability) and `0035_payroll_tax_correction_thirteenth.sql` (tax tables, correction/13th columns, payslip adjustments). **Not** run by agents. Missing `kind` / schedule columns on `payroll.pay_run` makes `GET /api/payroll/pay-runs` return 500.
 2. Set `PII_ENCRYPTION_KEY` to exactly 32 characters in Infisical / `.env` (AES-256-GCM for SSS/HDMF/PhilHealth/TIN). Do **not** reuse `MFA_ENCRYPTION_KEY`.
 3. `npm run seed:rbac` (includes `payroll.tax_tables.view` / `manage`)
 4. `npm run seed:contribution-schedules` and `npm run seed:tax-schedules`
