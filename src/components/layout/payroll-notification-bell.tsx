@@ -81,68 +81,72 @@ export const PayrollNotificationBell = () => {
           ) : null}
         </div>
         <DropdownMenuSeparator />
-        {isPending ? (
-          <p className="px-3 py-4 text-sm text-muted-foreground">Loading…</p>
-        ) : null}
-        {!isPending && notifications.length === 0 ? (
-          <p className="px-3 py-4 text-sm text-muted-foreground">
-            No notifications yet.
-          </p>
-        ) : null}
-        {!isPending
-          ? notifications.map((notification) => {
-              const to = resolveNotificationTo(
-                notification.type,
-                notification.link,
-              );
-              const body =
-                notification.content || notification.body || notification.title;
-              const itemClass = cn(
-                "flex cursor-pointer flex-col items-start gap-0.5 whitespace-normal",
-                !notification.isRead && "bg-muted/40",
-              );
+        <div className="max-h-[min(20rem,calc(100vh-8rem))] overflow-y-auto">
+          {isPending ? (
+            <p className="px-3 py-4 text-sm text-muted-foreground">Loading…</p>
+          ) : null}
+          {!isPending && notifications.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-muted-foreground">
+              No notifications yet.
+            </p>
+          ) : null}
+          {!isPending
+            ? notifications.map((notification) => {
+                const to = resolveNotificationTo(
+                  notification.type,
+                  notification.link,
+                );
+                const body =
+                  notification.content ||
+                  notification.body ||
+                  notification.title;
+                const itemClass = cn(
+                  "flex cursor-pointer flex-col items-start gap-0.5 whitespace-normal",
+                  !notification.isRead && "bg-muted/40",
+                );
 
-              if (to) {
+                if (to) {
+                  return (
+                    <DropdownMenuItem key={notification.id} asChild>
+                      <a
+                        href={to}
+                        className={itemClass}
+                        onClick={() => {
+                          if (!notification.isRead) {
+                            markRead.mutate(notification.id);
+                          }
+                        }}
+                      >
+                        <span className="text-sm font-medium">
+                          {notification.title}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {body}
+                        </span>
+                      </a>
+                    </DropdownMenuItem>
+                  );
+                }
+
                 return (
-                  <DropdownMenuItem key={notification.id} asChild>
-                    <a
-                      href={to}
-                      className={itemClass}
-                      onClick={() => {
-                        if (!notification.isRead) {
-                          markRead.mutate(notification.id);
-                        }
-                      }}
-                    >
-                      <span className="text-sm font-medium">
-                        {notification.title}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {body}
-                      </span>
-                    </a>
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className={itemClass}
+                    onClick={() => {
+                      if (!notification.isRead) {
+                        markRead.mutate(notification.id);
+                      }
+                    }}
+                  >
+                    <span className="text-sm font-medium">
+                      {notification.title}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{body}</span>
                   </DropdownMenuItem>
                 );
-              }
-
-              return (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className={itemClass}
-                  onClick={() => {
-                    if (!notification.isRead) {
-                      markRead.mutate(notification.id);
-                    }
-                  }}
-                >
-                  <span className="text-sm font-medium">
-                    {notification.title}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{body}</span>
-                </DropdownMenuItem>
-              );
-            })
-          : null}
+              })
+            : null}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
