@@ -257,7 +257,9 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const readinessEnabled =
     Boolean(payRunId) &&
     !isCorrectionKind &&
-    (payRun?.status === "draft" || payRun?.status === "computed");
+    (payRun?.status === "draft" ||
+      payRun?.status === "computing" ||
+      payRun?.status === "computed");
   const readinessQuery = usePayRunReadiness(payRunId, readinessEnabled);
   const readinessIssuesFromApi = readinessQuery.data?.data.issues ?? [];
   const blockedIssues =
@@ -325,9 +327,18 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const isCorrection = (payRun.kind ?? "regular") === "correction";
   const canCompute =
     mayProcess &&
-    (payRun.status === "draft" || payRun.status === "computed");
+    (payRun.status === "draft" ||
+      payRun.status === "computing" ||
+      payRun.status === "computed");
   const canRelease = mayProcess && payRun.status === "computed";
   const canEdit = mayProcess && payRun.status === "computed";
+  const computeButtonLabel = compute.isPending
+    ? payRun.status === "computing"
+      ? "Resuming…"
+      : "Computing…"
+    : payRun.status === "computing"
+      ? "Resume"
+      : "Compute";
   const canCreateCorrection =
     mayProcess &&
     !isCorrection &&
@@ -420,7 +431,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
           onClick={() => compute.mutate(payRunId)}
           disabled={compute.isPending}
         >
-          {compute.isPending ? "Computing…" : "Compute"}
+          {computeButtonLabel}
         </Button>
       ) : null}
       {canRelease ? (

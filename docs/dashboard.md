@@ -22,6 +22,7 @@ Authenticated app chrome for Tito Payroll. Dashboard home shows a welcome view w
 - **Payroll KPI row** (live counts) as `tito-widget` tiles:
   - **Pay runs** — all cutoffs; links to `/dashboard/pay-runs`.
   - **Draft runs** — status `draft`.
+  - **Computing** — status `computing` (interrupted / in-progress compute).
   - **Computed** — status `computed`.
   - **Released** — status `released`.
   - **Contribution tables** — active schedule count; links to `/dashboard/contribution-tables`.
