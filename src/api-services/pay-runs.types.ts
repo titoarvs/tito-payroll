@@ -1,5 +1,5 @@
 export type CutoffHalf = "first" | "second";
-export type PayRunStatus = "draft" | "computed" | "released";
+export type PayRunStatus = "draft" | "computing" | "computed" | "released";
 export type PayRunKind = "regular" | "correction";
 export type ContributionKind = "sss" | "hdmf" | "philhealth";
 

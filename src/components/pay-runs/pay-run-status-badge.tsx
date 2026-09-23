@@ -7,6 +7,7 @@ const STATUS_VARIANT: Record<
   "muted" | "secondary" | "success" | "default"
 > = {
   draft: "muted",
+  computing: "default",
   computed: "secondary",
   released: "success",
 };

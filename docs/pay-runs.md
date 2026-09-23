@@ -33,21 +33,22 @@ Basic pay / gross / statutory deductions / withholding for a cutoff. Hours from 
 | Concept       | Storage                                                                                                                                                                           |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Batch         | `payroll.pay_run` (`kind` regular/correction, `correctsPayRunId`, `includeThirteenthMonth`, pinned `taxScheduleId` / `sssScheduleId` / `hdmfScheduleId` / `philhealthScheduleId`) |
-| Payslip       | `payroll.payslip` (+ denormalized OT/ND/holiday/leave/tax columns; SSS/HDMF/PhilHealth/TIN encrypted at rest)                                                                     |
-| Adjustment    | `payroll.payslip_adjustment` lines (`overtime` / `night_diff` / `holiday` / `leave` / `other` / `thirteenth_month`); compute/PATCH dual-write lines + columns                     |
+| Payslip       | `payroll.payslip` (+ denormalized OT/ND/holiday/leave/tax columns; SSS/HDMF/PhilHealth/TIN **and money fields** AES-GCM at rest) |
+| Adjustment    | `payroll.payslip_adjustment` lines (`overtime` / `night_diff` / `holiday` / `leave` / `other` / `thirteenth_month`); amounts encrypted; compute/PATCH dual-write lines + columns |
+| Hold          | `payroll.pay_run_adjustment_hold` — snapshots other-adjustments (and correction membership) across compute / resume |
 | TaxTable      | `payroll.tax_schedule` + `payroll.tax_bracket` (versioned; fork on edit if pinned)                                                                                                |
 | Contributions | `payroll.contribution_schedule` + brackets (fork on edit if pinned)                                                                                                               |
-| Audit         | `employee201.audit_log` (append-only + DB trigger; create/compute/release/PATCH + payslip/salary-rate views)                                                                      |
+| Audit         | `employee201.audit_log` (append-only + DB trigger; create/compute/release/PATCH + payslip views with IP / user-agent; no amounts in the log) |
 
 ## Lifecycle
 
-`draft` → `computed` (Compute) → `released` (Approve & release)
+`draft` → `computing` (Compute / Resume) → `computed` → `released` (Approve & release)
 
 1. **Readiness** (`GET /api/payroll/pay-runs/:id/readiness`) lists active employees missing an hourly rate or Tito Clock `userId`. Correction batches return no issues.
-2. **Compute** on a regular run is **blocked** (409) when readiness issues exist; payroll ops get a one-shot `pay-run-missing-data` notification. When clean, compute replaces payslips for all active employees, snapshots identity (gov IDs encrypted at rest), pulls Clock OT/ND/holiday (skipped for consultants), restores paid-leave hours into Basic (non-consultants), loads approved leave by `employee.id`, applies tax from Gross − contributions, **pins the contribution/tax schedule ids used** (FR-PR-12), fills 13th month when the batch is flagged, inserts adjustment rows + audit in one DB transaction, and notifies payroll ops (`pay-run-computed`).
-3. While **computed**, ops may `PATCH` the **other** adjustment with a **required reason** (non-consultants only); leave restore + withholding stay compute-owned; totals recalculate server-side; payslip + adjustments + audit share one DB transaction under module `payroll`.
-4. **Approve & release** stamps preparer and notifies each linked employee (atomic with audit). Slips appear under My payslips immediately. Viewing a payslip or pay-run payslip list writes a `view` audit row (no statutory numbers stored in the log).
-5. **Approval reminders** (daily 8 AM Asia/Manila, or `POST /api/payroll/scan-alerts`): for `status=computed`, due date = cutoff `periodEnd`. Stages: 7 days before → `pay-run-approval-reminder-7`; 2 days before → `pay-run-approval-reminder-2`; on/after `periodEnd` → `pay-run-approval-overdue`. Each stage once per pay run (in-app only).
+2. **Compute** on a regular run is **blocked** (409) when readiness issues exist; payroll ops get a one-shot `pay-run-missing-data` notification. When clean, status becomes `computing` and each employee is written in its own DB transaction (encrypted payslip + adjustment lines). Employees already written are skipped on **Resume**. When every employee has a slip, status becomes `computed`, holds clear, and ops get `pay-run-computed`. A full recompute from `computed` first snapshots other-adjustments into `pay_run_adjustment_hold`, deletes slips, then recomputes and reapplies those holds.
+3. While **computed**, ops may `PATCH` the **other** adjustment with a **required reason** (non-consultants only); leave restore + withholding stay compute-owned; totals recalculate server-side; payslip + adjustments + audit share one DB transaction under module `payroll`. PATCH / release require `computed` (not `computing`).
+4. **Approve & release** stamps preparer and notifies each linked employee (atomic with audit). Slips appear under My payslips immediately. Viewing a payslip (`GET .../payslips/:id`), My payslips, ops list, or pay-run payslip list writes a `view` audit row with actor IP / user-agent and **null** old/new values (no statutory numbers or money amounts).
+5. **Approval reminders** (daily 8 AM Asia/Manila, or `POST /api/payroll/scan-alerts`): for `status=computed`, due date = cutoff `periodEnd`. Stages: 7 days before → `pay-run-approval-reminder-7`; 2 days before → `pay-run-approval-reminder-2`; on/after `periodEnd` → `pay-run-approval-overdue`. Each stage once per pay run (in-app only). No reminders while `computing`.
 6. **Unfiled holiday work reminders** (same cron / `scan-alerts`): current calendar cutoff (1–15 / 16–EOM). When an employee has completed Clock work on a confirmed T201 holiday date with no approved Holiday Work claim, they get one in-app `holiday-work-unfiled-reminder` (payroll bell → `/dashboard`). Skips consultants, unlinked employees, closed cutoffs, and released regular pay runs for that period. Dedupe once per user × cutoff start × holiday date.
 7. **Table edits after compute**: Saving brackets on a schedule already pinned by any pay run **forks** a new schedule version (old row closed). Issued payslip amounts stay frozen; detail shows truncated pinned schedule ids.
 
@@ -87,13 +88,13 @@ UI helpers: `canManageStatutoryTables` / `canProcessPayRuns` in `src/lib/payroll
 
 ## Setup
 
-1. Apply payroll migrations in `tito-hris-api` (`npm run db:migrate`) — `0031_payroll_audit_pii_versions.sql` (schedule pins + audit immutability) and `0035_payroll_tax_correction_thirteenth.sql` (tax tables, correction/13th columns, payslip adjustments). **Not** run by agents. Missing `kind` / schedule columns on `payroll.pay_run` makes `GET /api/payroll/pay-runs` return 500.
-2. Set `PII_ENCRYPTION_KEY` to exactly 32 characters in Infisical / `.env` (AES-256-GCM for SSS/HDMF/PhilHealth/TIN). Do **not** reuse `MFA_ENCRYPTION_KEY`.
+1. Apply payroll migrations in `tito-hris-api` (`npm run db:migrate`) — include `0031_payroll_audit_pii_versions.sql`, `0035_payroll_tax_correction_thirteenth.sql`, and `0036_payroll_payslip_money_encrypt_resume.sql` (money columns → text + `pay_run_adjustment_hold`). **Not** run by agents. Missing `kind` / schedule columns on `payroll.pay_run` makes `GET /api/payroll/pay-runs` return 500.
+2. Set `PII_ENCRYPTION_KEY` to exactly 32 characters in Infisical / `.env` (AES-256-GCM for SSS/HDMF/PhilHealth/TIN **and** payslip money). Do **not** reuse `MFA_ENCRYPTION_KEY`. Legacy plain decimals remain readable until the next write encrypts them.
 3. `npm run seed:rbac` (includes `payroll.tax_tables.view` / `manage`)
 4. `npm run seed:contribution-schedules` and `npm run seed:tax-schedules`
 5. Employee hourly rate + coverage flags in T201 / salary rates
 
-Production TLS terminates at the reverse proxy; Helmet is enabled on the API. Page-activity logs no longer store HTTP response bodies.
+Production TLS terminates at the reverse proxy; Helmet is enabled on the API. Page-activity logs no longer store HTTP response bodies. Dashboard / 13th-month totals decrypt money rows in the API (SQL `SUM` cannot run on ciphertext).
 
 ## Out of scope
 

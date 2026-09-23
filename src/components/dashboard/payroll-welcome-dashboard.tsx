@@ -63,13 +63,15 @@ type StatusFilter = "all" | PayRunStatus;
 const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
   { id: "all", label: "All cutoffs" },
   { id: "draft", label: "Draft" },
+  { id: "computing", label: "Computing" },
   { id: "computed", label: "Computed" },
   { id: "released", label: "Released" },
 ];
 
-/** Distinct status hues: slate → blue → green (not a green-only scale). */
+/** Distinct status hues: slate → amber → blue → green. */
 const STATUS_COLORS: Record<PayRunStatus, string> = {
   draft: "color-mix(in srgb, var(--tito-dull-blue) 42%, #c5d0e0)",
+  computing: "color-mix(in srgb, var(--tito-dull-blue) 70%, #e8a317)",
   computed: "var(--tito-dull-blue)",
   released: "var(--tito-green)",
 };
@@ -105,6 +107,7 @@ type MonthBucket = {
   key: string;
   label: string;
   draft: number;
+  computing: number;
   computed: number;
   released: number;
   total: number;
@@ -118,6 +121,7 @@ const buildMonthBuckets = (runs: PayRun[]): MonthBucket[] => {
       key,
       label: monthLabel(key),
       draft: 0,
+      computing: 0,
       computed: 0,
       released: 0,
       total: 0,
@@ -167,6 +171,7 @@ export const PayrollWelcomeDashboard = ({
   const schedules = schedulesData?.data ?? [];
   const activeSchedules = schedules.filter((s) => s.isActive).length;
   const draftRuns = countByStatus(payRuns, "draft");
+  const computingRuns = countByStatus(payRuns, "computing");
   const computedRuns = countByStatus(payRuns, "computed");
   const releasedRuns = countByStatus(payRuns, "released");
   const employeeCounts = employeeDash?.data.counts;
@@ -186,6 +191,7 @@ export const PayrollWelcomeDashboard = ({
   const statusSegments = [
     { id: "released" as const, label: "Released", count: releasedRuns },
     { id: "computed" as const, label: "Computed", count: computedRuns },
+    { id: "computing" as const, label: "Computing", count: computingRuns },
     { id: "draft" as const, label: "Draft", count: draftRuns },
   ];
   const statusTotal = Math.max(1, payRuns.length);
@@ -918,6 +924,7 @@ const MonthBar = ({
     [
       { key: "released" as const, value: bucket.released },
       { key: "computed" as const, value: bucket.computed },
+      { key: "computing" as const, value: bucket.computing },
       { key: "draft" as const, value: bucket.draft },
     ] satisfies { key: PayRunStatus; value: number }[]
   ).filter((part) => part.value > 0);
