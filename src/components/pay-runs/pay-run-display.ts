@@ -51,6 +51,7 @@ export const cutoffHalfLabel = (
 
 export const payRunStatusLabel = (status: PayRunStatus | string): string => {
   if (status === "draft") return "Draft";
+  if (status === "computing") return "Computing";
   if (status === "computed") return "Computed";
   if (status === "released") return "Released";
   return String(status);

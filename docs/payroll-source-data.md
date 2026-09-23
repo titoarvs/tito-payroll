@@ -13,7 +13,7 @@ All data comes from **tito-hris-api-v2** `employee201` (not the T201 app DB dire
 | Leave in cutoff | Approved leave via `LeaveRequestRepository.findApprovedInDateRange` | Keyed by **`employee.id`**. Prorate overlap with weekdays; paid leave restores Basic hours (`max(0, expected − Clock)`); `UNPAID` → unpaid days only (no restore). |
 | Holidays + premium % | employee201 holidays | Confirmed instances with premium. |
 | Withholding | `payroll.tax_schedule` / `tax_bracket` | Monthly TRAIN-style; applied to `(Gross − contributions) × 2`, half withheld per cutoff. Compute **pins** the schedule id on the pay run (FR-PR-12). |
-| Statutory numbers | `employee201.employee` + payslip snapshot | SSS / HDMF / PhilHealth / TIN encrypted at rest (`PII_ENCRYPTION_KEY`); decrypted for authorized API responses. |
+| Statutory numbers | `employee201.employee` + payslip snapshot | SSS / HDMF / PhilHealth / TIN encrypted at rest (`PII_ENCRYPTION_KEY`); decrypted for authorized API responses. Payslip money columns use the same AES-GCM key. |
 
 ## Consultant routing
 

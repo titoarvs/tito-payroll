@@ -155,15 +155,27 @@ Cutoff create → compute → review → approve & release. Contribution table e
   4. Approve & release
 - **Expected result:** Step 2 → 400 (reason required). Step 3 → totals recalculate; `other` adjustment note stores the reason; T201 Audit Trail module **Payroll** shows `otherAdjustment` update with `{amount} | {reason}` (action + audit in one DB commit). After release, slips appear under each employee login; each linked employee gets `payslip-released`. Direct SQL `UPDATE`/`DELETE` on `employee201.audit_log` fails (`immutable`).
 
-### TC-10d: Payslip view is access-logged; gov IDs round-trip
+### TC-10d: Payslip view is access-logged; gov IDs and money round-trip
 
 - **Priority:** High
 - **Preconditions:** Computed or released payslip with SSS/TIN on the employee
 - **Steps:**
   1. `GET /api/payroll/payslips/:id` as ops (and as the employee for a released slip)
-  2. Open T201 Audit Trail filtered to module Payroll / action view
-  3. Inspect DB `payroll.payslip.sss_number` / `employee201.employee.sss_number`
-- **Expected result:** API JSON shows plaintext statutory numbers for authorized callers. Audit shows a `view` row with **null** old/new values (no numbers logged). DB columns store AES-GCM ciphertext (`iv:authTag:payload` hex) after write/encrypt-on-next-update; legacy plaintext still decrypts as plaintext until rewritten.
+  2. `GET /api/payroll/payslips/me` and `GET /api/payroll/payslips` (ops)
+  3. Open T201 Audit Trail filtered to module Payroll / action view
+  4. Inspect DB `payroll.payslip.sss_number`, `basic_pay`, `net_pay` / `employee201.employee.sss_number`
+- **Expected result:** API JSON shows plaintext statutory numbers and money for authorized callers. Each read writes a `view` row with **null** old/new values (no numbers or amounts logged) and populated `ip_address` / `user_agent` when present. DB columns store AES-GCM ciphertext (`iv:authTag:payload` hex) after write/encrypt-on-next-update; legacy plaintext still decrypts as plaintext until rewritten.
+
+### TC-10f: Compute resume skips written lines and keeps other adjustments
+
+- **Priority:** High
+- **Preconditions:** Draft regular pay run ready to compute; at least two active employees
+- **Steps:**
+  1. Start Compute; interrupt the API process mid-batch (or stop after status is `computing` with some slips present)
+  2. Confirm status is `computing` and some payslips exist
+  3. Click **Resume** (same Compute endpoint)
+  4. On a fully `computed` run, PATCH other adjustment with a reason on one slip → Compute again → confirm that slip keeps the other adjustment amount/reason after recompute
+- **Expected result:** Resume does not duplicate `(pay_run_id, employee_id)` lines. Employees already written are skipped. When complete, status is `computed` and ops get `pay-run-computed` once. Full recompute from `computed` restores saved other-adjustments via `pay_run_adjustment_hold`.
 
 ### TC-10e: Compute pins table versions; bracket save forks
 
