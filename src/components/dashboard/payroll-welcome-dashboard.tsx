@@ -267,8 +267,8 @@ export const PayrollWelcomeDashboard = ({
             numberOfMonths={2}
             formatLabel={() => rangeLabel}
             sidebar={({ applyRange, setDraft }) => (
-              <div className="flex h-full flex-col gap-0.5">
-                <p className="px-2 pb-1.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+              <div className="flex h-full flex-col gap-px">
+                <p className="px-1.5 pb-1 text-[10px] font-medium tracking-[0.06em] text-muted-foreground uppercase">
                   Presets
                 </p>
                 {DASHBOARD_DATE_PRESETS.map((preset) => {
@@ -283,7 +283,7 @@ export const PayrollWelcomeDashboard = ({
                         applyPreset(preset.id);
                       }}
                       className={cn(
-                        "rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                        "rounded-md px-1.5 py-1 text-left text-[11px] font-medium leading-tight tracking-[0.01em] transition-colors duration-100 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
                         active
                           ? "bg-tito-blue text-white"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -293,7 +293,7 @@ export const PayrollWelcomeDashboard = ({
                     </button>
                   );
                 })}
-                <div className="my-2 border-t border-border/50" />
+                <div className="my-1.5 border-t border-border/40" />
                 <button
                   type="button"
                   onClick={() => {
@@ -304,7 +304,7 @@ export const PayrollWelcomeDashboard = ({
                     });
                   }}
                   className={cn(
-                    "rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                    "rounded-md px-1.5 py-1 text-left text-[11px] font-medium leading-tight tracking-[0.01em] transition-colors duration-100 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
                     dateRange.preset === "custom"
                       ? "bg-tito-blue text-white"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -312,8 +312,8 @@ export const PayrollWelcomeDashboard = ({
                 >
                   Custom range
                 </button>
-                <p className="mt-auto px-2 pt-3 text-[10px] leading-snug text-muted-foreground">
-                  Click a start date, then an end date on the calendar.
+                <p className="mt-auto px-1.5 pt-2 text-[10px] leading-snug tracking-[0.01em] text-muted-foreground">
+                  Start date, then end date.
                 </p>
               </div>
             )}

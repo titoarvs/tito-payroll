@@ -110,8 +110,12 @@ export interface Payslip {
   totalDeductions: string;
   overtimeHours?: string;
   overtimePay?: string;
+  /** Approved OT hours whose claim date is inside this pay run cutoff. */
+  approvedOvertimeHours?: string;
   nightDiffHours?: string;
   nightDiffPay?: string;
+  /** Approved ND hours whose claim date is inside this pay run cutoff. */
+  approvedNightDiffHours?: string;
   holidayHours?: string;
   holidayPay?: string;
   paidLeaveDays?: string;

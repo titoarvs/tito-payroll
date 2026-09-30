@@ -1,9 +1,25 @@
-import { Plus, Trash2Icon } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ContributionKind } from "~/api-services/pay-runs.types";
 import { PageHeader } from "~/components/layout/page-header";
 import { EmployeeContributionsTable } from "~/components/pay-runs/employee-contributions-table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   Card,
   CardContent,
@@ -77,9 +93,11 @@ export const ContributionTablesPage = () => {
   const [pageTab, setPageTab] = useState<PageTab>("employees");
   const [selectedId, setSelectedId] = useState<string>("");
   const [drafts, setDrafts] = useState<BracketDraft[]>([]);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newBracket, setNewBracket] = useState<BracketDraft>(EMPTY_BRACKET);
-  const [addError, setAddError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [form, setForm] = useState<BracketDraft>(EMPTY_BRACKET);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const selected =
     schedules.find((s) => s.id === selectedId) ?? schedules[0] ?? null;
@@ -111,38 +129,74 @@ export const ContributionTablesPage = () => {
     );
   }, [schedules, selectedId]);
 
-  const handleSave = () => {
-    if (!selected) return;
-    replace.mutate({
-      id: selected.id,
-      input: {
-        brackets: drafts.map((d) => ({
-          minCompensation: d.minCompensation,
-          maxCompensation: d.maxCompensation.trim() || null,
-          employeeShare: d.employeeShare,
-          employerShare: d.employerShare || "0",
-        })),
+  const persist = (rows: BracketDraft[]) => {
+    if (!selected || !mayManage) return;
+    setDrafts(rows);
+    replace.mutate(
+      {
+        id: selected.id,
+        input: {
+          brackets: rows.map((row) => ({
+            minCompensation: row.minCompensation.trim(),
+            maxCompensation: row.maxCompensation.trim() || null,
+            employeeShare: row.employeeShare.trim(),
+            employerShare: row.employerShare.trim() || "0",
+          })),
+        },
       },
-    });
+      {
+        onSuccess: (result) => {
+          const nextId = result.data.id;
+          if (nextId && nextId !== selected.id) setSelectedId(nextId);
+        },
+      },
+    );
   };
 
   const openAddModal = () => {
-    setNewBracket(EMPTY_BRACKET);
-    setAddError(null);
-    setAddOpen(true);
+    setEditIndex(null);
+    setForm(EMPTY_BRACKET);
+    setFormError(null);
+    setFormOpen(true);
   };
 
-  const handleAddBracket = () => {
-    const min = newBracket.minCompensation.trim();
-    const employeeShare = newBracket.employeeShare.trim();
+  const openEditModal = (index: number) => {
+    const row = drafts[index];
+    if (!row) return;
+    setEditIndex(index);
+    setForm({ ...row });
+    setFormError(null);
+    setFormOpen(true);
+  };
+
+  const handleSaveForm = () => {
+    const min = form.minCompensation.trim();
+    const employeeShare = form.employeeShare.trim();
     if (!min || !employeeShare) {
-      setAddError("Min compensation and employee share are required.");
+      setFormError("Min compensation and employee share are required.");
       return;
     }
-    setDrafts((current) => [...current, { ...newBracket }]);
-    setAddOpen(false);
-    setNewBracket(EMPTY_BRACKET);
-    setAddError(null);
+    const nextRow: BracketDraft = {
+      minCompensation: min,
+      maxCompensation: form.maxCompensation.trim(),
+      employeeShare,
+      employerShare: form.employerShare.trim() || "0.00",
+    };
+    const next =
+      editIndex == null
+        ? [...drafts, nextRow]
+        : drafts.map((row, index) => (index === editIndex ? nextRow : row));
+    persist(next);
+    setFormOpen(false);
+    setEditIndex(null);
+    setForm(EMPTY_BRACKET);
+    setFormError(null);
+  };
+
+  const handleDelete = () => {
+    if (deleteIndex == null) return;
+    persist(drafts.filter((_, index) => index !== deleteIndex));
+    setDeleteIndex(null);
   };
 
   return (
@@ -227,13 +281,11 @@ export const ContributionTablesPage = () => {
               <CardHeader className="pb-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <CardTitle className="text-base">
-                      {mayManage ? "Edit brackets" : "Brackets"}
-                    </CardTitle>
+                    <CardTitle className="text-base">Brackets</CardTitle>
                     <CardDescription>
                       {mayManage
-                        ? "Switch fund tab, edit rows, then save. Add new brackets from the dialog."
-                        : "View SSS / HDMF / PhilHealth brackets. Only Super Admin and finance can edit."}
+                        ? "Add, edit, or delete a bracket. Changes save immediately. Blank max means open-ended."
+                        : "View SSS / HDMF / PhilHealth brackets. Only Super Admin, admin, and finance can edit."}
                     </CardDescription>
                   </div>
                   {mayManage ? (
@@ -242,17 +294,10 @@ export const ContributionTablesPage = () => {
                       type="button"
                       variant="outline"
                       onClick={openAddModal}
-                      disabled={!selected}
+                      disabled={!selected || replace.isPending}
                     >
                       <Plus className="size-4" />
                       Add bracket
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleSave}
-                      disabled={replace.isPending || !selected}
-                    >
-                      {replace.isPending ? "Saving…" : "Save brackets"}
                     </Button>
                   </div>
                   ) : null}
@@ -323,7 +368,7 @@ export const ContributionTablesPage = () => {
                       : "This schedule has no brackets."}
                   </p>
                 ) : (
-                  <div className="-mx-6 overflow-x-auto border-y border-border/40 sm:mx-0 sm:rounded-lg sm:border">
+                  <div className="-mx-6 sm:mx-0">
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent">
@@ -333,8 +378,8 @@ export const ContributionTablesPage = () => {
                           <TableHead>Employee share</TableHead>
                           <TableHead>Employer share</TableHead>
                           {mayManage ? (
-                            <TableHead className="w-20 text-right">
-                              Remove
+                            <TableHead className="w-14 text-right">
+                              <span className="sr-only">Actions</span>
                             </TableHead>
                           ) : null}
                         </TableRow>
@@ -345,91 +390,49 @@ export const ContributionTablesPage = () => {
                             <TableCell className="text-xs text-muted-foreground">
                               {index + 1}
                             </TableCell>
-                            <TableCell>
-                              <Input
-                                value={draft.minCompensation}
-                                readOnly={!mayManage}
-                                onChange={(e) => {
-                                  if (!mayManage) return;
-                                  const next = [...drafts];
-                                  next[index] = {
-                                    ...draft,
-                                    minCompensation: e.target.value,
-                                  };
-                                  setDrafts(next);
-                                }}
-                                aria-label={`Min compensation ${index + 1}`}
-                                className="h-9 min-w-[6.5rem]"
-                              />
+                            <TableCell className="tabular-nums">
+                              {draft.minCompensation}
                             </TableCell>
-                            <TableCell>
-                              <Input
-                                value={draft.maxCompensation}
-                                readOnly={!mayManage}
-                                onChange={(e) => {
-                                  if (!mayManage) return;
-                                  const next = [...drafts];
-                                  next[index] = {
-                                    ...draft,
-                                    maxCompensation: e.target.value,
-                                  };
-                                  setDrafts(next);
-                                }}
-                                placeholder="Open"
-                                aria-label={`Max compensation ${index + 1}`}
-                                className="h-9 min-w-[6.5rem]"
-                              />
+                            <TableCell className="tabular-nums">
+                              {draft.maxCompensation.trim() || "Open"}
                             </TableCell>
-                            <TableCell>
-                              <Input
-                                value={draft.employeeShare}
-                                readOnly={!mayManage}
-                                onChange={(e) => {
-                                  if (!mayManage) return;
-                                  const next = [...drafts];
-                                  next[index] = {
-                                    ...draft,
-                                    employeeShare: e.target.value,
-                                  };
-                                  setDrafts(next);
-                                }}
-                                aria-label={`Employee share ${index + 1}`}
-                                className="h-9 min-w-[6.5rem]"
-                              />
+                            <TableCell className="tabular-nums">
+                              {draft.employeeShare}
                             </TableCell>
-                            <TableCell>
-                              <Input
-                                value={draft.employerShare}
-                                readOnly={!mayManage}
-                                onChange={(e) => {
-                                  if (!mayManage) return;
-                                  const next = [...drafts];
-                                  next[index] = {
-                                    ...draft,
-                                    employerShare: e.target.value,
-                                  };
-                                  setDrafts(next);
-                                }}
-                                aria-label={`Employer share ${index + 1}`}
-                                className="h-9 min-w-[6.5rem]"
-                              />
+                            <TableCell className="tabular-nums">
+                              {draft.employerShare}
                             </TableCell>
                             {mayManage ? (
                             <TableCell className="text-right">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                                onClick={() =>
-                                  setDrafts((current) =>
-                                    current.filter((_, i) => i !== index),
-                                  )
-                                }
-                                aria-label={`Remove bracket ${index + 1}`}
-                              >
-                                <Trash2Icon className="size-3.5" />
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8"
+                                    disabled={replace.isPending}
+                                    aria-label={`Bracket ${index + 1} actions`}
+                                  >
+                                    <MoreVertical className="size-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-36">
+                                  <DropdownMenuItem
+                                    onSelect={() => openEditModal(index)}
+                                  >
+                                    <Pencil />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() => setDeleteIndex(index)}
+                                  >
+                                    <Trash2Icon />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                             ) : null}
                           </TableRow>
@@ -456,16 +459,18 @@ export const ContributionTablesPage = () => {
           ) : null}
 
           <Dialog
-            open={mayManage && addOpen}
+            open={mayManage && formOpen}
             onOpenChange={(open) => {
               if (!mayManage) return;
-              setAddOpen(open);
+              setFormOpen(open);
+              if (!open) setFormError(null);
             }}
           >
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
-                  Add {selected ? KIND_LABEL[selected.kind] : ""} bracket
+                  {editIndex == null ? "Add" : "Edit"}{" "}
+                  {selected ? KIND_LABEL[selected.kind] : ""} bracket
                 </DialogTitle>
                 <DialogDescription>
                   Compensation range and shares. Blank max means open-ended.
@@ -476,9 +481,9 @@ export const ContributionTablesPage = () => {
                   <Label htmlFor="bracket-min">Min compensation</Label>
                   <Input
                     id="bracket-min"
-                    value={newBracket.minCompensation}
+                    value={form.minCompensation}
                     onChange={(e) =>
-                      setNewBracket((current) => ({
+                      setForm((current) => ({
                         ...current,
                         minCompensation: e.target.value,
                       }))
@@ -489,9 +494,9 @@ export const ContributionTablesPage = () => {
                   <Label htmlFor="bracket-max">Max (blank = open)</Label>
                   <Input
                     id="bracket-max"
-                    value={newBracket.maxCompensation}
+                    value={form.maxCompensation}
                     onChange={(e) =>
-                      setNewBracket((current) => ({
+                      setForm((current) => ({
                         ...current,
                         maxCompensation: e.target.value,
                       }))
@@ -504,9 +509,9 @@ export const ContributionTablesPage = () => {
                     <Label htmlFor="bracket-employee">Employee share</Label>
                     <Input
                       id="bracket-employee"
-                      value={newBracket.employeeShare}
+                      value={form.employeeShare}
                       onChange={(e) =>
-                        setNewBracket((current) => ({
+                        setForm((current) => ({
                           ...current,
                           employeeShare: e.target.value,
                         }))
@@ -517,9 +522,9 @@ export const ContributionTablesPage = () => {
                     <Label htmlFor="bracket-employer">Employer share</Label>
                     <Input
                       id="bracket-employer"
-                      value={newBracket.employerShare}
+                      value={form.employerShare}
                       onChange={(e) =>
-                        setNewBracket((current) => ({
+                        setForm((current) => ({
                           ...current,
                           employerShare: e.target.value,
                         }))
@@ -527,26 +532,62 @@ export const ContributionTablesPage = () => {
                     />
                   </div>
                 </div>
-                {addError ? (
+                {formError ? (
                   <p className="text-sm text-destructive" role="alert">
-                    {addError}
+                    {formError}
                   </p>
                 ) : null}
                 <div className="flex justify-end gap-2 pt-1">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setAddOpen(false)}
+                    onClick={() => setFormOpen(false)}
                   >
                     Cancel
                   </Button>
-                  <Button type="button" onClick={handleAddBracket}>
-                    Add bracket
+                  <Button
+                    type="button"
+                    onClick={handleSaveForm}
+                    disabled={replace.isPending}
+                  >
+                    {replace.isPending
+                      ? "Saving…"
+                      : editIndex == null
+                        ? "Add bracket"
+                        : "Save bracket"}
                   </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
+
+          <AlertDialog
+            open={deleteIndex != null}
+            onOpenChange={(open) => {
+              if (!open) setDeleteIndex(null);
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this bracket?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bracket {deleteIndex == null ? "" : deleteIndex + 1} is
+                  removed from this schedule and the change is saved
+                  immediately.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={replace.isPending}
+                >
+                  Delete bracket
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       ) : null}
     </div>

@@ -149,7 +149,7 @@ export const EmployeeTable = ({
   return (
     <Card
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-border/40 shadow-sm",
+        "flex flex-col overflow-hidden rounded-xl border-border/40 shadow-sm",
         className,
       )}
       aria-label="Employee roster table"
@@ -163,8 +163,8 @@ export const EmployeeTable = ({
           aria-busy={isRefreshing}
         >
           <Table className={EMPLOYEE_ROSTER_TABLE_CLASS}>
-            <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm supports-[backdrop-filter]:bg-muted/70 [&_th]:bg-muted/80">
-              <TableRow className="border-0 hover:bg-transparent">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
                 <SortableEmployeeTableHead
                   label="Employee"
                   sortKey="name"

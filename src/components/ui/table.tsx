@@ -2,24 +2,33 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils";
 
-/** Shared bordered grid for all payroll tables. */
+/** Horizontal rules only. No cell grid. */
 export const TABLE_BORDERED_CLASS =
-  "border-collapse [&_th]:border [&_td]:border [&_th]:border-border/60 [&_td]:border-border/50";
+  "border-separate border-spacing-0 [&_th]:border-x-0 [&_td]:border-x-0 [&_th]:border-t-0 [&_td]:border-t-0 [&_th]:border-b [&_td]:border-b [&_th]:border-border/50 [&_td]:border-border/40";
 
-const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <table
-    ref={ref}
-    className={cn(
-      "w-full caption-bottom text-sm",
-      TABLE_BORDERED_CLASS,
-      className,
-    )}
-    {...props}
-  />
-));
+/** Scrollport for every payroll table. Grows with the rows and stops at 600px. */
+export const TABLE_SCROLL_CLASS = "max-h-[600px] overflow-auto";
+
+type TableProps = React.HTMLAttributes<HTMLTableElement> & {
+  /** Drop the fixed scroll height when the body has no data rows. */
+  empty?: boolean;
+};
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, empty = false, ...props }, ref) => (
+    <div className={empty ? "overflow-x-auto" : TABLE_SCROLL_CLASS}>
+      <table
+        ref={ref}
+        className={cn(
+          "w-full caption-bottom text-sm",
+          TABLE_BORDERED_CLASS,
+          className,
+        )}
+        {...props}
+      />
+    </div>
+  ),
+);
 Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<
@@ -29,7 +38,7 @@ const TableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      "bg-muted/50 [&_tr]:border-b-0 [&_tr]:hover:bg-transparent [&_th]:bg-muted/50",
+      "sticky top-0 z-10 bg-card [&_tr]:hover:bg-transparent [&_th]:bg-card",
       className,
     )}
     {...props}
@@ -43,7 +52,7 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-b-0", className)}
+    className={cn("[&_tr:last-child_td]:border-b-0", className)}
     {...props}
   />
 ));
@@ -56,7 +65,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "transition-colors duration-150 hover:bg-muted/30",
+      "transition-colors duration-100 ease-out hover:bg-muted/40 motion-reduce:transition-none",
       className,
     )}
     {...props}
@@ -71,7 +80,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-11 px-3 text-left align-middle text-xs font-medium tracking-wide text-muted-foreground sm:px-4",
+      "h-11 px-4 text-left align-middle text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground",
       className,
     )}
     {...props}
@@ -86,7 +95,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "px-3 py-3 align-middle text-foreground sm:px-4 sm:py-3.5",
+      "px-4 py-3.5 align-middle text-sm text-foreground",
       className,
     )}
     {...props}

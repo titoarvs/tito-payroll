@@ -234,7 +234,10 @@ export const MyPayslipsPage = () => {
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto p-0">
-            <Table className={isOps ? "min-w-[52rem]" : "min-w-[40rem]"}>
+            <Table
+              empty={pageRows.length === 0}
+              className={isOps ? "min-w-[52rem]" : "min-w-[40rem]"}
+            >
               <TableHeader>
                 <TableRow>
                   <TableHead>Period</TableHead>

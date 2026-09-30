@@ -398,7 +398,7 @@ export const EmployeeSalaryRatesTable = ({
                   : "No salary rates yet."}
               </p>
             ) : (
-              <div className="-mx-6 overflow-x-auto sm:mx-0 sm:rounded-lg sm:border sm:border-border/40">
+              <div className="-mx-6 overflow-x-auto sm:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
