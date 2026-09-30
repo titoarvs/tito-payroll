@@ -6,11 +6,14 @@ import type { HrisUser } from "~/lib/hris-auth";
  */
 const PAYROLL_OPS_ROLES = ["super_admin", "admin", "finance"] as const;
 
-/** HR (`admin`) + finance: create / compute / release / edit adjustments. */
-const PAY_RUN_PROCESS_ROLES = ["admin", "finance"] as const;
+/** Super Admin, admin, and finance: create / compute / release / edit adjustments. */
+const PAY_RUN_PROCESS_ROLES = ["super_admin", "admin", "finance"] as const;
 
-/** Super Admin + finance: edit SSS/HDMF/PhilHealth and tax brackets. */
-const STATUTORY_TABLE_MANAGE_ROLES = ["super_admin", "finance"] as const;
+/** Super Admin, admin, and finance: edit SSS/HDMF/PhilHealth brackets. */
+const STATUTORY_TABLE_MANAGE_ROLES = ["super_admin", "admin", "finance"] as const;
+
+/** Super Admin, admin, and finance: add, edit, and delete tax brackets. */
+const TAX_TABLE_MANAGE_ROLES = ["super_admin", "admin", "finance"] as const;
 
 export const userRoles = (user: HrisUser | undefined | null): string[] => {
   if (!user) return [];
@@ -34,10 +37,15 @@ export const canProcessPayRuns = (
   user: HrisUser | undefined | null,
 ): boolean => hasAnyRole(user, PAY_RUN_PROCESS_ROLES);
 
-/** Edit contribution / tax table brackets. */
+/** Edit contribution table brackets. */
 export const canManageStatutoryTables = (
   user: HrisUser | undefined | null,
 ): boolean => hasAnyRole(user, STATUTORY_TABLE_MANAGE_ROLES);
+
+/** Add, edit, and delete BIR / TRAIN tax brackets. */
+export const canManageTaxTables = (
+  user: HrisUser | undefined | null,
+): boolean => hasAnyRole(user, TAX_TABLE_MANAGE_ROLES);
 
 /** Who may see the Salary and rates section / call salary-rates list. */
 export const canViewEmployeeSalaryRates = (

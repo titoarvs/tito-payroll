@@ -1,5 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { PayslipDocument } from "~/components/pay-runs/payslip-document";
+import {
+  PayslipPdfDownload,
+  PayslipPdfViewer,
+} from "~/components/pay-runs/payslip-pdf-viewer";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useMyPayslip } from "~/hooks/use-pay-runs";
@@ -14,10 +17,6 @@ export const MyPayslipDetailPage = ({
 }: MyPayslipDetailPageProps) => {
   const { data, isPending, isError, error } = useMyPayslip(payslipId);
   const payslip = data?.data;
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   if (isPending) {
     return (
@@ -56,11 +55,9 @@ export const MyPayslipDetailPage = ({
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/dashboard/my-payslips">← My payslips</Link>
         </Button>
-        <Button type="button" onClick={handlePrint}>
-          Print / Save as PDF
-        </Button>
+        <PayslipPdfDownload payslip={payslip} />
       </div>
-      <PayslipDocument payslip={payslip} />
+      <PayslipPdfViewer payslip={payslip} />
     </div>
   );
 };

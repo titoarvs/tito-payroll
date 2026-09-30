@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
 
-export const EMPLOYEE_ROSTER_TABLE_BODY_CLASS = "min-h-0 flex-1 overflow-auto";
+export const EMPLOYEE_ROSTER_TABLE_BODY_CLASS = "min-h-0";
 
 /** @deprecated Borders come from shared `Table`; kept for call-site compatibility. */
 export const EMPLOYEE_ROSTER_TABLE_CLASS = "";
@@ -26,7 +26,7 @@ export const EmployeeTableSkeleton = ({
 }: EmployeeTableSkeletonProps) => (
   <Card
     className={cn(
-      "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-border/40 shadow-sm",
+      "flex flex-col overflow-hidden rounded-xl border-border/40 shadow-sm",
       className,
     )}
     aria-busy="true"
@@ -35,8 +35,8 @@ export const EmployeeTableSkeleton = ({
     <CardContent className="flex min-h-0 flex-1 flex-col p-0">
       <div className={EMPLOYEE_ROSTER_TABLE_BODY_CLASS}>
         <Table className={EMPLOYEE_ROSTER_TABLE_CLASS}>
-          <TableHeader className="sticky top-0 z-10 bg-muted/80 [&_th]:bg-muted/80">
-            <TableRow className="border-0 hover:bg-transparent">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
               <TableHead className="min-w-[12rem]">Employee</TableHead>
               <TableHead className="min-w-[8rem]">Employee ID</TableHead>
               <TableHead className="min-w-[8rem]">Department</TableHead>

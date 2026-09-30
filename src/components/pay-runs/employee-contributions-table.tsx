@@ -127,7 +127,7 @@ export const EmployeeContributionsTable = () => {
 
         {!isPending && !isError && filtered.length > 0 ? (
           <>
-            <div className="overflow-x-auto border-t border-border/40">
+            <div>
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">

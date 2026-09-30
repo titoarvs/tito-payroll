@@ -9,9 +9,9 @@ import {
 import {
   cutoffHalfLabel,
   formatPayRunPeriod,
-  missingPayrollReasonLabel,
+  formatPayslipMoney,
 } from "~/components/pay-runs/pay-run-display";
-import { PayslipDocument } from "~/components/pay-runs/payslip-document";
+import { MissingPayrollDataNotice } from "~/components/pay-runs/missing-payroll-data-notice";
 import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
 import {
   AlertDialog,
@@ -40,8 +40,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Table,
@@ -63,12 +61,10 @@ import {
   usePayRunPayslips,
   usePayRunReadiness,
   useReleasePayRun,
-  useUpdatePayslip,
 } from "~/hooks/use-pay-runs";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
 import { canProcessPayRuns } from "~/lib/payroll-access";
-import { cn } from "~/lib/utils";
 import type { MissingPayrollDataIssue } from "~/api-services/pay-runs.types";
 
 interface PayRunDetailProps {
@@ -122,6 +118,21 @@ const PAYSLIP_COLUMN_DEFS: TableColumnDef<PayslipColumnId>[] = [
 
 const PAYSLIP_COLUMNS_STORAGE_KEY = "payroll.pay-run-payslips.tableColumns.v2";
 
+const ApprovedClaimCell = ({
+  hours,
+  pay,
+}: {
+  hours: string | null | undefined;
+  pay: string | null | undefined;
+}) => (
+  <span className="block leading-tight">
+    <span className="block">{hours && hours !== "" ? `${hours}h` : "0.00h"}</span>
+    <span className="block text-xs text-muted-foreground">
+      {formatPayslipMoney(pay ?? "0.00")}
+    </span>
+  </span>
+);
+
 const renderPayslipColumnCell = (
   id: PayslipColumnId,
   row: Payslip,
@@ -153,14 +164,20 @@ const renderPayslipColumnCell = (
       );
     case "ot":
       return (
-        <TableCell key={id} className="tabular-nums">
-          {row.overtimePay ?? "0.00"}
+        <TableCell key={id} className="whitespace-nowrap tabular-nums">
+          <ApprovedClaimCell
+            hours={row.approvedOvertimeHours ?? row.overtimeHours}
+            pay={row.overtimePay}
+          />
         </TableCell>
       );
     case "nd":
       return (
-        <TableCell key={id} className="tabular-nums">
-          {row.nightDiffPay ?? "0.00"}
+        <TableCell key={id} className="whitespace-nowrap tabular-nums">
+          <ApprovedClaimCell
+            hours={row.approvedNightDiffHours ?? row.nightDiffHours}
+            pay={row.nightDiffPay}
+          />
         </TableCell>
       );
     case "holiday":
@@ -234,15 +251,11 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const compute = useComputePayRun();
   const release = useReleasePayRun();
   const createCorrection = useCreateCorrectionPayRun();
-  const updatePayslip = useUpdatePayslip(payRunId);
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
   const [correctionEmployeeIds, setCorrectionEmployeeIds] = useState<
     Set<string>
   >(() => new Set());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [otherAdjustment, setOtherAdjustment] = useState("");
-  const [adjustmentReason, setAdjustmentReason] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<EmployeePageSize>(
     DEFAULT_EMPLOYEE_PAGE_SIZE,
@@ -268,10 +281,6 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       : null;
   const readinessIssues = blockedIssues ?? readinessIssuesFromApi;
   const payslips = payslipsQuery.data?.data ?? [];
-  const selected = useMemo(
-    () => payslips.find((row) => row.id === selectedId) ?? null,
-    [payslips, selectedId],
-  );
   const total = payslips.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const colSpan = 1 + visibleIds.length;
@@ -303,8 +312,6 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
     (release.error instanceof HrisApiError && release.error.message) ||
     (createCorrection.error instanceof HrisApiError &&
       createCorrection.error.message) ||
-    (updatePayslip.error instanceof HrisApiError &&
-      updatePayslip.error.message) ||
     null;
 
   if (isPending) {
@@ -331,7 +338,6 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       payRun.status === "computing" ||
       payRun.status === "computed");
   const canRelease = mayProcess && payRun.status === "computed";
-  const canEdit = mayProcess && payRun.status === "computed";
   const computeButtonLabel = compute.isPending
     ? payRun.status === "computing"
       ? "Resuming…"
@@ -348,23 +354,9 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const halfLabelShort = cutoffHalfLabel(payRun.cutoffHalf);
   const halfLabelFull = cutoffHalfLabel(payRun.cutoffHalf, { withFunds: true });
 
-  const handleSelect = (row: Payslip) => {
-    setSelectedId(row.id);
-    setOtherAdjustment(row.otherAdjustment ?? "0.00");
-    setAdjustmentReason(row.otherAdjustmentReason ?? "");
-  };
-
   const handleRelease = () => {
     release.mutate(payRunId, {
       onSuccess: () => setReleaseOpen(false),
-    });
-  };
-
-  const handleSaveAdjustment = () => {
-    if (!selected) return;
-    updatePayslip.mutate({
-      id: selected.id,
-      input: { otherAdjustment, reason: adjustmentReason.trim() },
     });
   };
 
@@ -400,15 +392,12 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
     );
   };
 
-  const previewPayslip: Payslip | null = selected
-    ? {
-        ...selected,
-        periodStart: selected.periodStart ?? payRun.periodStart,
-        periodEnd: selected.periodEnd ?? payRun.periodEnd,
-        cutoffHalf: selected.cutoffHalf ?? payRun.cutoffHalf,
-        status: selected.status ?? payRun.status,
-      }
-    : null;
+  const openPayslip = (payslipId: string) => {
+    void navigate({
+      to: "/dashboard/pay-runs/$id/payslips/$payslipId",
+      params: { id: payRunId, payslipId },
+    });
+  };
 
   const actionButtons = (
     <>
@@ -552,34 +541,10 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       </header>
 
       {!isCorrection && readinessIssues.length > 0 ? (
-        <div
-          className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm"
-          role="alert"
-        >
-          <p className="font-medium text-destructive">
-            Missing payroll data — Compute is blocked until these are fixed
-          </p>
-          <ul className="mt-2 space-y-1.5 text-foreground">
-            {readinessIssues.map((issue) => (
-              <li
-                key={issue.employeeId}
-                className="flex flex-wrap items-baseline gap-x-2 gap-y-1"
-              >
-                <Link
-                  to="/dashboard/employees/$id"
-                  params={{ id: issue.employeeId }}
-                  className="font-medium underline-offset-2 hover:underline"
-                >
-                  {issue.employeeName}
-                  {issue.employeeCode ? ` (#${issue.employeeCode})` : ""}
-                </Link>
-                <span className="text-muted-foreground">
-                  {issue.reasons.map(missingPayrollReasonLabel).join(" · ")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <MissingPayrollDataNotice
+          key={payRunId}
+          issues={readinessIssues}
+        />
       ) : null}
 
       {isCorrection && payRun.correctsPayRunId ? (
@@ -677,7 +642,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
             <CardTitle className="text-base">Payslips</CardTitle>
             <CardDescription>
               Amounts from the latest compute for this cutoff. Select a row to
-              preview the paper payslip.
+              open the payslip.
             </CardDescription>
           </div>
           <TableColumnVisibility
@@ -689,12 +654,31 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
         </CardHeader>
         <CardContent className="flex flex-col p-0">
           <div className="overflow-x-auto">
-            <Table className="min-w-[56rem]">
+            <Table
+              empty={!payslipsQuery.isPending && total === 0}
+              className="min-w-[56rem]"
+            >
               <TableHeader>
                 <TableRow>
                   <TableHead>Employee</TableHead>
                   {visibleIds.map((id) => (
-                    <TableHead key={id}>{labelById[id]}</TableHead>
+                    <TableHead
+                      key={id}
+                      title={
+                        id === "ot"
+                          ? "Approved overtime whose worked date is in this cutoff"
+                          : id === "nd"
+                            ? "Approved night differential whose worked date is in this cutoff"
+                            : undefined
+                      }
+                      className={
+                        id === "ot" || id === "nd"
+                          ? "whitespace-nowrap"
+                          : undefined
+                      }
+                    >
+                      {labelById[id]}
+                    </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -721,11 +705,15 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
                   pageRows.map((row) => (
                     <TableRow
                       key={row.id}
-                      className={cn(
-                        "cursor-pointer hover:bg-muted/40",
-                        selectedId === row.id && "bg-muted/60",
-                      )}
-                      onClick={() => handleSelect(row)}
+                      className="cursor-pointer hover:bg-muted/40"
+                      onClick={() => openPayslip(row.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openPayslip(row.id);
+                        }
+                      }}
+                      tabIndex={0}
                     >
                       <TableCell className="max-w-[16rem]">
                         <div className="flex min-w-0 flex-col gap-0.5">
@@ -752,62 +740,6 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
         </CardContent>
       </Card>
 
-      {previewPayslip ? (
-        <div className="flex flex-col gap-4">
-          {canEdit && selected?.employmentStatus !== "consultant" ? (
-            <Card>
-              <CardContent className="flex flex-wrap items-end gap-3 pt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="other-adjustment">Other adjustment</Label>
-                  <Input
-                    id="other-adjustment"
-                    className="w-40 tabular-nums"
-                    value={otherAdjustment}
-                    onChange={(event) => setOtherAdjustment(event.target.value)}
-                  />
-                </div>
-                <div className="min-w-[12rem] flex-1 space-y-2">
-                  <Label htmlFor="adjustment-reason">Reason</Label>
-                  <Input
-                    id="adjustment-reason"
-                    value={adjustmentReason}
-                    onChange={(event) =>
-                      setAdjustmentReason(event.target.value)
-                    }
-                    placeholder="Required — why this adjustment"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  onClick={handleSaveAdjustment}
-                  disabled={
-                    updatePayslip.isPending || !adjustmentReason.trim()
-                  }
-                >
-                  {updatePayslip.isPending ? "Saving…" : "Save adjustment"}
-                </Button>
-                <p className="w-full text-xs text-muted-foreground">
-                  Reason is required and audit-logged. Edits recalculate net on
-                  the server while the run is computed (not yet released).
-                  {isCorrection
-                    ? " Correction batches only support other adjustment."
-                    : null}
-                </p>
-              </CardContent>
-            </Card>
-          ) : null}
-          <div className="flex justify-end print:hidden">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => window.print()}
-            >
-              Print / Save as PDF
-            </Button>
-          </div>
-          <PayslipDocument payslip={previewPayslip} />
-        </div>
-      ) : null}
     </div>
   );
 };

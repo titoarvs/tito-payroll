@@ -1,7 +1,23 @@
-import { Plus, Trash2Icon } from "lucide-react";
+import { MoreVertical, Pencil, Plus, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageHeader } from "~/components/layout/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   Card,
   CardContent,
@@ -33,8 +49,7 @@ import {
 } from "~/hooks/use-pay-runs";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
-import { canManageStatutoryTables } from "~/lib/payroll-access";
-import { cn } from "~/lib/utils";
+import { canManageTaxTables } from "~/lib/payroll-access";
 
 interface BracketDraft {
   minCompensation: string;
@@ -52,15 +67,17 @@ const EMPTY_BRACKET: BracketDraft = {
 
 export const TaxTablesPage = () => {
   const { data: user } = useCurrentUser();
-  const mayManage = canManageStatutoryTables(user);
+  const mayManage = canManageTaxTables(user);
   const { data, isPending, isError, error } = useTaxSchedules();
   const replace = useReplaceTaxBrackets();
   const schedules = data?.data ?? [];
   const [selectedId, setSelectedId] = useState("");
   const [drafts, setDrafts] = useState<BracketDraft[]>([]);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newBracket, setNewBracket] = useState<BracketDraft>(EMPTY_BRACKET);
-  const [addError, setAddError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [form, setForm] = useState<BracketDraft>(EMPTY_BRACKET);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const selected =
     schedules.find((s) => s.id === selectedId) ?? schedules[0] ?? null;
@@ -87,39 +104,77 @@ export const TaxTablesPage = () => {
     );
   }, [schedules, selectedId]);
 
-  const handleSave = () => {
-    if (!selected) return;
-    replace.mutate({
-      id: selected.id,
-      input: {
-        brackets: drafts.map((d) => ({
-          minCompensation: d.minCompensation,
-          maxCompensation: d.maxCompensation.trim() || null,
-          baseTax: d.baseTax,
-          rateOnExcess: d.rateOnExcess,
-        })),
+  const persist = (rows: BracketDraft[]) => {
+    if (!selected || !mayManage) return;
+    setDrafts(rows);
+    replace.mutate(
+      {
+        id: selected.id,
+        input: {
+          brackets: rows.map((row) => ({
+            minCompensation: row.minCompensation.trim(),
+            maxCompensation: row.maxCompensation.trim() || null,
+            baseTax: row.baseTax.trim(),
+            rateOnExcess: row.rateOnExcess.trim(),
+          })),
+        },
       },
-    });
+      {
+        onSuccess: (result) => {
+          const nextId = result.data.id;
+          if (nextId && nextId !== selected.id) setSelectedId(nextId);
+        },
+      },
+    );
   };
 
   const openAddModal = () => {
-    setNewBracket(EMPTY_BRACKET);
-    setAddError(null);
-    setAddOpen(true);
+    setEditIndex(null);
+    setForm(EMPTY_BRACKET);
+    setFormError(null);
+    setFormOpen(true);
   };
 
-  const handleAddBracket = () => {
-    const min = newBracket.minCompensation.trim();
-    const baseTax = newBracket.baseTax.trim();
-    const rateOnExcess = newBracket.rateOnExcess.trim();
+  const openEditModal = (index: number) => {
+    const row = drafts[index];
+    if (!row) return;
+    setEditIndex(index);
+    setForm({ ...row });
+    setFormError(null);
+    setFormOpen(true);
+  };
+
+  const handleSaveForm = () => {
+    const min = form.minCompensation.trim();
+    const baseTax = form.baseTax.trim();
+    const rateOnExcess = form.rateOnExcess.trim();
     if (!min || !baseTax || !rateOnExcess) {
-      setAddError("Min compensation, base tax, and rate on excess are required.");
+      setFormError(
+        "Min compensation, base tax, and rate on excess are required.",
+      );
       return;
     }
-    setDrafts((current) => [...current, { ...newBracket }]);
-    setAddOpen(false);
-    setNewBracket(EMPTY_BRACKET);
-    setAddError(null);
+    const nextRow: BracketDraft = {
+      minCompensation: min,
+      maxCompensation: form.maxCompensation.trim(),
+      baseTax,
+      rateOnExcess,
+    };
+    const next =
+      editIndex == null
+        ? [...drafts, nextRow]
+        : drafts.map((row, index) => (index === editIndex ? nextRow : row));
+    persist(next);
+    setFormOpen(false);
+    setEditIndex(null);
+    setForm(EMPTY_BRACKET);
+    setFormError(null);
+  };
+
+  const handleDelete = () => {
+    if (deleteIndex == null) return;
+    persist(drafts.filter((_, index) => index !== deleteIndex));
+    setDeleteIndex(null);
   };
 
   return (
@@ -167,13 +222,11 @@ export const TaxTablesPage = () => {
           <CardHeader className="pb-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-base">
-                  {mayManage ? "Edit brackets" : "Brackets"}
-                </CardTitle>
+                <CardTitle className="text-base">Brackets</CardTitle>
                 <CardDescription>
                   {mayManage
-                    ? "Select a schedule, edit rows, then save. Blank max means open-ended."
-                    : "View BIR / TRAIN brackets. Only Super Admin and finance can edit."}
+                    ? "Add, edit, or delete a bracket. Changes save immediately. Blank max means open-ended."
+                    : "View BIR / TRAIN brackets. Only Super Admin, admin, and finance can edit."}
                 </CardDescription>
               </div>
               {mayManage ? (
@@ -182,76 +235,16 @@ export const TaxTablesPage = () => {
                   type="button"
                   variant="outline"
                   onClick={openAddModal}
-                  disabled={!selected}
+                  disabled={!selected || replace.isPending}
                 >
                   <Plus className="size-4" />
                   Add bracket
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={replace.isPending || !selected}
-                >
-                  {replace.isPending ? "Saving…" : "Save brackets"}
                 </Button>
               </div>
               ) : null}
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
-            <div
-              className="flex flex-wrap gap-1 rounded-lg border border-border/50 bg-muted/30 p-1"
-              role="tablist"
-              aria-label="Tax schedule"
-            >
-              {schedules.map((schedule) => {
-                const active = selected?.id === schedule.id;
-                return (
-                  <button
-                    key={schedule.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setSelectedId(schedule.id)}
-                    className={cn(
-                      "min-w-[8rem] flex-1 rounded-md px-3 py-2 text-left transition-colors",
-                      active
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-card/60 hover:text-foreground",
-                    )}
-                  >
-                    <span className="block text-sm font-semibold tracking-tight">
-                      {schedule.name}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
-                      {schedule.isActive ? "Active" : "Inactive"} ·{" "}
-                      {schedule.brackets.length} brackets
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {selected ? (
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {selected.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    Effective {selected.effectiveFrom}
-                    {selected.effectiveTo
-                      ? ` → ${selected.effectiveTo}`
-                      : " → open"}
-                    {selected.isActive ? "" : " · inactive"}
-                  </p>
-                </div>
-                <p className="text-xs tabular-nums text-muted-foreground">
-                  {drafts.length} bracket{drafts.length === 1 ? "" : "s"}
-                </p>
-              </div>
-            ) : null}
-
             {drafts.length === 0 ? (
               <p className="text-sm text-muted-foreground" role="status">
                 {mayManage
@@ -259,7 +252,7 @@ export const TaxTablesPage = () => {
                   : "This schedule has no brackets."}
               </p>
             ) : (
-              <div className="-mx-6 overflow-x-auto border-y border-border/40 sm:mx-0 sm:rounded-lg sm:border">
+              <div className="-mx-6 overflow-x-auto sm:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -269,7 +262,9 @@ export const TaxTablesPage = () => {
                       <TableHead>Base tax</TableHead>
                       <TableHead>Rate on excess %</TableHead>
                       {mayManage ? (
-                        <TableHead className="w-20 text-right">Remove</TableHead>
+                        <TableHead className="w-14 text-right">
+                          <span className="sr-only">Actions</span>
+                        </TableHead>
                       ) : null}
                     </TableRow>
                   </TableHeader>
@@ -279,91 +274,49 @@ export const TaxTablesPage = () => {
                         <TableCell className="text-xs text-muted-foreground">
                           {index + 1}
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            value={draft.minCompensation}
-                            readOnly={!mayManage}
-                            onChange={(e) => {
-                              if (!mayManage) return;
-                              const next = [...drafts];
-                              next[index] = {
-                                ...draft,
-                                minCompensation: e.target.value,
-                              };
-                              setDrafts(next);
-                            }}
-                            aria-label={`Min compensation ${index + 1}`}
-                            className="h-9 min-w-[6.5rem]"
-                          />
+                        <TableCell className="tabular-nums">
+                          {draft.minCompensation}
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            value={draft.maxCompensation}
-                            readOnly={!mayManage}
-                            onChange={(e) => {
-                              if (!mayManage) return;
-                              const next = [...drafts];
-                              next[index] = {
-                                ...draft,
-                                maxCompensation: e.target.value,
-                              };
-                              setDrafts(next);
-                            }}
-                            placeholder="Open"
-                            aria-label={`Max compensation ${index + 1}`}
-                            className="h-9 min-w-[6.5rem]"
-                          />
+                        <TableCell className="tabular-nums">
+                          {draft.maxCompensation.trim() || "Open"}
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            value={draft.baseTax}
-                            readOnly={!mayManage}
-                            onChange={(e) => {
-                              if (!mayManage) return;
-                              const next = [...drafts];
-                              next[index] = {
-                                ...draft,
-                                baseTax: e.target.value,
-                              };
-                              setDrafts(next);
-                            }}
-                            aria-label={`Base tax ${index + 1}`}
-                            className="h-9 min-w-[6.5rem]"
-                          />
+                        <TableCell className="tabular-nums">
+                          {draft.baseTax}
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            value={draft.rateOnExcess}
-                            readOnly={!mayManage}
-                            onChange={(e) => {
-                              if (!mayManage) return;
-                              const next = [...drafts];
-                              next[index] = {
-                                ...draft,
-                                rateOnExcess: e.target.value,
-                              };
-                              setDrafts(next);
-                            }}
-                            aria-label={`Rate on excess ${index + 1}`}
-                            className="h-9 min-w-[6.5rem]"
-                          />
+                        <TableCell className="tabular-nums">
+                          {draft.rateOnExcess}
                         </TableCell>
                         {mayManage ? (
                         <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                            onClick={() =>
-                              setDrafts((current) =>
-                                current.filter((_, i) => i !== index),
-                              )
-                            }
-                            aria-label={`Remove bracket ${index + 1}`}
-                          >
-                            <Trash2Icon className="size-3.5" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                disabled={replace.isPending}
+                                aria-label={`Bracket ${index + 1} actions`}
+                              >
+                                <MoreVertical className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-36">
+                              <DropdownMenuItem
+                                onSelect={() => openEditModal(index)}
+                              >
+                                <Pencil />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => setDeleteIndex(index)}
+                              >
+                                <Trash2Icon />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                         ) : null}
                       </TableRow>
@@ -390,15 +343,18 @@ export const TaxTablesPage = () => {
       ) : null}
 
       <Dialog
-        open={mayManage && addOpen}
+        open={mayManage && formOpen}
         onOpenChange={(open) => {
           if (!mayManage) return;
-          setAddOpen(open);
+          setFormOpen(open);
+          if (!open) setFormError(null);
         }}
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add tax bracket</DialogTitle>
+            <DialogTitle>
+              {editIndex == null ? "Add tax bracket" : "Edit tax bracket"}
+            </DialogTitle>
             <DialogDescription>
               Monthly compensation range, base tax, and percent on excess.
             </DialogDescription>
@@ -408,9 +364,9 @@ export const TaxTablesPage = () => {
               <Label htmlFor="tax-bracket-min">Min compensation</Label>
               <Input
                 id="tax-bracket-min"
-                value={newBracket.minCompensation}
+                value={form.minCompensation}
                 onChange={(e) =>
-                  setNewBracket((current) => ({
+                  setForm((current) => ({
                     ...current,
                     minCompensation: e.target.value,
                   }))
@@ -421,9 +377,9 @@ export const TaxTablesPage = () => {
               <Label htmlFor="tax-bracket-max">Max (blank = open)</Label>
               <Input
                 id="tax-bracket-max"
-                value={newBracket.maxCompensation}
+                value={form.maxCompensation}
                 onChange={(e) =>
-                  setNewBracket((current) => ({
+                  setForm((current) => ({
                     ...current,
                     maxCompensation: e.target.value,
                   }))
@@ -436,9 +392,9 @@ export const TaxTablesPage = () => {
                 <Label htmlFor="tax-bracket-base">Base tax</Label>
                 <Input
                   id="tax-bracket-base"
-                  value={newBracket.baseTax}
+                  value={form.baseTax}
                   onChange={(e) =>
-                    setNewBracket((current) => ({
+                    setForm((current) => ({
                       ...current,
                       baseTax: e.target.value,
                     }))
@@ -449,9 +405,9 @@ export const TaxTablesPage = () => {
                 <Label htmlFor="tax-bracket-rate">Rate on excess %</Label>
                 <Input
                   id="tax-bracket-rate"
-                  value={newBracket.rateOnExcess}
+                  value={form.rateOnExcess}
                   onChange={(e) =>
-                    setNewBracket((current) => ({
+                    setForm((current) => ({
                       ...current,
                       rateOnExcess: e.target.value,
                     }))
@@ -459,26 +415,61 @@ export const TaxTablesPage = () => {
                 />
               </div>
             </div>
-            {addError ? (
+            {formError ? (
               <p className="text-sm text-destructive" role="alert">
-                {addError}
+                {formError}
               </p>
             ) : null}
             <div className="flex justify-end gap-2 pt-1">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setAddOpen(false)}
+                onClick={() => setFormOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="button" onClick={handleAddBracket}>
-                Add bracket
+              <Button
+                type="button"
+                onClick={handleSaveForm}
+                disabled={replace.isPending}
+              >
+                {replace.isPending
+                  ? "Saving…"
+                  : editIndex == null
+                    ? "Add bracket"
+                    : "Save bracket"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={deleteIndex != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteIndex(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this tax bracket?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bracket {deleteIndex == null ? "" : deleteIndex + 1} is removed
+              from this schedule and the change is saved immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              onClick={handleDelete}
+              disabled={replace.isPending}
+            >
+              Delete bracket
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

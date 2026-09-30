@@ -21,7 +21,7 @@ const buildSecurityHeaders = (hrisApiOrigin: string) => ({
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  "Content-Security-Policy": `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https: ${hrisApiOrigin}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
+  "Content-Security-Policy": `default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https: ${hrisApiOrigin}; frame-src 'self' blob:; object-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
 });
 
 export default defineConfig(({ mode }) => {
@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: process.cwd(),
     server: {
-      port: 3002,
+      port: 3000,
       strictPort: true,
     },
     define: {

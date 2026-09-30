@@ -26,6 +26,8 @@ import { Route as DashboardMyPayslipsIndexRouteImport } from './routes/dashboard
 import { Route as DashboardMyPayslipsPayslipIdRouteImport } from './routes/dashboard/my-payslips.$payslipId'
 import { Route as DashboardPayRunsIndexRouteImport } from './routes/dashboard/pay-runs.index'
 import { Route as DashboardPayRunsIdRouteImport } from './routes/dashboard/pay-runs.$id'
+import { Route as DashboardPayRunsIdIndexRouteImport } from './routes/dashboard/pay-runs.$id.index'
+import { Route as DashboardPayRunsIdPayslipsPayslipIdRouteImport } from './routes/dashboard/pay-runs.$id.payslips.$payslipId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -115,6 +117,17 @@ const DashboardPayRunsIdRoute = DashboardPayRunsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DashboardPayRunsRoute,
 } as any)
+const DashboardPayRunsIdIndexRoute = DashboardPayRunsIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardPayRunsIdRoute,
+} as any)
+const DashboardPayRunsIdPayslipsPayslipIdRoute =
+  DashboardPayRunsIdPayslipsPayslipIdRouteImport.update({
+    id: '/payslips/$payslipId',
+    path: '/payslips/$payslipId',
+    getParentRoute: () => DashboardPayRunsIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -130,10 +143,12 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
-  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRoute
+  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRouteWithChildren
   '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
   '/dashboard/my-payslips/': typeof DashboardMyPayslipsIndexRoute
   '/dashboard/pay-runs/': typeof DashboardPayRunsIndexRoute
+  '/dashboard/pay-runs/$id/': typeof DashboardPayRunsIdIndexRoute
+  '/dashboard/pay-runs/$id/payslips/$payslipId': typeof DashboardPayRunsIdPayslipsPayslipIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -145,10 +160,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
-  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRoute
   '/dashboard/employees': typeof DashboardEmployeesIndexRoute
   '/dashboard/my-payslips': typeof DashboardMyPayslipsIndexRoute
   '/dashboard/pay-runs': typeof DashboardPayRunsIndexRoute
+  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdIndexRoute
+  '/dashboard/pay-runs/$id/payslips/$payslipId': typeof DashboardPayRunsIdPayslipsPayslipIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -165,10 +181,12 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
-  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRoute
+  '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRouteWithChildren
   '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
   '/dashboard/my-payslips/': typeof DashboardMyPayslipsIndexRoute
   '/dashboard/pay-runs/': typeof DashboardPayRunsIndexRoute
+  '/dashboard/pay-runs/$id/': typeof DashboardPayRunsIdIndexRoute
+  '/dashboard/pay-runs/$id/payslips/$payslipId': typeof DashboardPayRunsIdPayslipsPayslipIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,6 +208,8 @@ export interface FileRouteTypes {
     | '/dashboard/employees/'
     | '/dashboard/my-payslips/'
     | '/dashboard/pay-runs/'
+    | '/dashboard/pay-runs/$id/'
+    | '/dashboard/pay-runs/$id/payslips/$payslipId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -201,10 +221,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
-    | '/dashboard/pay-runs/$id'
     | '/dashboard/employees'
     | '/dashboard/my-payslips'
     | '/dashboard/pay-runs'
+    | '/dashboard/pay-runs/$id'
+    | '/dashboard/pay-runs/$id/payslips/$payslipId'
   id:
     | '__root__'
     | '/'
@@ -224,6 +245,8 @@ export interface FileRouteTypes {
     | '/dashboard/employees/'
     | '/dashboard/my-payslips/'
     | '/dashboard/pay-runs/'
+    | '/dashboard/pay-runs/$id/'
+    | '/dashboard/pay-runs/$id/payslips/$payslipId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -355,6 +378,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPayRunsIdRouteImport
       parentRoute: typeof DashboardPayRunsRoute
     }
+    '/dashboard/pay-runs/$id/': {
+      id: '/dashboard/pay-runs/$id/'
+      path: '/'
+      fullPath: '/dashboard/pay-runs/$id/'
+      preLoaderRoute: typeof DashboardPayRunsIdIndexRouteImport
+      parentRoute: typeof DashboardPayRunsIdRoute
+    }
+    '/dashboard/pay-runs/$id/payslips/$payslipId': {
+      id: '/dashboard/pay-runs/$id/payslips/$payslipId'
+      path: '/payslips/$payslipId'
+      fullPath: '/dashboard/pay-runs/$id/payslips/$payslipId'
+      preLoaderRoute: typeof DashboardPayRunsIdPayslipsPayslipIdRouteImport
+      parentRoute: typeof DashboardPayRunsIdRoute
+    }
   }
 }
 
@@ -384,13 +421,27 @@ const DashboardMyPayslipsRouteChildren: DashboardMyPayslipsRouteChildren = {
 const DashboardMyPayslipsRouteWithChildren =
   DashboardMyPayslipsRoute._addFileChildren(DashboardMyPayslipsRouteChildren)
 
+interface DashboardPayRunsIdRouteChildren {
+  DashboardPayRunsIdIndexRoute: typeof DashboardPayRunsIdIndexRoute
+  DashboardPayRunsIdPayslipsPayslipIdRoute: typeof DashboardPayRunsIdPayslipsPayslipIdRoute
+}
+
+const DashboardPayRunsIdRouteChildren: DashboardPayRunsIdRouteChildren = {
+  DashboardPayRunsIdIndexRoute: DashboardPayRunsIdIndexRoute,
+  DashboardPayRunsIdPayslipsPayslipIdRoute:
+    DashboardPayRunsIdPayslipsPayslipIdRoute,
+}
+
+const DashboardPayRunsIdRouteWithChildren =
+  DashboardPayRunsIdRoute._addFileChildren(DashboardPayRunsIdRouteChildren)
+
 interface DashboardPayRunsRouteChildren {
-  DashboardPayRunsIdRoute: typeof DashboardPayRunsIdRoute
+  DashboardPayRunsIdRoute: typeof DashboardPayRunsIdRouteWithChildren
   DashboardPayRunsIndexRoute: typeof DashboardPayRunsIndexRoute
 }
 
 const DashboardPayRunsRouteChildren: DashboardPayRunsRouteChildren = {
-  DashboardPayRunsIdRoute: DashboardPayRunsIdRoute,
+  DashboardPayRunsIdRoute: DashboardPayRunsIdRouteWithChildren,
   DashboardPayRunsIndexRoute: DashboardPayRunsIndexRoute,
 }
 
