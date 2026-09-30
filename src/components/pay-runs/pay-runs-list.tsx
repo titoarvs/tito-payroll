@@ -125,7 +125,16 @@ export const PayRunsList = () => {
         ? "Failed to create pay run"
         : null;
 
-  const canCreate = Boolean(periodStart && periodEnd && periodStart <= periodEnd);
+  const duplicateRun = runs.find(
+    (run) =>
+      (run.kind ?? "regular") === "regular" &&
+      run.periodStart === periodStart &&
+      run.periodEnd === periodEnd &&
+      run.cutoffHalf === cutoffHalf,
+  );
+  const canCreate = Boolean(
+    periodStart && periodEnd && periodStart <= periodEnd && !duplicateRun,
+  );
   const colSpan = 2 + visibleIds.length;
 
   const applyDefaultPeriod = () => {
@@ -242,6 +251,13 @@ export const PayRunsList = () => {
               </span>
             </span>
           </label>
+          {duplicateRun ? (
+            <p className="mt-3 text-sm text-destructive" role="alert">
+              A pay run already exists for{" "}
+              {formatPayRunPeriod(periodStart, periodEnd)} (
+              {cutoffHalfLabel(cutoffHalf)}).
+            </p>
+          ) : null}
           {createError ? (
             <p className="mt-3 text-sm text-destructive" role="alert">
               {createError}

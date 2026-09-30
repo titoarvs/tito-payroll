@@ -185,7 +185,7 @@ export function DateRangePicker({
           ) : null}
 
           <div
-            className="min-w-0 p-2"
+            className="min-w-0 p-3"
             onMouseLeave={() => {
               if (selectingEnd) setHoveredDay(undefined);
             }}
@@ -202,28 +202,28 @@ export function DateRangePicker({
               onDayMouseEnter={(date) => {
                 if (selectingEnd) setHoveredDay(date);
               }}
-              className="bg-transparent p-0 [--cell-size:1.75rem]"
+              className="bg-transparent p-0 [--cell-size:2.25rem]"
               classNames={{
                 root: "w-auto",
                 months: cn(
-                  "relative flex gap-3",
+                  "relative flex gap-6",
                   months > 1 ? "flex-row" : "flex-col",
                 ),
                 month:
-                  "flex w-[calc(var(--cell-size)*7)] shrink-0 flex-col gap-1",
+                  "flex w-[calc(var(--cell-size)*7)] shrink-0 flex-col gap-2",
                 month_caption:
-                  "relative flex h-7 w-full items-center justify-center",
-                caption_label: "text-xs font-medium tracking-tight",
+                  "relative flex h-8 w-full items-center justify-center",
+                caption_label: "text-sm font-medium tracking-tight",
                 nav: "absolute inset-x-0 top-0 z-10 flex w-full items-center justify-between",
-                button_previous: "size-6 p-0",
-                button_next: "size-6 p-0",
+                button_previous: "size-7 p-0",
+                button_next: "size-7 p-0",
                 month_grid: "w-full border-collapse",
                 weekdays: "flex w-full",
                 weekday:
-                  "w-[--cell-size] flex-1 select-none text-center text-[10px] font-medium tracking-[0.04em] text-muted-foreground",
-                week: "mt-0.5 flex w-full",
+                  "w-[--cell-size] flex-1 select-none text-center text-[11px] font-medium tracking-[0.04em] text-muted-foreground",
+                week: "mt-1 flex w-full",
                 day: cn(
-                  "relative aspect-square h-auto w-[--cell-size] flex-1 p-0 text-center text-xs",
+                  "relative aspect-square h-auto w-[--cell-size] flex-1 p-0 text-center text-sm",
                   "[&:has([data-range-middle=true])]:rounded-none",
                 ),
                 range_start: "rounded-l-full bg-transparent",
