@@ -72,9 +72,27 @@ UI: list shows a **Correction** badge; detail links back to the source run.
 | `/dashboard/pay-runs`               | finance / admin — create; **super_admin** view-only (no create)                                                             |
 | `/dashboard/pay-runs/$id`           | finance / admin — compute / other adjustment / release / create correction from released regular; **super_admin** view-only |
 | `/dashboard/contribution-tables`    | finance / **super_admin** edit brackets; **admin** (HR) read-only                                                           |
-| `/dashboard/tax-tables`             | finance / **super_admin** edit brackets; **admin** (HR) read-only                                                           |
+| `/dashboard/tax-tables`             | finance / **super_admin** add / edit / delete draft brackets, import CSV, publish; **admin** (HR) read-only                 |
 | `/dashboard/my-payslips`            | any signed-in employee/consultant with released slips                                                                       |
 | `/dashboard/my-payslips/$payslipId` | payslip details + print / save as PDF                                                                                       |
+
+### Tax tables (draft + frequency)
+
+- Route: `src/routes/dashboard/tax-tables.tsx` → `TaxTablesPage`
+- Hooks: `useTaxSchedules`, `useAddDraftTaxBracket`, `useUpdateDraftTaxBracket`, `useDeleteDraftTaxBracket`, `useImportDraftTaxBrackets`, `usePublishTaxDraft`, `useReplaceTaxBrackets`
+- Endpoints:
+  - `GET /api/payroll/tax-schedules`
+  - `POST /api/payroll/tax-schedules/draft/brackets` — frequency, sequence, min, max (null = open), base tax, rate %, excess-over; creates draft if missing; does not change the active schedule
+  - `PATCH /api/payroll/tax-schedules/draft/brackets/:bracketId` — edit one draft bracket only; 400 if the bracket is on a published schedule
+  - `DELETE /api/payroll/tax-schedules/draft/brackets/:bracketId` — delete one draft bracket only
+  - `POST /api/payroll/tax-schedules/draft/import` — body `{ csv }` with header `frequency,sequence,minCompensation,maxCompensation,baseTax,rateOnExcess,excessOver`; replaces all brackets on the draft (creates draft if missing); does not publish or change the active schedule; invalid CSV → 400 with no writes
+  - `POST /api/payroll/tax-schedules/draft/publish` — promotes draft to active; deactivates prior active (pinned pay runs keep their schedule id)
+- Formula: `withholding = baseTax + rate% × max(0, taxable − excessOver)`. Semi-monthly brackets on the **active** schedule apply directly to cutoff taxable; monthly-only schedules keep the legacy ×2 / half-of-monthly TRAIN path.
+- Migration: `0042_payroll_tax_draft_brackets.sql` (`status`, `frequency`, `sequence`, `excess_over`)
+
+### T201 employee Payslips tab
+
+- `GET /api/payroll/employees/:employeeId/payslips` (`payroll.payslips.view`) — released slips for one employee; used by the T201 profile Payslips tab (Nest `admin` / `super_admin` only). Employees use My payslips here, not T201.
 
 ### RBAC segregation of duties
 
@@ -88,7 +106,7 @@ UI helpers: `canManageStatutoryTables` / `canProcessPayRuns` in `src/lib/payroll
 
 ## Setup
 
-1. Apply payroll migrations in `tito-hris-api` (`npm run db:migrate`) — include `0031_payroll_audit_pii_versions.sql`, `0035_payroll_tax_correction_thirteenth.sql`, and `0036_payroll_payslip_money_encrypt_resume.sql` (money columns → text + `pay_run_adjustment_hold`). **Not** run by agents. Missing `kind` / schedule columns on `payroll.pay_run` makes `GET /api/payroll/pay-runs` return 500.
+1. Apply payroll migrations in `tito-hris-api` (`npm run db:migrate`) — include `0031_payroll_audit_pii_versions.sql`, `0035_payroll_tax_correction_thirteenth.sql`, `0036_payroll_payslip_money_encrypt_resume.sql`, and `0042_payroll_tax_draft_brackets.sql`. **Not** run by agents. Missing `kind` / schedule columns on `payroll.pay_run` makes `GET /api/payroll/pay-runs` return 500.
 2. Set `PII_ENCRYPTION_KEY` to exactly 32 characters in Infisical / `.env` (AES-256-GCM for SSS/HDMF/PhilHealth/TIN **and** payslip money). Do **not** reuse `MFA_ENCRYPTION_KEY`. Legacy plain decimals remain readable until the next write encrypts them.
 3. `npm run seed:rbac` (includes `payroll.tax_tables.view` / `manage`)
 4. `npm run seed:contribution-schedules` and `npm run seed:tax-schedules`
