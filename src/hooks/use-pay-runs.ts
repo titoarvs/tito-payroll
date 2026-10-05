@@ -13,6 +13,7 @@ import type {
   ReplaceBracketsInput,
   ReplaceTaxBracketsInput,
   UpdateDraftTaxBracketInput,
+  UpdatePayRunInput,
   UpdatePayslipInput,
 } from "~/api-services/pay-runs.types";
 import {
@@ -95,6 +96,19 @@ export const useReleasePayRun = () => {
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
       await queryClient.invalidateQueries({ queryKey: payRunsKeys.detail(id) });
       await queryClient.invalidateQueries({ queryKey: myPayslipsKeys.all });
+    },
+  });
+};
+
+export const useUpdatePayRun = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdatePayRunInput }) =>
+      payRunsService.update(id, input),
+    onSuccess: async (_data, { id }) => {
+      await queryClient.invalidateQueries({ queryKey: payRunsKeys.all });
+      await queryClient.invalidateQueries({ queryKey: payRunsKeys.detail(id) });
+      await queryClient.invalidateQueries({ queryKey: payRunsKeys.payslips(id) });
     },
   });
 };

@@ -14,6 +14,7 @@ import type {
   ReplaceBracketsInput,
   ReplaceTaxBracketsInput,
   TaxSchedule,
+  UpdatePayRunInput,
   UpdatePayslipInput,
   PayRunReadiness,
 } from "./pay-runs.types";
@@ -34,6 +35,10 @@ export const payRunsService = {
     ),
   create: (input: CreatePayRunInput) =>
     hrisApi.post<ApiListResponse<PayRun>>(PAY_RUNS, input),
+  update: (id: string, input: UpdatePayRunInput) =>
+    hrisApi.patch<
+      ApiListResponse<{ payRun: PayRun; payslips: Payslip[] } | PayRun>
+    >(`${PAY_RUNS}/${encodeURIComponent(id)}`, input),
   createCorrection: (sourceId: string, input: CreateCorrectionPayRunInput) =>
     hrisApi.post<ApiListResponse<PayRun>>(
       `${PAY_RUNS}/${encodeURIComponent(sourceId)}/corrections`,

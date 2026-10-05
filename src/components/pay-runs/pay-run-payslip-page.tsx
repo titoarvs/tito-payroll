@@ -9,6 +9,7 @@ import { useCurrentUser } from "~/hooks/use-current-user";
 import { usePayRun, usePayslip, useUpdatePayslip } from "~/hooks/use-pay-runs";
 import { HrisApiError } from "~/lib/hris-api-client";
 import { canProcessPayRuns } from "~/lib/payroll-access";
+import { recalcNetFromTax } from "~/lib/withholding-split";
 
 interface PayRunPayslipPageProps {
   payRunId: string;
@@ -26,6 +27,7 @@ export const PayRunPayslipPage = ({
   const updatePayslip = useUpdatePayslip(payRunId);
   const [otherAdjustment, setOtherAdjustment] = useState("");
   const [adjustmentReason, setAdjustmentReason] = useState("");
+  const [withholdingTax, setWithholdingTax] = useState("");
 
   const payRun = payRunQuery.data?.data;
   const payslip = payslipQuery.data?.data;
@@ -35,6 +37,7 @@ export const PayRunPayslipPage = ({
     if (!payslip || payslip.payRunId !== payRunId) return;
     setOtherAdjustment(payslip.otherAdjustment ?? "0.00");
     setAdjustmentReason(payslip.otherAdjustmentReason ?? "");
+    setWithholdingTax(payslip.withholdingTax ?? "0.00");
   }, [payRunId, payslip]);
 
   if (payRunQuery.isPending || payslipQuery.isPending) {
@@ -78,26 +81,68 @@ export const PayRunPayslipPage = ({
     mayProcess &&
     payRun.status === "computed" &&
     payslipOnRun.employmentStatus !== "consultant";
+  const isCorrection = (payRun.kind ?? "regular") === "correction";
   const employeeName = payslipOnRun.employeeName?.trim() || "Payslip";
   const employeeCode = payslipOnRun.employeeCode?.trim();
+
+  const previewTotals = canEdit
+    ? recalcNetFromTax({
+        grossPay: payslipOnRun.grossPay,
+        sss: payslipOnRun.sss,
+        hdmf: payslipOnRun.hdmf,
+        philhealth: payslipOnRun.philhealth,
+        withholdingTax,
+        totalAdjustments: payslipOnRun.totalAdjustments ?? "0.00",
+      })
+    : null;
+
   const documentPayslip = {
     ...payslipOnRun,
     periodStart: payslipOnRun.periodStart ?? payRun.periodStart,
     periodEnd: payslipOnRun.periodEnd ?? payRun.periodEnd,
     cutoffHalf: payslipOnRun.cutoffHalf ?? payRun.cutoffHalf,
     status: payslipOnRun.status ?? payRun.status,
+    ...(canEdit && previewTotals
+      ? {
+          withholdingTax,
+          totalDeductions: previewTotals.totalDeductions,
+          netPay: previewTotals.netPay,
+        }
+      : {}),
   };
   const saveError =
     updatePayslip.error instanceof HrisApiError
       ? updatePayslip.error.message
       : null;
 
-  const handleSaveAdjustment = () => {
+  const taxChanged =
+    withholdingTax.trim() !== (payslipOnRun.withholdingTax ?? "0.00").trim();
+  const adjustmentChanged =
+    otherAdjustment.trim() !== (payslipOnRun.otherAdjustment ?? "0.00").trim();
+
+  const handleSave = () => {
+    const input: {
+      otherAdjustment?: string;
+      reason?: string;
+      withholdingTax?: string;
+    } = {};
+    if (adjustmentChanged) {
+      input.otherAdjustment = otherAdjustment;
+      input.reason = adjustmentReason.trim();
+    }
+    if (taxChanged && !isCorrection) {
+      input.withholdingTax = withholdingTax;
+    }
+    if (!input.otherAdjustment && !input.withholdingTax) return;
     updatePayslip.mutate({
       id: payslipOnRun.id,
-      input: { otherAdjustment, reason: adjustmentReason.trim() },
+      input,
     });
   };
+
+  const canSave =
+    (adjustmentChanged && Boolean(adjustmentReason.trim())) ||
+    (taxChanged && !isCorrection && Boolean(withholdingTax.trim()));
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
@@ -134,6 +179,17 @@ export const PayRunPayslipPage = ({
       {canEdit ? (
         <div className="space-y-3 rounded-md border border-border/60 bg-card px-4 py-3 print:hidden">
           <div className="flex flex-wrap items-end gap-3">
+            {!isCorrection ? (
+              <div className="space-y-2">
+                <Label htmlFor="withholding-tax">Withholding tax</Label>
+                <Input
+                  id="withholding-tax"
+                  className="h-8 w-40 tabular-nums"
+                  value={withholdingTax}
+                  onChange={(event) => setWithholdingTax(event.target.value)}
+                />
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="other-adjustment">Other adjustment</Label>
               <Input
@@ -144,29 +200,34 @@ export const PayRunPayslipPage = ({
               />
             </div>
             <div className="min-w-[12rem] flex-1 space-y-2">
-              <Label htmlFor="adjustment-reason">Reason</Label>
+              <Label htmlFor="adjustment-reason">
+                Reason {adjustmentChanged ? "(required)" : ""}
+              </Label>
               <Input
                 id="adjustment-reason"
                 className="h-8"
                 value={adjustmentReason}
                 onChange={(event) => setAdjustmentReason(event.target.value)}
-                placeholder="Required — why this adjustment"
+                placeholder="Required when changing other adjustment"
               />
             </div>
             <Button
               type="button"
               size="sm"
               className="h-8"
-              onClick={handleSaveAdjustment}
-              disabled={updatePayslip.isPending || !adjustmentReason.trim()}
+              onClick={handleSave}
+              disabled={updatePayslip.isPending || !canSave}
             >
-              {updatePayslip.isPending ? "Saving…" : "Save adjustment"}
+              {updatePayslip.isPending ? "Saving…" : "Save"}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Reason is required and audit-logged. Edits recalculate net on the
-            server while the run is computed (not yet released).
-            {(payRun.kind ?? "regular") === "correction"
+            Tax and net update on screen as you type. Reason is required when
+            changing other adjustment and is audit-logged.
+            {payRun.splitWithholding
+              ? " Split withholding is on — tax stays editable."
+              : null}
+            {isCorrection
               ? " Correction batches only support other adjustment."
               : null}
           </p>

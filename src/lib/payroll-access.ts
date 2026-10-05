@@ -12,8 +12,11 @@ const PAY_RUN_PROCESS_ROLES = ["super_admin", "admin", "finance"] as const;
 /** Super Admin, admin, and finance: edit SSS/HDMF/PhilHealth brackets. */
 const STATUTORY_TABLE_MANAGE_ROLES = ["super_admin", "admin", "finance"] as const;
 
-/** Super Admin, admin, and finance: add, edit, and delete tax brackets. */
+/** Super Admin, admin, and finance: add, edit, and delete draft tax brackets. */
 const TAX_TABLE_MANAGE_ROLES = ["super_admin", "admin", "finance"] as const;
+
+/** Super Admin only: publish draft tax schedule (ND-PR-17). */
+const TAX_TABLE_PUBLISH_ROLES = ["super_admin"] as const;
 
 export const userRoles = (user: HrisUser | undefined | null): string[] => {
   if (!user) return [];
@@ -42,10 +45,15 @@ export const canManageStatutoryTables = (
   user: HrisUser | undefined | null,
 ): boolean => hasAnyRole(user, STATUTORY_TABLE_MANAGE_ROLES);
 
-/** Add, edit, and delete BIR / TRAIN tax brackets. */
+/** Add, edit, and delete BIR / TRAIN draft tax brackets. */
 export const canManageTaxTables = (
   user: HrisUser | undefined | null,
 ): boolean => hasAnyRole(user, TAX_TABLE_MANAGE_ROLES);
+
+/** Publish draft tax schedule — Super Admin only. */
+export const canPublishTaxTables = (
+  user: HrisUser | undefined | null,
+): boolean => hasAnyRole(user, TAX_TABLE_PUBLISH_ROLES);
 
 /** Who may see the Salary and rates section / call salary-rates list. */
 export const canViewEmployeeSalaryRates = (

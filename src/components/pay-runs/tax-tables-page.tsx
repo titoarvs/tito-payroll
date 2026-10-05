@@ -52,13 +52,12 @@ import {
   useDeleteDraftTaxBracket,
   useImportDraftTaxBrackets,
   usePublishTaxDraft,
-  useReplaceTaxBrackets,
   useTaxSchedules,
   useUpdateDraftTaxBracket,
 } from "~/hooks/use-pay-runs";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
-import { canManageTaxTables } from "~/lib/payroll-access";
+import { canManageTaxTables, canPublishTaxTables } from "~/lib/payroll-access";
 
 const FREQUENCIES: TaxBracketFrequency[] = [
   "daily",
@@ -108,13 +107,13 @@ const frequencyLabel = (value: string): string => {
 export const TaxTablesPage = () => {
   const { data: user } = useCurrentUser();
   const mayManage = canManageTaxTables(user);
+  const mayPublish = canPublishTaxTables(user);
   const { data, isPending, isError, error } = useTaxSchedules();
   const addDraft = useAddDraftTaxBracket();
   const updateDraft = useUpdateDraftTaxBracket();
   const deleteDraft = useDeleteDraftTaxBracket();
   const importDraft = useImportDraftTaxBrackets();
   const publishDraft = usePublishTaxDraft();
-  const replace = useReplaceTaxBrackets();
   const schedules = data?.data ?? [];
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,8 +157,10 @@ export const TaxTablesPage = () => {
   }, [selected, frequencyFilter]);
 
   const isDraftSelected = selected?.status === "draft";
+  const mayEditSelected = mayManage && isDraftSelected;
 
   const openAddModal = () => {
+    if (!mayManage) return;
     setEditIndex(null);
     const nextSeq =
       (selected?.brackets.filter(
@@ -227,48 +228,28 @@ export const TaxTablesPage = () => {
       const row = selected.brackets[editIndex];
       if (!row) return;
 
-      if (isDraftSelected) {
-        updateDraft.mutate(
-          { bracketId: row.id, input: payload },
-          {
-            onSuccess: (result) => {
-              if (result.data.id) setSelectedId(result.data.id);
-              setFormOpen(false);
-              setEditIndex(null);
-              setFormError(null);
-            },
-            onError: (err) => {
-              setFormError(
-                err instanceof HrisApiError
-                  ? err.message
-                  : "Failed to update draft bracket",
-              );
-            },
-          },
+      if (!isDraftSelected) {
+        setFormError(
+          "Published schedules are immutable. Edit the draft, then ask Super Admin to publish.",
         );
         return;
       }
 
-      const next = selected.brackets.map((bracket, index) =>
-        index === editIndex
-          ? payload
-          : {
-              frequency:
-                (bracket.frequency as TaxBracketFrequency) || "monthly",
-              sequence: bracket.sequence,
-              minCompensation: bracket.minCompensation,
-              maxCompensation: bracket.maxCompensation,
-              baseTax: bracket.baseTax,
-              rateOnExcess: bracket.rateOnExcess,
-              excessOver: bracket.excessOver || bracket.minCompensation,
-            },
-      );
-      replace.mutate(
-        { id: selected.id, input: { brackets: next } },
+      updateDraft.mutate(
+        { bracketId: row.id, input: payload },
         {
           onSuccess: (result) => {
             if (result.data.id) setSelectedId(result.data.id);
             setFormOpen(false);
+            setEditIndex(null);
+            setFormError(null);
+          },
+          onError: (err) => {
+            setFormError(
+              err instanceof HrisApiError
+                ? err.message
+                : "Failed to update draft bracket",
+            );
           },
         },
       );
@@ -318,18 +299,6 @@ export const TaxTablesPage = () => {
       return;
     }
 
-    const next = selected.brackets
-      .filter((b) => b.id !== row.id)
-      .map((b) => ({
-        frequency: (b.frequency as TaxBracketFrequency) || "monthly",
-        sequence: b.sequence,
-        minCompensation: b.minCompensation,
-        maxCompensation: b.maxCompensation,
-        baseTax: b.baseTax,
-        rateOnExcess: b.rateOnExcess,
-        excessOver: b.excessOver || b.minCompensation,
-      }));
-    replace.mutate({ id: selected.id, input: { brackets: next } });
     setDeleteIndex(null);
   };
 
@@ -366,14 +335,13 @@ export const TaxTablesPage = () => {
     addDraft.isPending ||
     updateDraft.isPending ||
     deleteDraft.isPending ||
-    importDraft.isPending ||
-    replace.isPending;
+    importDraft.isPending;
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-6">
       <PageHeader
         title="Tax tables"
-        description="Versioned BIR / TRAIN brackets by frequency. Add brackets to a draft; publish when ready. Compute uses the active schedule."
+        description="Versioned BIR / TRAIN monthly brackets by frequency. HR/finance draft and import; Super Admin publishes. Compute uses the active monthly schedule."
       />
 
       {isPending ? (
@@ -437,7 +405,7 @@ export const TaxTablesPage = () => {
                     <Upload className="size-4" />
                     {importDraft.isPending ? "Importing…" : "Import CSV"}
                   </Button>
-                  {draftSchedule ? (
+                  {draftSchedule && mayPublish ? (
                     <Button
                       type="button"
                       variant="outline"
@@ -525,7 +493,7 @@ export const TaxTablesPage = () => {
                       <TableHead>Base tax</TableHead>
                       <TableHead>Rate %</TableHead>
                       <TableHead>Excess-over</TableHead>
-                      {mayManage ? (
+                      {mayEditSelected ? (
                         <TableHead className="w-14 text-right">
                           <span className="sr-only">Actions</span>
                         </TableHead>
@@ -558,7 +526,7 @@ export const TaxTablesPage = () => {
                         <TableCell className="tabular-nums">
                           {draft.excessOver || draft.minCompensation}
                         </TableCell>
-                        {mayManage ? (
+                        {mayEditSelected ? (
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -603,7 +571,6 @@ export const TaxTablesPage = () => {
             updateDraft.isError ||
             deleteDraft.isError ||
             importDraft.isError ||
-            replace.isError ||
             publishDraft.isError ? (
               <p className="text-sm text-destructive" role="alert">
                 {importError ??
@@ -612,7 +579,6 @@ export const TaxTablesPage = () => {
                     updateDraft.error ||
                     deleteDraft.error ||
                     importDraft.error ||
-                    replace.error ||
                     publishDraft.error
                   ) instanceof HrisApiError
                     ? (
@@ -620,7 +586,6 @@ export const TaxTablesPage = () => {
                           updateDraft.error ||
                           deleteDraft.error ||
                           importDraft.error ||
-                          replace.error ||
                           publishDraft.error) as HrisApiError
                       ).message
                     : "Save failed")}
@@ -630,13 +595,12 @@ export const TaxTablesPage = () => {
             updateDraft.isSuccess ||
             deleteDraft.isSuccess ||
             importDraft.isSuccess ||
-            replace.isSuccess ||
             publishDraft.isSuccess ? (
               <p className="text-sm text-muted-foreground" role="status">
                 {publishDraft.isSuccess
                   ? "Draft published."
                   : importDraft.isSuccess
-                    ? "CSV imported into draft. Review, then publish when ready."
+                    ? "CSV imported into draft. Review, then Super Admin can publish."
                     : "Brackets saved."}
               </p>
             ) : null}
@@ -660,9 +624,7 @@ export const TaxTablesPage = () => {
             <DialogDescription>
               {editIndex == null
                 ? "Saved under the selected frequency on the draft version."
-                : isDraftSelected
-                  ? "Updates this bracket on the draft only. The published schedule is unchanged until you publish."
-                  : "Updates the active schedule (may fork if pinned by a pay run)."}
+                : "Updates this bracket on the draft only. The published schedule is unchanged until Super Admin publishes."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 px-4 pb-4">
@@ -809,9 +771,7 @@ export const TaxTablesPage = () => {
             <AlertDialogTitle>Delete this tax bracket?</AlertDialogTitle>
             <AlertDialogDescription>
               Bracket {deleteIndex == null ? "" : deleteIndex + 1} is removed
-              {isDraftSelected
-                ? " from the draft only. The published schedule is unchanged."
-                : " from this schedule and the change is saved immediately."}
+              from the draft only. The published schedule is unchanged.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -819,7 +779,7 @@ export const TaxTablesPage = () => {
             <AlertDialogAction
               type="button"
               onClick={handleDelete}
-              disabled={replace.isPending || deleteDraft.isPending}
+              disabled={deleteDraft.isPending}
             >
               Delete bracket
             </AlertDialogAction>
