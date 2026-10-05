@@ -1,5 +1,8 @@
 import { hrisApi } from "~/lib/hris-api-client";
 import type {
+  AddDraftTaxBracketInput,
+  ImportDraftTaxBracketsInput,
+  UpdateDraftTaxBracketInput,
   ApiListResponse,
   ContributionSchedule,
   CreateCorrectionPayRunInput,
@@ -91,6 +94,29 @@ export const taxTablesService = {
     hrisApi.put<ApiListResponse<TaxSchedule>>(
       `${TAX_SCHEDULES}/${encodeURIComponent(id)}/brackets`,
       input,
+    ),
+  addDraftBracket: (input: AddDraftTaxBracketInput) =>
+    hrisApi.post<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/brackets`,
+      input,
+    ),
+  updateDraftBracket: (bracketId: string, input: UpdateDraftTaxBracketInput) =>
+    hrisApi.patch<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/brackets/${encodeURIComponent(bracketId)}`,
+      input,
+    ),
+  deleteDraftBracket: (bracketId: string) =>
+    hrisApi.delete<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/brackets/${encodeURIComponent(bracketId)}`,
+    ),
+  importDraftBrackets: (input: ImportDraftTaxBracketsInput) =>
+    hrisApi.post<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/import`,
+      input,
+    ),
+  publishDraft: () =>
+    hrisApi.post<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/publish`,
     ),
 };
 

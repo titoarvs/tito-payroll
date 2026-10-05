@@ -281,6 +281,55 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** User without `payroll.tax_tables.view` / `manage` hits tax-schedules endpoints; ops open `/dashboard/tax-tables`
 - **Expected result:** 403 without permission; **finance** and **super_admin** can view/edit brackets; **admin** (HR) can view only (Save / Add hidden; PUT brackets → 403)
 
+### TC-19d: Add bracket to draft by frequency
+
+- **Priority:** High
+- **Preconditions:** Migration `0042_payroll_tax_draft_brackets.sql` applied; finance or super_admin JWT
+- **Steps:**
+  1. Open `/dashboard/tax-tables`
+  2. Add bracket: frequency `semi-monthly`, sequence `1`, min / max / base / rate / excess-over
+  3. Confirm list filters to semi-monthly on the draft schedule
+  4. Confirm the prior active monthly schedule is unchanged
+  5. Duplicate the same sequence on semi-monthly
+- **Expected result:** Bracket saved via `POST /api/payroll/tax-schedules/draft/brackets`; draft created if missing; active schedule untouched; duplicate sequence → 409
+
+### TC-19d2: Edit or delete draft bracket only
+
+- **Priority:** High
+- **Preconditions:** Draft with at least one bracket; active published schedule also present
+- **Steps:**
+  1. Select the draft schedule
+  2. Edit one bracket (change rate / max)
+  3. Confirm the active schedule’s brackets are unchanged
+  4. Delete another draft bracket
+  5. Attempt `PATCH` / `DELETE` on a bracket id that belongs to the active schedule
+- **Expected result:** Draft updates via `PATCH` / `DELETE .../draft/brackets/:id`; active schedule unchanged; mutate on published bracket → 400
+
+### TC-19d3: Import CSV into draft
+
+- **Priority:** High
+- **Preconditions:** finance or super_admin JWT; sample CSV with header `frequency,sequence,minCompensation,maxCompensation,baseTax,rateOnExcess,excessOver`
+- **Steps:**
+  1. Open `/dashboard/tax-tables` → Import CSV with a valid file (blank max = open)
+  2. Confirm the UI selects the draft and lists imported rows
+  3. Confirm the active schedule is unchanged and status is still draft (not published)
+  4. Import a bad CSV (wrong header or invalid frequency)
+- **Expected result:** Valid import → `POST /api/payroll/tax-schedules/draft/import` replaces draft brackets only; bad CSV → 400 and no bracket writes on draft or active
+
+### TC-19e: Publish draft tax schedule
+
+- **Priority:** Medium
+- **Preconditions:** Draft with at least one bracket
+- **Steps:** Click Publish draft
+- **Expected result:** Draft becomes active; previous active is deactivated; pay runs that pinned the old schedule id keep that pin; next compute uses the published brackets
+
+### TC-19f: T201 profile Payslips tab (ops)
+
+- **Priority:** High
+- **Preconditions:** Released payslips for employee E; Nest `admin` or `super_admin` JWT in T201
+- **Steps:** Open T201 `/dashboard/employees/{E}` → Payslips tab
+- **Expected result:** Lists E’s released slips (period, cutoff, gross, deductions, net) via `GET /api/payroll/employees/{E}/payslips`. Employee JWT: tab absent; same GET → 403. Unreleased slips do not appear.
+
 ### TC-19b: Super Admin cannot process pay runs
 
 - **Priority:** High

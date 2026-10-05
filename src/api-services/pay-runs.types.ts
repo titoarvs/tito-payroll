@@ -40,13 +40,23 @@ export interface EmployeeContributionRow {
   philhealth: string;
 }
 
+export type TaxBracketFrequency =
+  | "daily"
+  | "weekly"
+  | "semi-monthly"
+  | "monthly"
+  | "annual";
+
 export interface TaxBracket {
   id: string;
   scheduleId: string;
+  frequency: TaxBracketFrequency | string;
+  sequence: number;
   minCompensation: string;
   maxCompensation: string | null;
   baseTax: string;
   rateOnExcess: string;
+  excessOver: string;
 }
 
 export interface TaxSchedule {
@@ -55,9 +65,35 @@ export interface TaxSchedule {
   effectiveFrom: string;
   effectiveTo: string | null;
   isActive: boolean;
+  /** `active` published table; `draft` editable WIP. */
+  status?: "active" | "draft" | string;
   brackets: TaxBracket[];
   /** Present when Save brackets forked a new version (FR-PR-12). */
   forkedFromId?: string;
+}
+
+export interface AddDraftTaxBracketInput {
+  frequency: TaxBracketFrequency;
+  sequence: number;
+  minCompensation: string;
+  maxCompensation?: string | null;
+  baseTax: string;
+  rateOnExcess: string;
+  excessOver: string;
+}
+
+export interface UpdateDraftTaxBracketInput {
+  frequency?: TaxBracketFrequency;
+  sequence?: number;
+  minCompensation?: string;
+  maxCompensation?: string | null;
+  baseTax?: string;
+  rateOnExcess?: string;
+  excessOver?: string;
+}
+
+export interface ImportDraftTaxBracketsInput {
+  csv: string;
 }
 
 export interface PayRun {
@@ -166,10 +202,13 @@ export interface ReplaceBracketsInput {
 
 export interface ReplaceTaxBracketsInput {
   brackets: Array<{
+    frequency?: TaxBracketFrequency | string;
+    sequence?: number;
     minCompensation: string;
     maxCompensation?: string | null;
     baseTax: string;
     rateOnExcess: string;
+    excessOver?: string;
   }>;
 }
 
