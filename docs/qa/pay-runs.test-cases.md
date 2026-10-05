@@ -271,15 +271,26 @@ Cutoff create → compute → review → approve & release. Contribution table e
 ### TC-18: Withholding tax from Gross − contributions
 
 - **Priority:** High
-- **Preconditions:** Seeded tax schedule; employee covered, not consultant; Gross large enough that `(gross − contributions) × 2` hits a taxable TRAIN bracket
+- **Preconditions:** Seeded monthly tax schedule; employee covered, not consultant; Gross large enough that `(gross − contributions) × 2` hits a taxable TRAIN bracket; `splitWithholding` off (default)
 - **Steps:** Compute
-- **Expected result:** `withholdingTax` = half of monthly TRAIN on `(gross − SSS − HDMF − PhilHealth) × 2`; appears on paper slip; consultants / uncovered → `0.00`
+- **Expected result:** `withholdingTax` = **full** monthly TRAIN on `(gross − SSS − HDMF − PhilHealth) × 2`; appears on paper slip; consultants / uncovered → `0.00`
+
+### TC-18b: Split withholding on — remainder on 2nd cutoff
+
+- **Priority:** High
+- **Preconditions:** Migration `0043_payroll_withholding_split.sql`; monthly tax table; 1st and 2nd cutoff pay runs in the same month
+- **Steps:**
+  1. Create / open 1st cutoff with **Split monthly withholding** on → Compute
+  2. Note each slip’s `withholdingTax` (floor half of monthly)
+  3. Create / open 2nd cutoff with split on → Compute
+  4. On a computed slip, edit withholding tax → Save; confirm net updates on screen immediately
+- **Expected result:** 1st = `floor(monthly/2)`; 2nd = monthly on `(1st taxable + 2nd taxable)` − stored 1st withholding. Toggle on detail updates WHT/Net immediately then PATCH reconciles. Tax field remains editable when split is on.
 
 ### TC-19: Tax tables RBAC
 
 - **Priority:** High
 - **Steps:** User without `payroll.tax_tables.view` / `manage` hits tax-schedules endpoints; ops open `/dashboard/tax-tables`
-- **Expected result:** 403 without permission; **finance** and **super_admin** can view/edit brackets; **admin** (HR) can view only (Save / Add hidden; PUT brackets → 403)
+- **Expected result:** 403 without permission; **finance** and **admin** can draft / import / edit draft brackets; **Publish draft** only for **super_admin** (`payroll.tax_tables.publish`); finance/admin `POST .../draft/publish` → 403; published schedule edit → 400
 
 ### TC-19d: Add bracket to draft by frequency
 
@@ -318,10 +329,16 @@ Cutoff create → compute → review → approve & release. Contribution table e
 
 ### TC-19e: Publish draft tax schedule
 
-- **Priority:** Medium
-- **Preconditions:** Draft with at least one bracket
+- **Priority:** High
+- **Preconditions:** Draft with at least one bracket; **super_admin** JWT
 - **Steps:** Click Publish draft
-- **Expected result:** Draft becomes active; previous active is deactivated; pay runs that pinned the old schedule id keep that pin; next compute uses the published brackets
+- **Expected result:** Draft becomes active; previous active is deactivated; pay runs that pinned the old schedule id keep that pin; next compute uses the published brackets; finance/admin cannot see Publish or get 403 on publish endpoint
+
+### TC-19e2: Published schedule immutable
+
+- **Priority:** High
+- **Steps:** As finance, `PUT /api/payroll/tax-schedules/{activeId}/brackets` or edit actions on the active schedule in UI
+- **Expected result:** 400; UI shows no edit/delete on published schedules; only draft is editable
 
 ### TC-19f: T201 profile Payslips tab (ops)
 
@@ -346,11 +363,11 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - **Steps:** Open `/dashboard/contribution-tables` → Brackets → attempt Save / PUT brackets
 - **Expected result:** Inputs read-only; Add/Save/Remove hidden; API 403 on manage endpoints; compute/release still available on pay runs
 
-### TC-20: Other adjustment PATCH still works
+### TC-20: Other adjustment and tax PATCH still work
 
 - **Priority:** High
-- **Steps:** Computed run → edit Other adjustment → Save
-- **Expected result:** Net recalculates; `other` adjustment line upserted; leave/tax unchanged
+- **Steps:** Computed run → edit Other adjustment (with reason) and/or Withholding tax → Save
+- **Expected result:** Net recalculates on screen and on server; `other` adjustment line upserted when adjustment changes; tax amount persists until next Compute or split toggle
 
 ### TC-15: Auth — employee cannot create pay run
 
@@ -375,7 +392,7 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - Approval reminder stages dedupe per type + pay run; draft/released skipped
 - Unfiled holiday reminders dedupe per user + cutoff start + holiday date; skip after periodEnd / released regular run / consultants
 - `audit_log` is append-only (trigger blocks UPDATE/DELETE)
-- Bracket save on a pinned schedule forks a new version; unreferenced schedules still replace in place
+- Published tax schedules are immutable (draft endpoints only); Super Admin publishes
 - Payslip / salary-rates / unmasked employee detail GETs write `view` audits without storing statutory numbers
 
 ## Out of Scope
@@ -384,7 +401,6 @@ Cutoff create → compute → review → approve & release. Contribution table e
 - Encrypting salary / pay money amounts at rest
 - Renaming `pay_run` HTTP path to Batch
 - ND-PR-13 (subtract Clock hours for LWOP)
-- Full BIR productization beyond versioned table + half-monthly apply
 - Automatic December 13th-month payout (HR flags the batch)
 - Subtracting 13th month already paid earlier in the same year
 - Email / SMTP delivery of payroll alerts

@@ -61,10 +61,15 @@ import {
   usePayRunPayslips,
   usePayRunReadiness,
   useReleasePayRun,
+  useUpdatePayRun,
 } from "~/hooks/use-pay-runs";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
 import { canProcessPayRuns } from "~/lib/payroll-access";
+import {
+  previewWithholdingOnSplitToggle,
+  recalcNetFromTax,
+} from "~/lib/withholding-split";
 import type { MissingPayrollDataIssue } from "~/api-services/pay-runs.types";
 
 interface PayRunDetailProps {
@@ -250,12 +255,16 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const payslipsQuery = usePayRunPayslips(payRunId);
   const compute = useComputePayRun();
   const release = useReleasePayRun();
+  const updatePayRun = useUpdatePayRun();
   const createCorrection = useCreateCorrectionPayRun();
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
   const [correctionEmployeeIds, setCorrectionEmployeeIds] = useState<
     Set<string>
   >(() => new Set());
+  const [previewPayslips, setPreviewPayslips] = useState<Payslip[] | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<EmployeePageSize>(
     DEFAULT_EMPLOYEE_PAGE_SIZE,
@@ -280,7 +289,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       ? extractReadinessIssues(compute.error.payload)
       : null;
   const readinessIssues = blockedIssues ?? readinessIssuesFromApi;
-  const payslips = payslipsQuery.data?.data ?? [];
+  const payslips = previewPayslips ?? payslipsQuery.data?.data ?? [];
   const total = payslips.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const colSpan = 1 + visibleIds.length;
@@ -294,7 +303,12 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
 
   useEffect(() => {
     setPage(1);
+    setPreviewPayslips(null);
   }, [payRunId, pageSize, total]);
+
+  useEffect(() => {
+    setPreviewPayslips(null);
+  }, [payslipsQuery.dataUpdatedAt]);
 
   useEffect(() => {
     if (page > totalPages) {
@@ -307,9 +321,47 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
     return payslips.slice(start, start + pageSize);
   }, [payslips, page, pageSize]);
 
+  const handleSplitToggle = (next: boolean) => {
+    if (!payRun || !mayProcess) return;
+    const source = payslipsQuery.data?.data ?? [];
+    if (payRun.status === "computed" && source.length > 0) {
+      setPreviewPayslips(
+        source.map((row) => {
+          if (row.employmentStatus === "consultant") return row;
+          const withholdingTax = previewWithholdingOnSplitToggle({
+            splitOn: next,
+            cutoffHalf: payRun.cutoffHalf,
+            currentWithholding: row.withholdingTax ?? "0.00",
+            firstCutoffWithholdingTax: row.firstCutoffWithholdingTax,
+          });
+          const totals = recalcNetFromTax({
+            grossPay: row.grossPay,
+            sss: row.sss,
+            hdmf: row.hdmf,
+            philhealth: row.philhealth,
+            withholdingTax,
+            totalAdjustments: row.totalAdjustments ?? "0.00",
+          });
+          return {
+            ...row,
+            withholdingTax,
+            totalDeductions: totals.totalDeductions,
+            netPay: totals.netPay,
+          };
+        }),
+      );
+    }
+    updatePayRun.mutate({
+      id: payRunId,
+      input: { splitWithholding: next },
+    });
+  };
+
   const actionError =
     (compute.error instanceof HrisApiError && compute.error.message) ||
     (release.error instanceof HrisApiError && release.error.message) ||
+    (updatePayRun.error instanceof HrisApiError &&
+      updatePayRun.error.message) ||
     (createCorrection.error instanceof HrisApiError &&
       createCorrection.error.message) ||
     null;
@@ -509,6 +561,9 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
           {payRun.includeThirteenthMonth ? (
             <span> · 13th month included</span>
           ) : null}
+          {payRun.splitWithholding ? (
+            <span> · Withholding split on</span>
+          ) : null}
           {payRun.taxScheduleId ||
           payRun.sssScheduleId ||
           payRun.hdmfScheduleId ||
@@ -539,6 +594,30 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
           ) : null}
         </p>
       </header>
+
+      {mayProcess && !isCorrection && payRun.status !== "released" ? (
+        <label
+          htmlFor="pay-run-split-withholding"
+          className="flex cursor-pointer items-start gap-2 rounded-md border border-border/60 bg-card px-4 py-3 text-sm"
+        >
+          <input
+            id="pay-run-split-withholding"
+            type="checkbox"
+            className="mt-1 size-4 shrink-0 rounded border border-input"
+            checked={payRun.splitWithholding === true}
+            onChange={(event) => handleSplitToggle(event.target.checked)}
+            disabled={updatePayRun.isPending || payRun.status === "computing"}
+          />
+          <span>
+            <span className="font-medium">Split monthly withholding</span>
+            <span className="block text-xs text-muted-foreground">
+              Off: full monthly tax on this cutoff. On: floor half on the 1st,
+              remainder on the 2nd. Toggle updates WHT and Net immediately;
+              tax stays editable on each slip.
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       {!isCorrection && readinessIssues.length > 0 ? (
         <MissingPayrollDataNotice
