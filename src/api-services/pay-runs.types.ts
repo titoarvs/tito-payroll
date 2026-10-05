@@ -40,13 +40,23 @@ export interface EmployeeContributionRow {
   philhealth: string;
 }
 
+export type TaxBracketFrequency =
+  | "daily"
+  | "weekly"
+  | "semi-monthly"
+  | "monthly"
+  | "annual";
+
 export interface TaxBracket {
   id: string;
   scheduleId: string;
+  frequency: TaxBracketFrequency | string;
+  sequence: number;
   minCompensation: string;
   maxCompensation: string | null;
   baseTax: string;
   rateOnExcess: string;
+  excessOver: string;
 }
 
 export interface TaxSchedule {
@@ -55,9 +65,35 @@ export interface TaxSchedule {
   effectiveFrom: string;
   effectiveTo: string | null;
   isActive: boolean;
+  /** `active` published table; `draft` editable WIP. */
+  status?: "active" | "draft" | string;
   brackets: TaxBracket[];
   /** Present when Save brackets forked a new version (FR-PR-12). */
   forkedFromId?: string;
+}
+
+export interface AddDraftTaxBracketInput {
+  frequency: TaxBracketFrequency;
+  sequence: number;
+  minCompensation: string;
+  maxCompensation?: string | null;
+  baseTax: string;
+  rateOnExcess: string;
+  excessOver: string;
+}
+
+export interface UpdateDraftTaxBracketInput {
+  frequency?: TaxBracketFrequency;
+  sequence?: number;
+  minCompensation?: string;
+  maxCompensation?: string | null;
+  baseTax?: string;
+  rateOnExcess?: string;
+  excessOver?: string;
+}
+
+export interface ImportDraftTaxBracketsInput {
+  csv: string;
 }
 
 export interface PayRun {
@@ -69,6 +105,8 @@ export interface PayRun {
   kind?: PayRunKind;
   correctsPayRunId?: string | null;
   includeThirteenthMonth?: boolean;
+  /** When true, split monthly withholding across cutoffs (ND-PR-18). */
+  splitWithholding?: boolean;
   /** Schedule versions pinned at compute (FR-PR-12). */
   taxScheduleId?: string | null;
   sssScheduleId?: string | null;
@@ -133,6 +171,10 @@ export interface Payslip {
   status?: PayRunStatus;
   releasedBy?: string | null;
   releasedAt?: string | null;
+  /** Sibling 1st-cutoff taxable for split preview (2nd cutoff lists). */
+  firstCutoffTaxable?: string | null;
+  /** Sibling 1st-cutoff stored withholding for split preview. */
+  firstCutoffWithholdingTax?: string | null;
 }
 
 export interface CreatePayRunInput {
@@ -140,10 +182,15 @@ export interface CreatePayRunInput {
   periodEnd: string;
   cutoffHalf: CutoffHalf;
   includeThirteenthMonth?: boolean;
+  splitWithholding?: boolean;
 }
 
 export interface CreateCorrectionPayRunInput {
   employeeIds: string[];
+}
+
+export interface UpdatePayRunInput {
+  splitWithholding?: boolean;
 }
 
 export interface UpdatePayslipInput {
@@ -152,6 +199,7 @@ export interface UpdatePayslipInput {
   holidayPay?: string;
   otherAdjustment?: string;
   reason?: string;
+  withholdingTax?: string;
   thirteenthMonthPay?: string;
 }
 
@@ -166,10 +214,13 @@ export interface ReplaceBracketsInput {
 
 export interface ReplaceTaxBracketsInput {
   brackets: Array<{
+    frequency?: TaxBracketFrequency | string;
+    sequence?: number;
     minCompensation: string;
     maxCompensation?: string | null;
     baseTax: string;
     rateOnExcess: string;
+    excessOver?: string;
   }>;
 }
 

@@ -1,5 +1,8 @@
 import { hrisApi } from "~/lib/hris-api-client";
 import type {
+  AddDraftTaxBracketInput,
+  ImportDraftTaxBracketsInput,
+  UpdateDraftTaxBracketInput,
   ApiListResponse,
   ContributionSchedule,
   CreateCorrectionPayRunInput,
@@ -11,6 +14,7 @@ import type {
   ReplaceBracketsInput,
   ReplaceTaxBracketsInput,
   TaxSchedule,
+  UpdatePayRunInput,
   UpdatePayslipInput,
   PayRunReadiness,
 } from "./pay-runs.types";
@@ -31,6 +35,10 @@ export const payRunsService = {
     ),
   create: (input: CreatePayRunInput) =>
     hrisApi.post<ApiListResponse<PayRun>>(PAY_RUNS, input),
+  update: (id: string, input: UpdatePayRunInput) =>
+    hrisApi.patch<
+      ApiListResponse<{ payRun: PayRun; payslips: Payslip[] } | PayRun>
+    >(`${PAY_RUNS}/${encodeURIComponent(id)}`, input),
   createCorrection: (sourceId: string, input: CreateCorrectionPayRunInput) =>
     hrisApi.post<ApiListResponse<PayRun>>(
       `${PAY_RUNS}/${encodeURIComponent(sourceId)}/corrections`,
@@ -91,6 +99,29 @@ export const taxTablesService = {
     hrisApi.put<ApiListResponse<TaxSchedule>>(
       `${TAX_SCHEDULES}/${encodeURIComponent(id)}/brackets`,
       input,
+    ),
+  addDraftBracket: (input: AddDraftTaxBracketInput) =>
+    hrisApi.post<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/brackets`,
+      input,
+    ),
+  updateDraftBracket: (bracketId: string, input: UpdateDraftTaxBracketInput) =>
+    hrisApi.patch<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/brackets/${encodeURIComponent(bracketId)}`,
+      input,
+    ),
+  deleteDraftBracket: (bracketId: string) =>
+    hrisApi.delete<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/brackets/${encodeURIComponent(bracketId)}`,
+    ),
+  importDraftBrackets: (input: ImportDraftTaxBracketsInput) =>
+    hrisApi.post<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/import`,
+      input,
+    ),
+  publishDraft: () =>
+    hrisApi.post<ApiListResponse<TaxSchedule>>(
+      `${TAX_SCHEDULES}/draft/publish`,
     ),
 };
 
