@@ -10,7 +10,8 @@ import {
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
 
-export const EMPLOYEE_ROSTER_TABLE_BODY_CLASS = "min-h-0";
+/** Flex column so the table's scrollport shrinks with the card instead of overflowing onto the footer. */
+export const EMPLOYEE_ROSTER_TABLE_BODY_CLASS = "flex min-h-0 flex-col";
 
 /** @deprecated Borders come from shared `Table`; kept for call-site compatibility. */
 export const EMPLOYEE_ROSTER_TABLE_CLASS = "";
