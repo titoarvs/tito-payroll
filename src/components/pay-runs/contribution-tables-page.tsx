@@ -1,8 +1,7 @@
 import { MoreVertical, Pencil, Plus, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ContributionKind } from "~/api-services/pay-runs.types";
-import { PageHeader } from "~/components/layout/page-header";
-import { EmployeeContributionsTable } from "~/components/pay-runs/employee-contributions-table";
+import { TaxTablesPage } from "~/components/pay-runs/tax-tables-page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,15 +60,20 @@ interface BracketDraft {
   employerShare: string;
 }
 
-type PageTab = "employees" | "brackets";
-
-const KIND_ORDER: ContributionKind[] = ["sss", "hdmf", "philhealth"];
-
 const KIND_LABEL: Record<ContributionKind, string> = {
   sss: "SSS",
-  hdmf: "HDMF",
+  hdmf: "Pag-IBIG",
   philhealth: "PhilHealth",
 };
+
+type Category = ContributionKind | "withholding";
+
+const CATEGORIES: { id: Category; label: string }[] = [
+  { id: "sss", label: "SSS" },
+  { id: "philhealth", label: "PhilHealth" },
+  { id: "hdmf", label: "Pag-IBIG" },
+  { id: "withholding", label: "Withholding" },
+];
 
 const KIND_HINT: Record<ContributionKind, string> = {
   sss: "2nd cutoff",
@@ -90,7 +94,7 @@ export const ContributionTablesPage = () => {
   const { data, isPending, isError, error } = useContributionSchedules();
   const replace = useReplaceBrackets();
   const schedules = data?.data ?? [];
-  const [pageTab, setPageTab] = useState<PageTab>("employees");
+  const [category, setCategory] = useState<Category>("sss");
   const [selectedId, setSelectedId] = useState<string>("");
   const [drafts, setDrafts] = useState<BracketDraft[]>([]);
   const [formOpen, setFormOpen] = useState(false);
@@ -98,14 +102,10 @@ export const ContributionTablesPage = () => {
   const [form, setForm] = useState<BracketDraft>(EMPTY_BRACKET);
   const [formError, setFormError] = useState<string | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [withholdingAdd, setWithholdingAdd] = useState(0);
 
   const selected =
     schedules.find((s) => s.id === selectedId) ?? schedules[0] ?? null;
-
-  const schedulesByKind = KIND_ORDER.map((kind) => ({
-    kind,
-    schedule: schedules.find((s) => s.kind === kind) ?? null,
-  })).filter((row) => row.schedule != null);
 
   useEffect(() => {
     if (!selectedId && schedules[0]) {
@@ -199,49 +199,74 @@ export const ContributionTablesPage = () => {
     setDeleteIndex(null);
   };
 
+  const chooseCategory = (next: Category) => {
+    setCategory(next);
+    if (next === "withholding") return;
+    const schedule = schedules.find((item) => item.kind === next);
+    if (schedule) setSelectedId(schedule.id);
+  };
+
   return (
     <div className="flex w-full min-w-0 flex-col gap-6">
-      <PageHeader
-        title="Contribution tables"
-        description="SSS / HDMF / PhilHealth brackets (employee share). Lookup key is monthly salary."
-      />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="page-title text-2xl font-semibold text-foreground">
+          Contributions
+        </h1>
+        {mayManage ? (
+          <Button
+            type="button"
+            onClick={() => {
+              if (category === "withholding") {
+                setWithholdingAdd((current) => current + 1);
+                return;
+              }
+              openAddModal();
+            }}
+            disabled={
+              category === "withholding"
+                ? false
+                : !selected || replace.isPending
+            }
+          >
+            <Plus className="size-4" />
+            Add bracket
+          </Button>
+        ) : null}
+      </div>
 
       <div
-        className="inline-flex w-fit max-w-full flex-wrap gap-1 rounded-lg border border-border/50 bg-muted/30 p-1"
+        className="flex gap-6 border-b border-border"
         role="tablist"
-        aria-label="Contribution tables sections"
+        aria-label="Contribution categories"
       >
-        {(
-          [
-            { id: "employees", label: "Employees" },
-            { id: "brackets", label: "Brackets" },
-          ] as const
-        ).map((tab) => {
-          const active = pageTab === tab.id;
+        {CATEGORIES.map((item) => {
+          const active = category === item.id;
           return (
             <button
-              key={tab.id}
+              key={item.id}
               type="button"
               role="tab"
               aria-selected={active}
-              onClick={() => setPageTab(tab.id)}
               className={cn(
-                "rounded-md px-3.5 py-2 text-sm font-medium transition-colors",
+                "-mb-px border-b-2 px-1 pb-2 text-sm",
                 active
-                  ? "bg-tito-green text-tito-dark-green shadow-sm"
-                  : "text-muted-foreground hover:bg-card/60 hover:text-foreground",
+                  ? "border-foreground font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
               )}
+              onClick={() => chooseCategory(item.id)}
             >
-              {tab.label}
+              {item.label}
             </button>
           );
         })}
       </div>
 
-      {pageTab === "employees" ? <EmployeeContributionsTable /> : null}
+      {category === "withholding" ? (
+        <TaxTablesPage embedded addRequest={withholdingAdd} />
+      ) : null}
 
-      {pageTab === "brackets" ? (
-        <>
+      {category !== "withholding" ? (
+      <>
           {isPending ? (
             <Card>
               <CardContent className="space-y-3 pt-6">
@@ -277,89 +302,18 @@ export const ContributionTablesPage = () => {
           ) : null}
 
           {!isPending && !isError && schedules.length > 0 ? (
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <CardTitle className="text-base">Brackets</CardTitle>
-                    <CardDescription>
-                      {mayManage
-                        ? "Add, edit, or delete a bracket. Changes save immediately. Blank max means open-ended."
-                        : "View SSS / HDMF / PhilHealth brackets. Only Super Admin, admin, and finance can edit."}
-                    </CardDescription>
-                  </div>
-                  {mayManage ? (
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={openAddModal}
-                      disabled={!selected || replace.isPending}
-                    >
-                      <Plus className="size-4" />
-                      Add bracket
-                    </Button>
-                  </div>
-                  ) : null}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-0">
-                <div
-                  className="flex flex-wrap gap-1 rounded-lg border border-border/50 bg-muted/30 p-1"
-                  role="tablist"
-                  aria-label="Contribution fund"
-                >
-                  {schedulesByKind.map(({ kind, schedule }) => {
-                    if (!schedule) return null;
-                    const active = selected?.id === schedule.id;
-                    return (
-                      <button
-                        key={schedule.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        id={`schedule-tab-${kind}`}
-                        onClick={() => setSelectedId(schedule.id)}
-                        className={cn(
-                          "min-w-[5.5rem] flex-1 rounded-md px-3 py-2 text-left transition-colors",
-                          "active:scale-[0.98] motion-reduce:active:scale-100",
-                          active
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:bg-card/60 hover:text-foreground",
-                        )}
-                      >
-                        <span className="block text-sm font-semibold tracking-tight">
-                          {KIND_LABEL[kind]}
-                        </span>
-                        <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
-                          {KIND_HINT[kind]} · {schedule.brackets.length}{" "}
-                          brackets
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
+            <div className="space-y-3">
                 {selected ? (
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">
-                        {KIND_LABEL[selected.kind]}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        Effective {selected.effectiveFrom}
-                        {selected.effectiveTo
-                          ? ` → ${selected.effectiveTo}`
-                          : " → open"}
-                        {selected.isActive ? "" : " · inactive"}
-                      </p>
-                    </div>
-                    <p className="text-xs tabular-nums text-muted-foreground">
-                      {drafts.length} bracket
-                      {drafts.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                ) : null}
+                  <p className="text-sm text-muted-foreground">
+                    {KIND_HINT[selected.kind]} · effective {selected.effectiveFrom}
+                    {selected.effectiveTo ? ` to ${selected.effectiveTo}` : ""}
+                    {selected.isActive ? "" : " · inactive"}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No {KIND_LABEL[category]} schedule yet.
+                  </p>
+                )}
 
                 {drafts.length === 0 ? (
                   <p className="text-sm text-muted-foreground" role="status">
@@ -368,7 +322,7 @@ export const ContributionTablesPage = () => {
                       : "This schedule has no brackets."}
                   </p>
                 ) : (
-                  <div className="-mx-6 sm:mx-0">
+                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent">
@@ -449,13 +403,7 @@ export const ContributionTablesPage = () => {
                       : "Save failed"}
                   </p>
                 ) : null}
-                {replace.isSuccess ? (
-                  <p className="text-sm text-muted-foreground" role="status">
-                    Brackets saved.
-                  </p>
-                ) : null}
-              </CardContent>
-            </Card>
+            </div>
           ) : null}
 
           <Dialog
@@ -588,7 +536,7 @@ export const ContributionTablesPage = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </>
+      </>
       ) : null}
     </div>
   );

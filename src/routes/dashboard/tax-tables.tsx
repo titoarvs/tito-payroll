@@ -1,11 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { TaxTablesPage } from "~/components/pay-runs/tax-tables-page";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/tax-tables")({
   ssr: false,
-  component: TaxTablesRoute,
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard/contribution-tables" });
+  },
 });
-
-function TaxTablesRoute() {
-  return <TaxTablesPage />;
-}
