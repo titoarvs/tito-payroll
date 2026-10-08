@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { badgeVariants } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -58,6 +59,7 @@ import {
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
 import { canManageTaxTables, canPublishTaxTables } from "~/lib/payroll-access";
+import { cn } from "~/lib/utils";
 
 const FREQUENCIES: TaxBracketFrequency[] = [
   "daily",
@@ -87,6 +89,21 @@ const EMPTY_BRACKET: BracketDraft = {
   excessOver: "0.00",
 };
 
+const groupedAmount = (value: string): string => {
+  const amount = Number(String(value).replace(/,/g, ""));
+  if (!Number.isFinite(amount)) return value;
+  return amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const ratePercent = (value: string): string => {
+  const amount = Number(String(value).replace(/,/g, ""));
+  if (!Number.isFinite(amount)) return value;
+  return String(Math.round(amount));
+};
+
 const frequencyLabel = (value: string): string => {
   switch (value) {
     case "semi-monthly":
@@ -104,7 +121,13 @@ const frequencyLabel = (value: string): string => {
   }
 };
 
-export const TaxTablesPage = () => {
+export const TaxTablesPage = ({
+  embedded = false,
+  addRequest = 0,
+}: {
+  embedded?: boolean;
+  addRequest?: number;
+}) => {
   const { data: user } = useCurrentUser();
   const mayManage = canManageTaxTables(user);
   const mayPublish = canPublishTaxTables(user);
@@ -127,7 +150,7 @@ export const TaxTablesPage = () => {
 
   const [selectedId, setSelectedId] = useState("");
   const [frequencyFilter, setFrequencyFilter] =
-    useState<TaxBracketFrequency | "all">("all");
+    useState<TaxBracketFrequency | "all">(embedded ? "daily" : "all");
   const [formOpen, setFormOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [form, setForm] = useState<BracketDraft>(EMPTY_BRACKET);
@@ -152,8 +175,13 @@ export const TaxTablesPage = () => {
 
   const visibleBrackets = useMemo(() => {
     const rows = selected?.brackets ?? [];
-    if (frequencyFilter === "all") return rows;
-    return rows.filter((b) => b.frequency === frequencyFilter);
+    const filtered =
+      frequencyFilter === "all"
+        ? rows
+        : rows.filter((b) => b.frequency === frequencyFilter);
+    return [...filtered].sort(
+      (left, right) => (left.sequence ?? 0) - (right.sequence ?? 0),
+    );
   }, [selected, frequencyFilter]);
 
   const isDraftSelected = selected?.status === "draft";
@@ -177,6 +205,13 @@ export const TaxTablesPage = () => {
     setFormError(null);
     setFormOpen(true);
   };
+
+  const seenAddRequest = useRef(addRequest);
+  useEffect(() => {
+    if (!embedded || addRequest === seenAddRequest.current) return;
+    seenAddRequest.current = addRequest;
+    openAddModal();
+  }, [addRequest, embedded, openAddModal]);
 
   const openEditModal = (index: number) => {
     const row = visibleBrackets[index];
@@ -339,10 +374,12 @@ export const TaxTablesPage = () => {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-6">
-      <PageHeader
-        title="Tax tables"
-        description="Versioned BIR / TRAIN monthly brackets by frequency. HR/finance draft and import; Super Admin publishes. Compute uses the active monthly schedule."
-      />
+      {embedded ? null : (
+        <PageHeader
+          title="Tax tables"
+          description="Versioned BIR / TRAIN monthly brackets by frequency. HR/finance draft and import; Super Admin publishes. Compute uses the active monthly schedule."
+        />
+      )}
 
       {isPending ? (
         <Card>
@@ -361,7 +398,173 @@ export const TaxTablesPage = () => {
         </p>
       ) : null}
 
-      {!isPending && !isError && selected ? (
+      {!isPending && !isError && !selected && embedded ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          No withholding schedule yet.
+        </p>
+      ) : null}
+
+      {!isPending && !isError && selected && embedded ? (
+        <div className="space-y-3">
+          <div
+            className="flex flex-wrap gap-2"
+            role="tablist"
+            aria-label="Withholding frequencies"
+          >
+            {FREQUENCIES.filter(
+              (frequency) =>
+                frequency !== "annual" ||
+                selected.brackets.some(
+                  (bracket) => bracket.frequency === "annual",
+                ),
+            ).map((frequency) => {
+              const active = frequencyFilter === frequency;
+              return (
+                <button
+                  key={frequency}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={cn(
+                    badgeVariants({ variant: active ? "default" : "muted" }),
+                    "cursor-pointer",
+                  )}
+                  onClick={() => setFrequencyFilter(frequency)}
+                >
+                  {frequencyLabel(frequency)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Effective {selected.effectiveFrom}
+            {selected.effectiveTo ? ` to ${selected.effectiveTo}` : ""}
+            {selected.isActive ? "" : " · inactive"}
+            {" · "}
+            <a
+              href="https://www.bir.gov.ph/WithHoldingTax"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              BIR withholding tax
+            </a>
+          </p>
+          {visibleBrackets.length === 0 ? (
+            <p className="text-sm text-muted-foreground" role="status">
+              {mayManage
+                ? "This frequency has no brackets. Use Add bracket to create one."
+                : "This frequency has no brackets."}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-10">#</TableHead>
+                    <TableHead>Min</TableHead>
+                    <TableHead>Max</TableHead>
+                    <TableHead>Base tax</TableHead>
+                    <TableHead>Rate %</TableHead>
+                    <TableHead>Excess-over</TableHead>
+                    {mayEditSelected ? (
+                      <TableHead className="w-14 text-right">
+                        <span className="sr-only">Actions</span>
+                      </TableHead>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleBrackets.map((draft, index) => (
+                    <TableRow key={draft.id ?? index}>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {draft.sequence ?? index + 1}
+                      </TableCell>
+                      <TableCell className="tabular-nums">
+                        {groupedAmount(draft.minCompensation)}
+                      </TableCell>
+                      <TableCell className="tabular-nums">
+                        {draft.maxCompensation?.trim()
+                          ? groupedAmount(draft.maxCompensation)
+                          : "Open"}
+                      </TableCell>
+                      <TableCell className="tabular-nums">
+                        {groupedAmount(draft.baseTax)}
+                      </TableCell>
+                      <TableCell className="tabular-nums">
+                        {ratePercent(draft.rateOnExcess)}
+                      </TableCell>
+                      <TableCell className="tabular-nums">
+                        {groupedAmount(draft.excessOver || draft.minCompensation)}
+                      </TableCell>
+                      {mayEditSelected ? (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                disabled={savePending}
+                                aria-label={`Bracket ${index + 1} actions`}
+                              >
+                                <MoreVertical className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-36">
+                              <DropdownMenuItem
+                                onSelect={() => openEditModal(index)}
+                              >
+                                <Pencil />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => setDeleteIndex(index)}
+                              >
+                                <Trash2Icon />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          {importError ||
+          addDraft.isError ||
+          updateDraft.isError ||
+          deleteDraft.isError ||
+          importDraft.isError ||
+          publishDraft.isError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {importError ??
+                ((
+                  addDraft.error ||
+                  updateDraft.error ||
+                  deleteDraft.error ||
+                  importDraft.error ||
+                  publishDraft.error
+                ) instanceof HrisApiError
+                  ? (
+                      (addDraft.error ||
+                        updateDraft.error ||
+                        deleteDraft.error ||
+                        importDraft.error ||
+                        publishDraft.error) as HrisApiError
+                    ).message
+                  : "Save failed")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!isPending && !isError && selected && !embedded ? (
         <Card>
           <CardHeader className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -379,8 +582,9 @@ export const TaxTablesPage = () => {
                   ) : null}
                 </CardTitle>
                 <CardDescription>
-                  Withholding = base + rate% × (taxable − excess-over). Blank max
-                  is open-ended.
+                  {embedded
+                    ? "Blank max is open-ended."
+                    : "Withholding = base + rate% × (taxable − excess-over). Blank max is open-ended."}
                 </CardDescription>
               </div>
               {mayManage ? (
@@ -510,21 +714,23 @@ export const TaxTablesPage = () => {
                           {frequencyLabel(String(draft.frequency ?? "monthly"))}
                         </TableCell>
                         <TableCell className="tabular-nums">
-                          {draft.minCompensation}
+                          {groupedAmount(draft.minCompensation)}
                         </TableCell>
                         <TableCell className="tabular-nums">
                           {draft.maxCompensation?.trim()
-                            ? draft.maxCompensation
+                            ? groupedAmount(draft.maxCompensation)
                             : "Open"}
                         </TableCell>
                         <TableCell className="tabular-nums">
-                          {draft.baseTax}
+                          {groupedAmount(draft.baseTax)}
                         </TableCell>
                         <TableCell className="tabular-nums">
-                          {draft.rateOnExcess}
+                          {ratePercent(draft.rateOnExcess)}
                         </TableCell>
                         <TableCell className="tabular-nums">
-                          {draft.excessOver || draft.minCompensation}
+                          {groupedAmount(
+                            draft.excessOver || draft.minCompensation,
+                          )}
                         </TableCell>
                         {mayEditSelected ? (
                           <TableCell className="text-right">

@@ -30,13 +30,11 @@ export const PayrollNavLinks = ({
     <div className={cn("flex flex-col gap-5", className)}>
       {sections.map((section) => (
         <div key={section.id} className="flex flex-col gap-1">
-          {!collapsed ? (
+          {!collapsed && section.label ? (
             <p className="px-3 pb-1 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
               {section.label}
             </p>
-          ) : (
-            <span className="sr-only">{section.label}</span>
-          )}
+          ) : null}
           {section.items.map((item) => {
             const Icon = item.icon;
             const active = isNavActive(pathname, item);
@@ -49,21 +47,21 @@ export const PayrollNavLinks = ({
                 aria-label={collapsed ? item.label : undefined}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "relative flex items-center overflow-hidden rounded-md py-2.5 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]",
+                  "relative flex items-center overflow-hidden rounded-lg py-2.5 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]",
                   active
                     ? "bg-tito-green text-tito-dark-green shadow-sm"
                     : "text-foreground/70 hover:bg-muted hover:text-foreground",
-                  collapsed ? "justify-center gap-0 px-2" : "gap-3 px-3",
+                  collapsed ? "justify-center gap-0 px-2" : "px-3",
                 )}
               >
-                <Icon
-                  className={cn(
-                    "h-[18px] w-[18px] shrink-0",
-                    active
-                      ? "text-tito-dark-green"
-                      : "text-muted-foreground",
-                  )}
-                />
+                {collapsed ? (
+                  <Icon
+                    className={cn(
+                      "h-[18px] w-[18px] shrink-0",
+                      active ? "text-tito-dark-green" : "text-muted-foreground",
+                    )}
+                  />
+                ) : null}
                 <span
                   className={cn(
                     "truncate whitespace-nowrap transition-[opacity,width] duration-200 ease-out",

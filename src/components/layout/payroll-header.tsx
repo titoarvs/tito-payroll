@@ -67,10 +67,6 @@ export const PayrollHeader = () => {
   const isOps = hasPayrollOps(user);
   const navItems = PAYROLL_NAV_ITEMS.filter(
     (item) => !item.requiresPayrollOps || isOps,
-  ).map((item) =>
-    isOps && item.to === "/dashboard/my-payslips"
-      ? { ...item, label: "Payslips" }
-      : item,
   );
 
   const handleLogout = () => {

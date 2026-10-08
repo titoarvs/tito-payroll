@@ -44,6 +44,17 @@ export const payRunsService = {
       `${PAY_RUNS}/${encodeURIComponent(sourceId)}/corrections`,
       input,
     ),
+  syncEmployment: (employeeId: string) =>
+    hrisApi.post<
+      ApiListResponse<{
+        employeeId: string;
+        userId: string | null;
+        salary: string | null;
+        hourlyRate: string | null;
+      }>
+    >(
+      `/payroll/employees/${encodeURIComponent(employeeId)}/sync-employment`,
+    ),
   compute: (id: string) =>
     hrisApi.post<ApiListResponse<{ payRun: PayRun; payslipCount: number }>>(
       `${PAY_RUNS}/${encodeURIComponent(id)}/compute`,

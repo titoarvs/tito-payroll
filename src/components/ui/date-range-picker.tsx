@@ -223,16 +223,21 @@ export function DateRangePicker({
                   "w-[--cell-size] flex-1 select-none text-center text-[11px] font-medium tracking-[0.04em] text-muted-foreground",
                 week: "mt-1 flex w-full",
                 day: cn(
-                  "relative aspect-square h-auto w-[--cell-size] flex-1 p-0 text-center text-sm",
-                  "[&:has([data-range-middle=true])]:rounded-none",
+                  "relative aspect-square h-auto w-[--cell-size] flex-1 overflow-hidden p-0 text-center text-sm",
+                  "[&:first-child:has([data-range-middle=true])]:rounded-l-full",
+                  "[&:last-child:has([data-range-middle=true])]:rounded-r-full",
+                  "[&:last-child:has([data-range-start=true])]:rounded-r-full",
+                  "[&:first-child:has([data-range-end=true])]:rounded-l-full",
                 ),
-                range_start: "rounded-l-full bg-transparent",
-                range_end: "rounded-r-full bg-transparent",
+                range_start:
+                  "rounded-l-full bg-[color-mix(in_srgb,var(--tito-green)_22%,transparent)]",
+                range_end:
+                  "rounded-r-full bg-[color-mix(in_srgb,var(--tito-green)_22%,transparent)]",
                 range_middle: cn(
                   "rounded-none",
                   selectingEnd
                     ? "bg-[color-mix(in_srgb,var(--tito-green)_14%,transparent)]"
-                    : "bg-[color-mix(in_srgb,var(--tito-green)_18%,transparent)]",
+                    : "bg-[color-mix(in_srgb,var(--tito-green)_22%,transparent)]",
                 ),
                 today: "rounded-full bg-muted text-foreground",
               }}
