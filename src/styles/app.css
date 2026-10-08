@@ -97,6 +97,7 @@
 :root {
   --radius: 0.5rem;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   --background: var(--tito-foreground);
   --foreground: var(--tito-blue);
@@ -1016,6 +1017,92 @@
   }
 }
 
+.pay-run-step-fill {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 480ms var(--ease-in-out);
+}
+
+.pay-run-step-fill[data-on="true"] {
+  transform: scaleX(1);
+}
+
+.pay-run-step-index {
+  transition:
+    background-color 200ms var(--ease-out),
+    color 200ms var(--ease-out);
+}
+
+.pay-run-step-pane[data-enter="true"] {
+  animation: pay-run-step-in 320ms var(--ease-out) both;
+}
+
+.pay-run-step-pane[data-enter="true"][data-direction="back"] {
+  animation-name: pay-run-step-in-back;
+}
+
+.pay-run-step-pane[data-motion="out"] {
+  animation: pay-run-step-out 280ms var(--ease-out) both;
+  pointer-events: none;
+}
+
+.pay-run-step-pane[data-motion="out"][data-direction="back"] {
+  animation-name: pay-run-step-out-back;
+}
+
+@keyframes pay-run-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pay-run-step-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pay-run-step-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-1.25rem);
+  }
+}
+
+@keyframes pay-run-step-out-back {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(1.25rem);
+  }
+}
+
+@keyframes pay-run-step-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card-hover-lift,
   .card-hover-lift:hover {
@@ -1062,6 +1149,17 @@
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  .pay-run-step-fill {
+    transition-duration: 160ms;
+  }
+
+  .pay-run-step-pane[data-enter="true"],
+  .pay-run-step-pane[data-enter="true"][data-direction="back"],
+  .pay-run-step-pane[data-motion="out"],
+  .pay-run-step-pane[data-motion="out"][data-direction="back"] {
+    animation: pay-run-step-fade 160ms var(--ease-out) both;
   }
 
   .auth-panel-swap {

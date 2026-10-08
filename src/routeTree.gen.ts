@@ -17,8 +17,11 @@ import { Route as AuthVerifyMfaRouteImport } from './routes/auth/verify-mfa'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardContributionTablesRouteImport } from './routes/dashboard/contribution-tables'
 import { Route as DashboardEmployeesRouteImport } from './routes/dashboard/employees'
+import { Route as DashboardFinalPayRouteImport } from './routes/dashboard/final-pay'
 import { Route as DashboardMyPayslipsRouteImport } from './routes/dashboard/my-payslips'
+import { Route as DashboardOtherDeductionsRouteImport } from './routes/dashboard/other-deductions'
 import { Route as DashboardPayRunsRouteImport } from './routes/dashboard/pay-runs'
+import { Route as DashboardReportsRouteImport } from './routes/dashboard/reports'
 import { Route as DashboardTaxTablesRouteImport } from './routes/dashboard/tax-tables'
 import { Route as DashboardEmployeesIndexRouteImport } from './routes/dashboard/employees.index'
 import { Route as DashboardEmployeesIdRouteImport } from './routes/dashboard/employees.$id'
@@ -26,6 +29,7 @@ import { Route as DashboardMyPayslipsIndexRouteImport } from './routes/dashboard
 import { Route as DashboardMyPayslipsPayslipIdRouteImport } from './routes/dashboard/my-payslips.$payslipId'
 import { Route as DashboardPayRunsIndexRouteImport } from './routes/dashboard/pay-runs.index'
 import { Route as DashboardPayRunsIdRouteImport } from './routes/dashboard/pay-runs.$id'
+import { Route as DashboardPayRunsNewRouteImport } from './routes/dashboard/pay-runs.new'
 import { Route as DashboardPayRunsIdIndexRouteImport } from './routes/dashboard/pay-runs.$id.index'
 import { Route as DashboardPayRunsIdPayslipsPayslipIdRouteImport } from './routes/dashboard/pay-runs.$id.payslips.$payslipId'
 
@@ -70,14 +74,30 @@ const DashboardEmployeesRoute = DashboardEmployeesRouteImport.update({
   path: '/employees',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardFinalPayRoute = DashboardFinalPayRouteImport.update({
+  id: '/final-pay',
+  path: '/final-pay',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardMyPayslipsRoute = DashboardMyPayslipsRouteImport.update({
   id: '/my-payslips',
   path: '/my-payslips',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardOtherDeductionsRoute =
+  DashboardOtherDeductionsRouteImport.update({
+    id: '/other-deductions',
+    path: '/other-deductions',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardPayRunsRoute = DashboardPayRunsRouteImport.update({
   id: '/pay-runs',
   path: '/pay-runs',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReportsRoute = DashboardReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardTaxTablesRoute = DashboardTaxTablesRouteImport.update({
@@ -117,6 +137,11 @@ const DashboardPayRunsIdRoute = DashboardPayRunsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DashboardPayRunsRoute,
 } as any)
+const DashboardPayRunsNewRoute = DashboardPayRunsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => DashboardPayRunsRoute,
+} as any)
 const DashboardPayRunsIdIndexRoute = DashboardPayRunsIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -137,13 +162,17 @@ export interface FileRoutesByFullPath {
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
   '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
   '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
+  '/dashboard/final-pay': typeof DashboardFinalPayRoute
   '/dashboard/my-payslips': typeof DashboardMyPayslipsRouteWithChildren
+  '/dashboard/other-deductions': typeof DashboardOtherDeductionsRoute
   '/dashboard/pay-runs': typeof DashboardPayRunsRouteWithChildren
+  '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/tax-tables': typeof DashboardTaxTablesRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
   '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRouteWithChildren
+  '/dashboard/pay-runs/new': typeof DashboardPayRunsNewRoute
   '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
   '/dashboard/my-payslips/': typeof DashboardMyPayslipsIndexRoute
   '/dashboard/pay-runs/': typeof DashboardPayRunsIndexRoute
@@ -156,10 +185,14 @@ export interface FileRoutesByTo {
   '/auth/success': typeof AuthSuccessRoute
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
   '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
+  '/dashboard/final-pay': typeof DashboardFinalPayRoute
+  '/dashboard/other-deductions': typeof DashboardOtherDeductionsRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/tax-tables': typeof DashboardTaxTablesRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
+  '/dashboard/pay-runs/new': typeof DashboardPayRunsNewRoute
   '/dashboard/employees': typeof DashboardEmployeesIndexRoute
   '/dashboard/my-payslips': typeof DashboardMyPayslipsIndexRoute
   '/dashboard/pay-runs': typeof DashboardPayRunsIndexRoute
@@ -175,13 +208,17 @@ export interface FileRoutesById {
   '/auth/verify-mfa': typeof AuthVerifyMfaRoute
   '/dashboard/contribution-tables': typeof DashboardContributionTablesRoute
   '/dashboard/employees': typeof DashboardEmployeesRouteWithChildren
+  '/dashboard/final-pay': typeof DashboardFinalPayRoute
   '/dashboard/my-payslips': typeof DashboardMyPayslipsRouteWithChildren
+  '/dashboard/other-deductions': typeof DashboardOtherDeductionsRoute
   '/dashboard/pay-runs': typeof DashboardPayRunsRouteWithChildren
+  '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/tax-tables': typeof DashboardTaxTablesRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/employees/$id': typeof DashboardEmployeesIdRoute
   '/dashboard/my-payslips/$payslipId': typeof DashboardMyPayslipsPayslipIdRoute
   '/dashboard/pay-runs/$id': typeof DashboardPayRunsIdRouteWithChildren
+  '/dashboard/pay-runs/new': typeof DashboardPayRunsNewRoute
   '/dashboard/employees/': typeof DashboardEmployeesIndexRoute
   '/dashboard/my-payslips/': typeof DashboardMyPayslipsIndexRoute
   '/dashboard/pay-runs/': typeof DashboardPayRunsIndexRoute
@@ -198,13 +235,17 @@ export interface FileRouteTypes {
     | '/auth/verify-mfa'
     | '/dashboard/contribution-tables'
     | '/dashboard/employees'
+    | '/dashboard/final-pay'
     | '/dashboard/my-payslips'
+    | '/dashboard/other-deductions'
     | '/dashboard/pay-runs'
+    | '/dashboard/reports'
     | '/dashboard/tax-tables'
     | '/dashboard/'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
     | '/dashboard/pay-runs/$id'
+    | '/dashboard/pay-runs/new'
     | '/dashboard/employees/'
     | '/dashboard/my-payslips/'
     | '/dashboard/pay-runs/'
@@ -217,10 +258,14 @@ export interface FileRouteTypes {
     | '/auth/success'
     | '/auth/verify-mfa'
     | '/dashboard/contribution-tables'
+    | '/dashboard/final-pay'
+    | '/dashboard/other-deductions'
+    | '/dashboard/reports'
     | '/dashboard/tax-tables'
     | '/dashboard'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
+    | '/dashboard/pay-runs/new'
     | '/dashboard/employees'
     | '/dashboard/my-payslips'
     | '/dashboard/pay-runs'
@@ -235,13 +280,17 @@ export interface FileRouteTypes {
     | '/auth/verify-mfa'
     | '/dashboard/contribution-tables'
     | '/dashboard/employees'
+    | '/dashboard/final-pay'
     | '/dashboard/my-payslips'
+    | '/dashboard/other-deductions'
     | '/dashboard/pay-runs'
+    | '/dashboard/reports'
     | '/dashboard/tax-tables'
     | '/dashboard/'
     | '/dashboard/employees/$id'
     | '/dashboard/my-payslips/$payslipId'
     | '/dashboard/pay-runs/$id'
+    | '/dashboard/pay-runs/new'
     | '/dashboard/employees/'
     | '/dashboard/my-payslips/'
     | '/dashboard/pay-runs/'
@@ -315,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardEmployeesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/final-pay': {
+      id: '/dashboard/final-pay'
+      path: '/final-pay'
+      fullPath: '/dashboard/final-pay'
+      preLoaderRoute: typeof DashboardFinalPayRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/my-payslips': {
       id: '/dashboard/my-payslips'
       path: '/my-payslips'
@@ -322,11 +378,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardMyPayslipsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/other-deductions': {
+      id: '/dashboard/other-deductions'
+      path: '/other-deductions'
+      fullPath: '/dashboard/other-deductions'
+      preLoaderRoute: typeof DashboardOtherDeductionsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/pay-runs': {
       id: '/dashboard/pay-runs'
       path: '/pay-runs'
       fullPath: '/dashboard/pay-runs'
       preLoaderRoute: typeof DashboardPayRunsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/reports': {
+      id: '/dashboard/reports'
+      path: '/reports'
+      fullPath: '/dashboard/reports'
+      preLoaderRoute: typeof DashboardReportsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/tax-tables': {
@@ -376,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/$id'
       fullPath: '/dashboard/pay-runs/$id'
       preLoaderRoute: typeof DashboardPayRunsIdRouteImport
+      parentRoute: typeof DashboardPayRunsRoute
+    }
+    '/dashboard/pay-runs/new': {
+      id: '/dashboard/pay-runs/new'
+      path: '/new'
+      fullPath: '/dashboard/pay-runs/new'
+      preLoaderRoute: typeof DashboardPayRunsNewRouteImport
       parentRoute: typeof DashboardPayRunsRoute
     }
     '/dashboard/pay-runs/$id/': {
@@ -437,11 +514,13 @@ const DashboardPayRunsIdRouteWithChildren =
 
 interface DashboardPayRunsRouteChildren {
   DashboardPayRunsIdRoute: typeof DashboardPayRunsIdRouteWithChildren
+  DashboardPayRunsNewRoute: typeof DashboardPayRunsNewRoute
   DashboardPayRunsIndexRoute: typeof DashboardPayRunsIndexRoute
 }
 
 const DashboardPayRunsRouteChildren: DashboardPayRunsRouteChildren = {
   DashboardPayRunsIdRoute: DashboardPayRunsIdRouteWithChildren,
+  DashboardPayRunsNewRoute: DashboardPayRunsNewRoute,
   DashboardPayRunsIndexRoute: DashboardPayRunsIndexRoute,
 }
 
@@ -451,8 +530,11 @@ const DashboardPayRunsRouteWithChildren =
 interface DashboardRouteChildren {
   DashboardContributionTablesRoute: typeof DashboardContributionTablesRoute
   DashboardEmployeesRoute: typeof DashboardEmployeesRouteWithChildren
+  DashboardFinalPayRoute: typeof DashboardFinalPayRoute
   DashboardMyPayslipsRoute: typeof DashboardMyPayslipsRouteWithChildren
+  DashboardOtherDeductionsRoute: typeof DashboardOtherDeductionsRoute
   DashboardPayRunsRoute: typeof DashboardPayRunsRouteWithChildren
+  DashboardReportsRoute: typeof DashboardReportsRoute
   DashboardTaxTablesRoute: typeof DashboardTaxTablesRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
@@ -460,8 +542,11 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardContributionTablesRoute: DashboardContributionTablesRoute,
   DashboardEmployeesRoute: DashboardEmployeesRouteWithChildren,
+  DashboardFinalPayRoute: DashboardFinalPayRoute,
   DashboardMyPayslipsRoute: DashboardMyPayslipsRouteWithChildren,
+  DashboardOtherDeductionsRoute: DashboardOtherDeductionsRoute,
   DashboardPayRunsRoute: DashboardPayRunsRouteWithChildren,
+  DashboardReportsRoute: DashboardReportsRoute,
   DashboardTaxTablesRoute: DashboardTaxTablesRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

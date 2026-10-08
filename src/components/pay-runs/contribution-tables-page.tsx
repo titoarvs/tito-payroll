@@ -88,7 +88,11 @@ const EMPTY_BRACKET: BracketDraft = {
   employerShare: "0.00",
 };
 
-export const ContributionTablesPage = () => {
+export const ContributionTablesPage = ({
+  title = "Contributions",
+}: {
+  title?: string;
+}) => {
   const { data: user } = useCurrentUser();
   const mayManage = canManageStatutoryTables(user);
   const { data, isPending, isError, error } = useContributionSchedules();
@@ -210,7 +214,7 @@ export const ContributionTablesPage = () => {
     <div className="flex w-full min-w-0 flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="page-title text-2xl font-semibold text-foreground">
-          Contributions
+          {title}
         </h1>
         {mayManage ? (
           <Button

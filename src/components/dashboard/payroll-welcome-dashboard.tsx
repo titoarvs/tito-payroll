@@ -338,7 +338,7 @@ export const PayrollWelcomeDashboard = ({
           </div>
           <div className="payroll-highlight__actions">
             <Button asChild>
-              <Link to="/dashboard/pay-runs">
+              <Link to={mayProcess ? "/dashboard/pay-runs/new" : "/dashboard/pay-runs"}>
                 {mayProcess ? "Run the next cutoff" : "Open pay runs"}
                 <ArrowUpRight className="size-4" />
               </Link>
