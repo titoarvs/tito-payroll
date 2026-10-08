@@ -1,21 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import {
-  ArrowUpRight,
-  Banknote,
-  CalendarDays,
-  FileCheck,
-  HandCoins,
-  PiggyBank,
-  Plus,
-  Table2,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { ArrowUpRight, FileCheck, Plus, Table2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import type { PayRun, PayRunStatus } from "~/api-services/pay-runs.types";
-import { DashboardKpiCard } from "~/components/dashboard/dashboard-kpi-card";
 import { EmployeeDashboardWidgets } from "~/components/dashboard/employee-dashboard-widgets";
 import {
   cutoffHalfLabel,
@@ -83,6 +71,12 @@ const displayFirstName = (user: HrisUser | undefined): string => {
   const fromName = user.name?.trim().split(/\s+/)[0];
   if (fromName) return fromName;
   return user.email.split("@")[0] || "there";
+};
+
+const formatPeso = (value: string): string => {
+  if (value === "—") return value;
+  if (value.startsWith("-")) return `-₱${value.slice(1)}`;
+  return `₱${value}`;
 };
 
 const formatCount = (value: number | undefined): string =>
@@ -250,14 +244,6 @@ export const PayrollWelcomeDashboard = ({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {showEmployeeMetrics ? (
-            <Button asChild variant="outline">
-              <Link to="/dashboard/employees">
-                <Users className="h-4 w-4" />
-                Employees
-              </Link>
-            </Button>
-          ) : null}
           <DateRangePicker
             id="dashboard-date-range"
             value={pickerValue}
@@ -321,163 +307,108 @@ export const PayrollWelcomeDashboard = ({
         </div>
       </div>
 
-      {/* Hero row */}
-      <section
-        className="grid gap-4 lg:grid-cols-12"
-        aria-label="Payroll overview"
-      >
-        <div className="payroll-cutoff-hero tito-brand-surface p-0 lg:col-span-5">
-          <div className="payroll-cutoff-hero__mesh" aria-hidden />
-          <div
-            className="tito-brand-surface__orb tito-brand-surface__orb--lime payroll-cutoff-hero__orb payroll-cutoff-hero__orb--lime"
-            aria-hidden
-          />
-          <div
-            className="tito-brand-surface__orb tito-brand-surface__orb--sky payroll-cutoff-hero__orb payroll-cutoff-hero__orb--sky"
-            aria-hidden
-          />
-          <div className="tito-brand-surface__sheen" aria-hidden />
-          <div className="payroll-cutoff-hero__glass">
-            <div className="payroll-cutoff-hero__icon">
-              <CalendarDays className="size-5" aria-hidden />
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="payroll-cutoff-hero__title">
-                {mayProcess ? "Run the next cutoff" : "Payroll overview"}
-              </h2>
-              <p className="payroll-cutoff-hero__copy">
-                {mayProcess
-                  ? "Create a period, compute Clock hours, then release payslips to employees."
-                  : "Review cutoffs and configure contribution or tax tables. Processing is limited to HR and finance."}
-              </p>
-            </div>
-            <div className="payroll-cutoff-hero__cta">
-              <Button asChild>
-                <Link to="/dashboard/pay-runs">
-                  Open pay runs
-                  <ArrowUpRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <StatHeroCard
-          className="lg:col-span-4"
-          label={showEmployeeMetrics ? "Employees on file" : "Pay runs"}
-          value={
-            metricsLoading
-              ? null
-              : formatCount(
-                  showEmployeeMetrics
-                    ? employeeCounts?.totalEmployees
-                    : payRuns.length,
-                )
-          }
-          hint={
-            showEmployeeMetrics
-              ? `${formatCount(employeeCounts?.activeEmployees)} active`
-              : `${formatCount(releasedRuns)} released`
-          }
-          accent="sky"
-          to={showEmployeeMetrics ? "/dashboard/employees" : "/dashboard/pay-runs"}
-        />
-
-        <StatHeroCard
-          className="lg:col-span-3"
-          label="Released cutoffs"
-          value={metricsLoading ? null : formatCount(releasedRuns)}
-          hint={`${formatCount(computedRuns)} ready to release`}
-          accent="lime"
-          to="/dashboard/pay-runs"
-        />
-      </section>
-
-      {/* Released money totals */}
-      <section className="flex flex-col gap-4" aria-label="Payroll money totals">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-base font-semibold tracking-tight text-foreground">
-              Released payroll totals
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Released payslips in selected range
-              {releasedMoney
-                ? ` · ${formatCount(releasedMoney.payslipCount)} slips`
-                : ""}
-              {latestReleased
-                ? ` · latest ${formatPayRunPeriod(latestReleased.periodStart, latestReleased.periodEnd)} (${cutoffHalfLabel(latestReleased.cutoffHalf)})`
-                : ""}
+      <section className="payroll-highlight" aria-label="Released net pay">
+        <div className="payroll-highlight__lead">
+          <p className="payroll-highlight__eyebrow">{rangeLabel}</p>
+          <h2 className="payroll-highlight__label">Net pay</h2>
+          {isSummaryPending ? (
+            <Skeleton className="mt-3 h-14 w-56" />
+          ) : (
+            <p className="payroll-highlight__figure">
+              {formatPeso(formatPayslipMoney(releasedMoney?.netPay))}
             </p>
+          )}
+          <span className="payroll-highlight__rule" aria-hidden />
+          <div className="payroll-highlight__meta">
+            <p>
+              {isSummaryPending
+                ? "Released payslips in this range"
+                : `${formatCount(releasedMoney?.payslipCount)} released slips`}
+            </p>
+            {latestReleased ? (
+              <p>
+                Latest{" "}
+                {formatPayRunPeriod(
+                  latestReleased.periodStart,
+                  latestReleased.periodEnd,
+                )}{" "}
+                ({cutoffHalfLabel(latestReleased.cutoffHalf)})
+              </p>
+            ) : null}
           </div>
-          {latestReleased ? (
-            <Button asChild variant="outline" size="sm">
-              <Link
-                to="/dashboard/pay-runs/$id"
-                params={{ id: latestReleased.payRunId }}
-              >
-                Latest cutoff
-                <ArrowUpRight className="size-3.5" />
+          <div className="payroll-highlight__actions">
+            <Button asChild>
+              <Link to="/dashboard/pay-runs">
+                {mayProcess ? "Run the next cutoff" : "Open pay runs"}
+                <ArrowUpRight className="size-4" />
               </Link>
             </Button>
-          ) : null}
+            {latestReleased ? (
+              <Button asChild variant="outline">
+                <Link
+                  to="/dashboard/pay-runs/$id"
+                  params={{ id: latestReleased.payRunId }}
+                >
+                  Latest cutoff
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <DashboardKpiCard
+        <dl className="payroll-highlight__rail">
+          <HighlightStat
             label="Gross salaries"
             value={
               isSummaryPending
-                ? "—"
-                : formatPayslipMoney(releasedMoney?.grossPay)
+                ? null
+                : formatPeso(formatPayslipMoney(releasedMoney?.grossPay))
             }
-            hint="Basic + allowances + premiums"
-            icon={Banknote}
-            accent="green"
-            isLoading={isSummaryPending}
-            to="/dashboard/pay-runs"
+            hint="Basic, allowances, premiums"
           />
-          <DashboardKpiCard
-            label="Total deductions"
+          <HighlightStat
+            label="Deductions"
             value={
               isSummaryPending
-                ? "—"
-                : formatPayslipMoney(releasedMoney?.totalDeductions)
+                ? null
+                : formatPeso(formatPayslipMoney(releasedMoney?.totalDeductions))
             }
-            hint="Contributions and other withholdings"
-            icon={HandCoins}
-            accent="sky"
-            isLoading={isSummaryPending}
-            to="/dashboard/pay-runs"
+            hint="Contributions and withholdings"
           />
-          <DashboardKpiCard
+          <HighlightStat
             label="Contributions"
             value={
               isSummaryPending
-                ? "—"
-                : formatPayslipMoney(releasedMoney?.contributionsTotal)
+                ? null
+                : formatPeso(formatPayslipMoney(releasedMoney?.contributionsTotal))
             }
-            hint="SSS + Pag-IBIG + PhilHealth"
-            icon={PiggyBank}
-            accent="blue"
-            isLoading={isSummaryPending}
+            hint="SSS, Pag-IBIG, PhilHealth"
             to="/dashboard/contribution-tables"
           />
-          <DashboardKpiCard
-            label="Net pay"
+          <HighlightStat
+            label={showEmployeeMetrics ? "Employees" : "Cutoffs"}
             value={
-              isSummaryPending
-                ? "—"
-                : formatPayslipMoney(releasedMoney?.netPay)
+              metricsLoading
+                ? null
+                : formatCount(
+                    showEmployeeMetrics
+                      ? employeeCounts?.totalEmployees
+                      : payRuns.length,
+                  )
             }
-            hint="Take-home after deductions"
-            icon={Wallet}
-            accent="slate"
-            isLoading={isSummaryPending}
-            to="/dashboard/my-payslips"
+            hint={
+              showEmployeeMetrics
+                ? `${formatCount(employeeCounts?.activeEmployees)} active · ${formatCount(releasedRuns)} released`
+                : `${formatCount(releasedRuns)} released · ${formatCount(computedRuns)} ready`
+            }
+            to={
+              showEmployeeMetrics ? "/dashboard/employees" : "/dashboard/pay-runs"
+            }
           />
-        </div>
+        </dl>
+      </section>
 
+      <section className="flex flex-col gap-4" aria-label="Payroll money totals">
         <div className="grid gap-4 lg:grid-cols-12">
           <div className="tito-widget border-border/60 p-5 sm:p-6 lg:col-span-7">
             <h3 className="text-sm font-semibold tracking-tight text-foreground">
@@ -528,7 +459,7 @@ export const PayrollWelcomeDashboard = ({
                       {row.label}
                     </span>
                     <span className="tabular-nums text-sm font-semibold text-foreground">
-                      {formatPayslipMoney(row.amount)}
+                      {formatPeso(formatPayslipMoney(row.amount))}
                     </span>
                   </li>
                 ))}
@@ -577,7 +508,7 @@ export const PayrollWelcomeDashboard = ({
                   >
                     <span className="text-muted-foreground">{row.label}</span>
                     <span className="tabular-nums font-medium text-foreground">
-                      {formatPayslipMoney(row.amount)}
+                      {formatPeso(formatPayslipMoney(row.amount))}
                     </span>
                   </li>
                 ))}
@@ -841,65 +772,44 @@ export const PayrollWelcomeDashboard = ({
   );
 };
 
-const StatHeroCard = ({
+const HighlightStat = ({
   label,
   value,
   hint,
   to,
-  accent,
-  className,
 }: {
   label: string;
   value: string | null;
   hint: string;
-  to: string;
-  accent: "sky" | "lime";
-  className?: string;
-}) => (
-  <Link
-    to={to}
-    className={cn(
-      "tito-widget card-hover-lift flex flex-col justify-between gap-6 border-border/60 bg-card p-5 sm:p-6",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className,
-    )}
-  >
-    <div className="flex items-start justify-between gap-3">
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <span
-        className={cn(
-          "size-2.5 shrink-0 rounded-full",
-          accent === "sky" ? "bg-tito-dull-blue" : "bg-tito-green",
-        )}
-        aria-hidden
-      />
-    </div>
-    <div>
+  to?: string;
+}) => {
+  const body = (
+    <>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
       {value == null ? (
-        <Skeleton className="h-10 w-28" />
+        <Skeleton className="mt-1 h-7 w-24" />
       ) : (
-        <p className="text-3xl font-semibold tracking-tight tabular-nums text-foreground sm:text-4xl">
+        <dd className="mt-0.5 text-xl font-semibold tracking-tight tabular-nums text-foreground">
           {value}
-        </p>
+        </dd>
       )}
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-      <div
-        className={cn(
-          "mt-4 h-2 w-full overflow-hidden rounded-full",
-          accent === "sky" ? "bg-tito-dull-blue/15" : "bg-tito-green/20",
-        )}
-        aria-hidden
-      >
-        <div
-          className={cn(
-            "h-full w-[72%] rounded-full",
-            accent === "sky" ? "bg-tito-dull-blue" : "bg-tito-green",
-          )}
-        />
-      </div>
-    </div>
-  </Link>
-);
+      <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+    </>
+  );
+
+  if (!to) {
+    return <div className="payroll-highlight__stat">{body}</div>;
+  }
+
+  return (
+    <Link
+      to={to}
+      className="payroll-highlight__stat payroll-highlight__stat--link"
+    >
+      {body}
+    </Link>
+  );
+};
 
 const LegendDot = ({ color, label }: { color: string; label: string }) => (
   <span className="inline-flex items-center gap-1.5">

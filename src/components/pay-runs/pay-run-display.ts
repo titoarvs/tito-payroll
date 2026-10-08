@@ -146,6 +146,17 @@ export const approvalDueLabel = (
   return null;
 };
 
+const moneyAmount = (value: string | null | undefined): number => {
+  const amount = Number(String(value ?? "").replace(/[$,]/g, ""));
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+/** True when basic pay or monthly salary is a positive amount. */
+export const hasBasicOrSalary = (
+  basicPay: string | null | undefined,
+  monthlySalary: string | null | undefined,
+): boolean => moneyAmount(basicPay) > 0 || moneyAmount(monthlySalary) > 0;
+
 export const missingPayrollReasonLabel = (reason: string): string => {
   if (reason === "missing_hourly_rate") return "No hourly rate";
   if (reason === "missing_clock_link") return "No Tito Clock link";

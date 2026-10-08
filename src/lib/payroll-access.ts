@@ -50,6 +50,11 @@ export const canManageTaxTables = (
   user: HrisUser | undefined | null,
 ): boolean => hasAnyRole(user, TAX_TABLE_MANAGE_ROLES);
 
+/** Sync employment pay onto an employee — Super Admin only. */
+export const canSyncEmployment = (
+  user: HrisUser | undefined | null,
+): boolean => hasAnyRole(user, ["super_admin"]);
+
 /** Publish draft tax schedule — Super Admin only. */
 export const canPublishTaxTables = (
   user: HrisUser | undefined | null,

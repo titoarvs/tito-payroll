@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
-  FileText,
   LayoutDashboard,
   Table2,
   Users,
@@ -56,12 +55,6 @@ export const PAYROLL_NAV_ITEMS: PayrollNavItem[] = [
     icon: Table2,
     section: "organization",
     requiresPayrollOps: true,
-  },
-  {
-    to: "/dashboard/my-payslips",
-    label: "My payslips",
-    icon: FileText,
-    section: "organization",
   },
 ];
 

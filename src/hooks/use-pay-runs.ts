@@ -73,6 +73,23 @@ export const useCreateCorrectionPayRun = () => {
   });
 };
 
+export const useSyncEmployeeEmployment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      employeeId,
+    }: {
+      employeeId: string;
+      payRunId: string;
+    }) => payRunsService.syncEmployment(employeeId),
+    onSuccess: async (_data, { payRunId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: payRunsKeys.readiness(payRunId),
+      });
+    },
+  });
+};
+
 export const useComputePayRun = () => {
   const queryClient = useQueryClient();
   return useMutation({

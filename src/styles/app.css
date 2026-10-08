@@ -362,6 +362,156 @@
     color: var(--foreground);
   }
 
+  .payroll-highlight {
+    display: grid;
+    gap: 2rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--tito-green) 32%, var(--border));
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--tito-green) 16%, #ffffff) 0%,
+        #ffffff 46%
+      );
+    padding: 1.75rem 1.5rem 1.5rem;
+    box-shadow:
+      0 1px 0 color-mix(in srgb, white 70%, transparent) inset,
+      0 10px 28px color-mix(in srgb, var(--tito-green) 10%, transparent);
+  }
+
+  @media (min-width: 1024px) {
+    .payroll-highlight {
+      grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.9fr);
+      align-items: start;
+      gap: 3rem;
+      padding: 2.25rem 2.5rem 2rem;
+    }
+  }
+
+  .payroll-highlight__lead {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .payroll-highlight__eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--tito-dark-green);
+  }
+
+  .payroll-highlight__label {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+
+  .payroll-highlight__figure {
+    margin-top: 0.45rem;
+    font-size: clamp(2.4rem, 4.6vw, 3.6rem);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--tito-blue);
+  }
+
+  .payroll-highlight__rule {
+    display: block;
+    width: 3.25rem;
+    height: 3px;
+    margin-top: 1.25rem;
+    border-radius: 999px;
+    background: var(--tito-green);
+  }
+
+  .payroll-highlight__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 1rem;
+    max-width: 36rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+
+  .payroll-highlight__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .payroll-highlight__rail {
+    display: grid;
+    gap: 0.25rem;
+    border-top: 1px solid color-mix(in srgb, var(--tito-green) 22%, var(--border));
+    padding-top: 1.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .payroll-highlight__rail {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 1.75rem;
+      row-gap: 0.5rem;
+      align-content: start;
+      border-top: none;
+      border-left: 1px solid color-mix(in srgb, var(--tito-green) 22%, var(--border));
+      padding-top: 0;
+      padding-left: 2.25rem;
+    }
+  }
+
+  .payroll-highlight__stat {
+    display: block;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+
+  .payroll-highlight__stat:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .payroll-highlight__stat--link {
+    border-radius: 0.5rem;
+    margin-inline: -0.4rem;
+    padding-inline: 0.4rem;
+    transition: background-color 140ms ease-out;
+  }
+
+  .payroll-highlight__stat--link:hover {
+    background: color-mix(in srgb, var(--tito-green) 12%, transparent);
+  }
+
+  .payroll-highlight__stat--link:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  .dark .payroll-highlight {
+    border-color: color-mix(in srgb, var(--tito-green) 28%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--tito-green) 12%, var(--card)) 0%,
+        var(--card) 52%
+      );
+    box-shadow: 0 10px 28px rgb(0 0 0 / 28%);
+  }
+
+  .dark .payroll-highlight__figure {
+    color: var(--foreground);
+  }
+
+  .dark .payroll-highlight__eyebrow {
+    color: var(--tito-green-text);
+  }
+
   /* Cutoff hero — shared brand surface */
   .payroll-cutoff-hero {
     --hero-ink: #012241;

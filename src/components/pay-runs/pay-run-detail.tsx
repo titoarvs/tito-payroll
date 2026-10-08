@@ -1,5 +1,6 @@
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import type { Payslip } from "~/api-services/pay-runs.types";
 import {
   DEFAULT_EMPLOYEE_PAGE_SIZE,
@@ -10,8 +11,9 @@ import {
   cutoffHalfLabel,
   formatPayRunPeriod,
   formatPayslipMoney,
+  hasBasicOrSalary,
+  missingPayrollReasonLabel,
 } from "~/components/pay-runs/pay-run-display";
-import { MissingPayrollDataNotice } from "~/components/pay-runs/missing-payroll-data-notice";
 import { PayRunStatusBadge } from "~/components/pay-runs/pay-run-status-badge";
 import {
   AlertDialog,
@@ -61,11 +63,12 @@ import {
   usePayRunPayslips,
   usePayRunReadiness,
   useReleasePayRun,
+  useSyncEmployeeEmployment,
   useUpdatePayRun,
 } from "~/hooks/use-pay-runs";
 import { useCurrentUser } from "~/hooks/use-current-user";
 import { HrisApiError } from "~/lib/hris-api-client";
-import { canProcessPayRuns } from "~/lib/payroll-access";
+import { canProcessPayRuns, canSyncEmployment } from "~/lib/payroll-access";
 import {
   previewWithholdingOnSplitToggle,
   recalcNetFromTax,
@@ -75,6 +78,14 @@ import type { MissingPayrollDataIssue } from "~/api-services/pay-runs.types";
 interface PayRunDetailProps {
   payRunId: string;
 }
+
+const formatEmployeeName = (value: string | null | undefined): string =>
+  (value ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 
 const extractReadinessIssues = (
   payload: unknown,
@@ -251,9 +262,11 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
   const navigate = useNavigate();
   const { data: user } = useCurrentUser();
   const mayProcess = canProcessPayRuns(user);
+  const maySync = canSyncEmployment(user);
   const { data, isPending, isError, error } = usePayRun(payRunId);
   const payslipsQuery = usePayRunPayslips(payRunId);
   const compute = useComputePayRun();
+  const syncEmployment = useSyncEmployeeEmployment();
   const release = useReleasePayRun();
   const updatePayRun = useUpdatePayRun();
   const createCorrection = useCreateCorrectionPayRun();
@@ -290,14 +303,47 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       : null;
   const readinessIssues = blockedIssues ?? readinessIssuesFromApi;
   const payslips = previewPayslips ?? payslipsQuery.data?.data ?? [];
-  const total = payslips.length;
+  const tableRows = useMemo(() => {
+    const onSlip = new Set(payslips.map((row) => row.employeeId));
+    const rows: Array<
+      | { kind: "slip"; slip: Payslip; name: string }
+      | { kind: "missing"; issue: MissingPayrollDataIssue; name: string }
+    > = [
+      ...payslips.map((slip) => ({
+        kind: "slip" as const,
+        slip,
+        name: slip.employeeName?.trim() || slip.employeeCode?.trim() || "",
+      })),
+      ...readinessIssues
+        .filter((issue) => !onSlip.has(issue.employeeId))
+        .map((issue) => ({
+          kind: "missing" as const,
+          issue,
+          name:
+            issue.employeeName?.trim() || issue.employeeCode?.trim() || "",
+        })),
+    ];
+    rows.sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+    );
+    return rows;
+  }, [payslips, readinessIssues]);
+  const total = tableRows.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const colSpan = 1 + visibleIds.length;
   const isPayslipsLoading = payslipsQuery.isPending || payslipsQuery.isFetching;
 
   const correctionCandidates = useMemo(
     () =>
-      payslips.filter((row) => row.employmentStatus !== "consultant"),
+      payslips
+        .filter((row) => row.employmentStatus !== "consultant")
+        .sort((left, right) =>
+          (left.employeeName ?? left.employeeCode ?? "").localeCompare(
+            right.employeeName ?? right.employeeCode ?? "",
+            undefined,
+            { sensitivity: "base" },
+          ),
+        ),
     [payslips],
   );
 
@@ -318,8 +364,8 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
 
   const pageRows = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return payslips.slice(start, start + pageSize);
-  }, [payslips, page, pageSize]);
+    return tableRows.slice(start, start + pageSize);
+  }, [tableRows, page, pageSize]);
 
   const handleSplitToggle = (next: boolean) => {
     if (!payRun || !mayProcess) return;
@@ -389,6 +435,17 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
     (payRun.status === "draft" ||
       payRun.status === "computing" ||
       payRun.status === "computed");
+  const releasePayPending =
+    payslipsQuery.isPending ||
+    (readinessEnabled && readinessQuery.isPending);
+  const releaseBlocked =
+    !isCorrection &&
+    !releasePayPending &&
+    (readinessIssues.length > 0 ||
+      payslips.length === 0 ||
+      payslips.some(
+        (row) => !hasBasicOrSalary(row.basicPay, row.monthlyRate),
+      ));
   const canRelease = mayProcess && payRun.status === "computed";
   const computeButtonLabel = compute.isPending
     ? payRun.status === "computing"
@@ -478,7 +535,18 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       {canRelease ? (
         <AlertDialog open={releaseOpen} onOpenChange={setReleaseOpen}>
           <AlertDialogTrigger asChild>
-            <Button type="button" variant="outline" size="sm" className="h-8">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={releaseBlocked || releasePayPending}
+              title={
+                releaseBlocked
+                  ? "Every employee needs a basic pay or salary."
+                  : undefined
+              }
+            >
               Approve & release
             </Button>
           </AlertDialogTrigger>
@@ -502,7 +570,7 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
                   event.preventDefault();
                   handleRelease();
                 }}
-                disabled={release.isPending}
+                disabled={release.isPending || releaseBlocked}
               >
                 {release.isPending ? "Releasing…" : "Approve & release"}
               </AlertDialogAction>
@@ -564,25 +632,16 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
           {payRun.splitWithholding ? (
             <span> · Withholding split on</span>
           ) : null}
-          {payRun.taxScheduleId ||
-          payRun.sssScheduleId ||
-          payRun.hdmfScheduleId ||
-          payRun.philhealthScheduleId ? (
-            <span className="hidden sm:inline">
-              {" "}
-              · Tables pinned
-              {payRun.sssScheduleId ? ` · SSS ${payRun.sssScheduleId.slice(0, 8)}…` : ""}
-              {payRun.hdmfScheduleId ? ` · HDMF ${payRun.hdmfScheduleId.slice(0, 8)}…` : ""}
-              {payRun.philhealthScheduleId
-                ? ` · PH ${payRun.philhealthScheduleId.slice(0, 8)}…`
-                : ""}
-              {payRun.taxScheduleId ? ` · Tax ${payRun.taxScheduleId.slice(0, 8)}…` : ""}
-            </span>
-          ) : null}
           {canCompute && !isCorrection ? (
             <span className="hidden sm:inline">
               {" "}
-              · Compute pulls Clock hours and approved OT / ND / holiday work.
+              · Time logs and hourly rate only.
+            </span>
+          ) : null}
+          {releaseBlocked ? (
+            <span className="text-destructive">
+              {" "}
+              · Every employee needs a basic pay or salary.
             </span>
           ) : null}
           {canCompute && isCorrection ? (
@@ -619,13 +678,6 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
         </label>
       ) : null}
 
-      {!isCorrection && readinessIssues.length > 0 ? (
-        <MissingPayrollDataNotice
-          key={payRunId}
-          issues={readinessIssues}
-        />
-      ) : null}
-
       {isCorrection && payRun.correctsPayRunId ? (
         <Card className="border-border/60 bg-muted/20">
           <CardContent className="flex flex-wrap items-center gap-2 py-4 text-sm">
@@ -651,47 +703,51 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
       ) : null}
 
       <Dialog open={correctionOpen} onOpenChange={setCorrectionOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create correction batch</DialogTitle>
+        <DialogContent className="flex max-h-[min(32rem,calc(100vh-2rem))] max-w-md flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="border-b border-border px-5 py-4 pr-12">
+            <DialogTitle>Create correction</DialogTitle>
             <DialogDescription>
-              Select employees to correct. The released source batch stays
-              immutable; the new batch starts at net 0 until you add an other
-              adjustment.
+              Choose who to correct. The released batch stays unchanged.
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-72 space-y-2 overflow-y-auto px-1">
-            {correctionCandidates.map((row) => {
-              const checked = correctionEmployeeIds.has(row.employeeId);
-              const label =
-                row.employeeName?.trim() ||
-                row.employeeCode ||
-                row.employeeId;
-              return (
-                <label
-                  key={row.employeeId}
-                  className="flex cursor-pointer items-start gap-2 rounded-md border border-border/50 px-3 py-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    className="mt-1 size-4 shrink-0 rounded border border-input"
-                    checked={checked}
-                    onChange={() => toggleCorrectionEmployee(row.employeeId)}
-                    disabled={createCorrection.isPending}
-                  />
-                  <span className="min-w-0">
-                    <span className="font-medium">{label}</span>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {correctionCandidates.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-muted-foreground">
+                No employees in this batch.
+              </p>
+            ) : (
+              correctionCandidates.map((row) => {
+                const checked = correctionEmployeeIds.has(row.employeeId);
+                const label =
+                  formatEmployeeName(row.employeeName) ||
+                  row.employeeCode ||
+                  row.employeeId;
+                return (
+                  <label
+                    key={row.employeeId}
+                    className="flex cursor-pointer items-center gap-3 border-b border-border/60 px-5 py-3 text-sm last:border-b-0 hover:bg-muted/40"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 shrink-0 rounded border border-input"
+                      checked={checked}
+                      onChange={() => toggleCorrectionEmployee(row.employeeId)}
+                      disabled={createCorrection.isPending}
+                    />
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {label}
+                    </span>
                     {row.employeeCode ? (
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                      <span className="shrink-0 font-mono text-xs text-muted-foreground">
                         {row.employeeCode}
                       </span>
                     ) : null}
-                  </span>
-                </label>
-              );
-            })}
+                  </label>
+                );
+              })
+            )}
           </div>
-          <div className="flex flex-wrap justify-end gap-2 px-1 pb-1 pt-2">
+          <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
             <Button
               type="button"
               variant="outline"
@@ -776,41 +832,126 @@ export const PayRunDetail = ({ payRunId }: PayRunDetailProps) => {
                       colSpan={colSpan}
                       className="py-8 text-center text-muted-foreground"
                     >
-                      No payslips yet. Compute pulls Clock hours and approved
-                      OT/ND/holiday work.
+                      No payslips yet. Compute includes employees with Clock time
+                      logs and an hourly rate.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  pageRows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className="cursor-pointer hover:bg-muted/40"
-                      onClick={() => openPayslip(row.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          openPayslip(row.id);
+                  pageRows.map((row) =>
+                    row.kind === "missing" ? (
+                      <TableRow
+                        key={`missing-${row.issue.employeeId}`}
+                        className="cursor-pointer bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/60"
+                        onClick={() =>
+                          navigate({
+                            to: "/dashboard/employees/$id",
+                            params: { id: row.issue.employeeId },
+                          })
                         }
-                      }}
-                      tabIndex={0}
-                    >
-                      <TableCell className="max-w-[16rem]">
-                        <div className="flex min-w-0 flex-col gap-0.5">
-                          <span className="truncate font-medium text-foreground">
-                            {row.employeeName?.trim() || "Unknown employee"}
-                          </span>
-                          <span className="truncate font-mono text-xs text-muted-foreground">
-                            {row.employeeCode?.trim()
-                              ? `#${row.employeeCode}`
-                              : row.employeeId}
-                          </span>
-                        </div>
-                      </TableCell>
-                      {visibleIds.map((id) =>
-                        renderPayslipColumnCell(id, row),
-                      )}
-                    </TableRow>
-                  ))
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            navigate({
+                              to: "/dashboard/employees/$id",
+                              params: { id: row.issue.employeeId },
+                            });
+                          }
+                        }}
+                        tabIndex={0}
+                      >
+                        <TableCell className="max-w-[16rem]">
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate font-medium text-red-950 dark:text-red-50">
+                              {row.issue.employeeName?.trim() ||
+                                "Unknown employee"}
+                            </span>
+                            <span className="truncate font-mono text-xs text-red-800/80 dark:text-red-100/80">
+                              {row.issue.employeeCode?.trim()
+                                ? `#${row.issue.employeeCode}`
+                                : row.issue.employeeId}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell
+                          colSpan={visibleIds.length}
+                          className="text-sm text-red-900 dark:text-red-50"
+                        >
+                          {row.issue.reasons
+                            .map((reason) => missingPayrollReasonLabel(reason))
+                            .join(", ")}
+                          {maySync ? (
+                            <>
+                              {" · "}
+                              <button
+                                type="button"
+                                className="font-medium underline underline-offset-2"
+                                disabled={syncEmployment.isPending}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  syncEmployment.mutate(
+                                    {
+                                      employeeId: row.issue.employeeId,
+                                      payRunId,
+                                    },
+                                    {
+                                      onSuccess: () => {
+                                        toast.success(
+                                          "Employment synced. Compute again to include this employee.",
+                                        );
+                                      },
+                                      onError: (error) => {
+                                        toast.error(
+                                          error instanceof HrisApiError
+                                            ? error.message
+                                            : "Could not sync employment",
+                                        );
+                                      },
+                                    },
+                                  );
+                                }}
+                              >
+                                {syncEmployment.isPending &&
+                                syncEmployment.variables?.employeeId ===
+                                  row.issue.employeeId
+                                  ? "Syncing…"
+                                  : "Sync"}
+                              </button>
+                            </>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow
+                        key={row.slip.id}
+                        className="cursor-pointer hover:bg-muted/40"
+                        onClick={() => openPayslip(row.slip.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            openPayslip(row.slip.id);
+                          }
+                        }}
+                        tabIndex={0}
+                      >
+                        <TableCell className="max-w-[16rem]">
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate font-medium text-foreground">
+                              {row.slip.employeeName?.trim() ||
+                                "Unknown employee"}
+                            </span>
+                            <span className="truncate font-mono text-xs text-muted-foreground">
+                              {row.slip.employeeCode?.trim()
+                                ? `#${row.slip.employeeCode}`
+                                : row.slip.employeeId}
+                            </span>
+                          </div>
+                        </TableCell>
+                        {visibleIds.map((id) =>
+                          renderPayslipColumnCell(id, row.slip),
+                        )}
+                      </TableRow>
+                    ),
+                  )
                 )}
               </TableBody>
             </Table>

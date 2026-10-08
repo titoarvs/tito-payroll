@@ -113,6 +113,7 @@ export const PayRunsList = () => {
   );
   const [includeThirteenthMonth, setIncludeThirteenthMonth] = useState(false);
   const [splitWithholding, setSplitWithholding] = useState(false);
+  const [duplicateTriggered, setDuplicateTriggered] = useState(false);
   const { columns, setColumns, visibleIds, labelById } = useTableColumns(
     PAY_RUN_COLUMNS_STORAGE_KEY,
     PAY_RUN_COLUMN_DEFS,
@@ -134,7 +135,7 @@ export const PayRunsList = () => {
       run.cutoffHalf === cutoffHalf,
   );
   const canCreate = Boolean(
-    periodStart && periodEnd && periodStart <= periodEnd && !duplicateRun,
+    periodStart && periodEnd && periodStart <= periodEnd,
   );
   const colSpan = 2 + visibleIds.length;
 
@@ -149,6 +150,8 @@ export const PayRunsList = () => {
 
   const handleCutoffHalfChange = (value: CutoffHalf) => {
     setCutoffHalf(value);
+    setDuplicateTriggered(false);
+    create.reset();
     const anchor = monthAnchorFromPeriod(periodStart, periodEnd);
     const next = payPeriodForHalf(
       anchor.getFullYear(),
@@ -161,6 +164,11 @@ export const PayRunsList = () => {
 
   const handleCreate = () => {
     if (!canCreate) return;
+    if (duplicateRun) {
+      setDuplicateTriggered(true);
+      return;
+    }
+    setDuplicateTriggered(false);
     create.mutate(
       {
         periodStart,
@@ -206,6 +214,8 @@ export const PayRunsList = () => {
                 onChange={(next) => {
                   setPeriodStart(next.start);
                   setPeriodEnd(next.end);
+                  setDuplicateTriggered(false);
+                  create.reset();
                 }}
                 disabled={create.isPending}
               />
@@ -279,7 +289,7 @@ export const PayRunsList = () => {
               </span>
             </span>
           </label>
-          {duplicateRun ? (
+          {duplicateTriggered && duplicateRun ? (
             <p className="mt-3 text-sm text-destructive" role="alert">
               A pay run already exists for{" "}
               {formatPayRunPeriod(periodStart, periodEnd)} (

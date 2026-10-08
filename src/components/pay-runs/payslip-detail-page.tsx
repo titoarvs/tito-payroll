@@ -1,18 +1,32 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeftIcon, DownloadIcon, PrinterIcon } from "lucide-react";
-import { formatPayRunPeriod } from "~/components/pay-runs/pay-run-display";
-import { PayslipView } from "~/components/pay-runs/payslip-view";
+import { PayslipDocument } from "~/components/pay-runs/payslip-document";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useCurrentUser } from "~/hooks/use-current-user";
 import { usePayslip } from "~/hooks/use-pay-runs";
 import { HrisApiError } from "~/lib/hris-api-client";
+import { hasPayrollOps } from "~/lib/payroll-access";
 
 type PayslipDetailPageProps = {
   payslipId: string;
 };
 
 export const PayslipDetailPage = ({ payslipId }: PayslipDetailPageProps) => {
+  const { data: user } = useCurrentUser();
+  const isOps = hasPayrollOps(user);
   const { data, isPending, isError, error } = usePayslip(payslipId);
+  const payslip = data?.data;
+  const backLabel = isOps ? "Payslips" : "My payslips";
+
+  if (isPending) {
+    return (
+      <div className="flex w-full min-w-0 flex-col gap-4">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-[32rem] w-full" />
+      </div>
+    );
+  }
 
   const errorMessage =
     error instanceof HrisApiError ? error.message : "Failed to load payslip.";
@@ -20,68 +34,18 @@ export const PayslipDetailPage = ({ payslipId }: PayslipDetailPageProps) => {
     error instanceof HrisApiError &&
     (error.status === 403 || error.status === 401);
   const isNotFound = error instanceof HrisApiError && error.status === 404;
-  const payslip = data?.data;
 
-  return (
-    <div className="flex w-full min-w-0 flex-col gap-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <Link
-            to="/dashboard/my-payslips"
-            className="mb-1.5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-4 shrink-0" />
-            Back to payslips
-          </Link>
-          <h1 className="page-title text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            Payslip
-          </h1>
-          {payslip?.employeeName ? (
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {payslip.employeeName}
-              {payslip.periodStart && payslip.periodEnd
-                ? ` · ${formatPayRunPeriod(payslip.periodStart, payslip.periodEnd)}`
-                : ""}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9 gap-1.5"
-            disabled={!payslip}
-            onClick={() => window.print()}
-          >
-            <PrinterIcon className="size-4" />
-            Print
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 gap-1.5"
-            disabled={!payslip}
-            onClick={() => window.print()}
-          >
-            <DownloadIcon className="size-4" />
-            Download PDF
-          </Button>
-        </div>
-      </div>
-
-      {isPending ? (
-        <div
-          className="space-y-3 rounded-xl border border-border/50 bg-card p-6"
-          role="status"
+  if (isError || !payslip) {
+    return (
+      <div className="flex w-full min-w-0 flex-col gap-4">
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="-ml-2 h-8 w-fit px-2 text-muted-foreground"
         >
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      ) : null}
-
-      {isError ? (
+          <Link to="/dashboard/my-payslips">← {backLabel}</Link>
+        </Button>
         <p className="text-sm text-destructive" role="alert">
           {isNotFound
             ? "Payslip not found."
@@ -89,11 +53,44 @@ export const PayslipDetailPage = ({ payslipId }: PayslipDetailPageProps) => {
               ? "You do not have access to this payslip."
               : errorMessage}
         </p>
-      ) : null}
+      </div>
+    );
+  }
 
-      {!isPending && !isError && payslip ? (
-        <PayslipView payslip={payslip} />
-      ) : null}
+  const employeeName = payslip.employeeName?.trim() || "Payslip";
+  const employeeCode = payslip.employeeCode?.trim();
+
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="-ml-2 h-8 px-2 text-muted-foreground print:hidden"
+          >
+            <Link to="/dashboard/my-payslips">← {backLabel}</Link>
+          </Button>
+          <h2 className="page-title text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+            {employeeName}
+          </h2>
+          {employeeCode ? (
+            <p className="text-sm text-muted-foreground">#{employeeCode}</p>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 print:hidden"
+          onClick={() => window.print()}
+        >
+          Print / Save as PDF
+        </Button>
+      </header>
+
+      <PayslipDocument payslip={payslip} />
     </div>
   );
 };
